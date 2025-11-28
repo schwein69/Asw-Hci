@@ -25,18 +25,18 @@ jobs:
 
       # ------------------- SERVER -------------------
       - name: Install Server Dependencies
-        working-directory: ./server
+        working-directory: mevn-app/server
         run: npm install
 
       - name: Lint Server (optional)
-        working-directory: ./server
+        working-directory: mevn-app/server
         run: npm run lint --if-present
 
       # ------------------- CLIENT -------------------
       - name: Install Client Dependencies
-        working-directory: ./client
+        working-directory: mevn-app/client
         run: npm install
 
       - name: Build Client
-        working-directory: ./client
+        working-directory: mevn-app/client
         run: npm run build
