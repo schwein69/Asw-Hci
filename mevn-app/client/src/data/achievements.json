@@ -1,0 +1,802 @@
+[
+  {
+    "id": 1,
+    "name": "Green Pioneer",
+    "description": "Complete your first carbon-neutral journey",
+    "icon": "🌱",
+    "points": 50,
+    "progress": 0
+  },
+  {
+    "id": 2,
+    "name": "Rail Rider",
+    "description": "Travel 1,000 km by train",
+    "icon": "🚂",
+    "points": 100,
+    "progress": 0
+  },
+  {
+    "id": 3,
+    "name": "Zero Waste Warrior",
+    "description": "Visit 10 zero-waste restaurants",
+    "icon": "🎒",
+    "points": 150,
+    "progress": 0
+  },
+  {
+    "id": 4,
+    "name": "Eco Explorer",
+    "description": "Visit 5 different countries sustainably",
+    "icon": "🌍",
+    "points": 200,
+    "progress": 0
+  },
+  {
+    "id": 5,
+    "name": "Carbon Saver",
+    "description": "Save 100 kg of CO₂",
+    "icon": "❤️",
+    "points": 250,
+    "progress": 0
+  },
+  {
+    "id": 6,
+    "name": "Bike Champion",
+    "description": "Travel 500 km by bike",
+    "icon": "🚴",
+    "points": 300,
+    "progress": 0
+  },
+  {
+    "id": 7,
+    "name": "Ocean Guardian",
+    "description": "Pick up 50 kg of ocean waste",
+    "icon": "🌊",
+    "points": 350,
+    "progress": 0
+  },
+  {
+    "id": 8,
+    "name": "Tree Hugger",
+    "description": "Plant 100 trees",
+    "icon": "🌳",
+    "points": 400,
+    "progress": 0
+  },
+  {
+    "id": 9,
+    "name": "Solar Traveler",
+    "description": "Use solar energy for 30 days",
+    "icon": "☀️",
+    "points": 100,
+    "progress": 0
+  },
+  {
+    "id": 10,
+    "name": "Water Saver",
+    "description": "Conserve 1,000 liters of water",
+    "icon": "💧",
+    "points": 75,
+    "progress": 0
+  },
+  {
+    "id": 11,
+    "name": "Plastic Free",
+    "description": "Use no single-use plastics for 7 days",
+    "icon": "♻️",
+    "points": 80,
+    "progress": 0
+  },
+  {
+    "id": 12,
+    "name": "Local Lover",
+    "description": "Shop at 10 local markets",
+    "icon": "🏪",
+    "points": 60,
+    "progress": 0
+  },
+  {
+    "id": 13,
+    "name": "Carpool King",
+    "description": "Carpool for 20 trips",
+    "icon": "🚗",
+    "points": 90,
+    "progress": 0
+  },
+  {
+    "id": 14,
+    "name": "Veggie Champion",
+    "description": "Eat vegetarian for 30 days",
+    "icon": "🥗",
+    "points": 120,
+    "progress": 0
+  },
+  {
+    "id": 15,
+    "name": "Energy Hero",
+    "description": "Reduce energy consumption by 50%",
+    "icon": "⚡",
+    "points": 150,
+    "progress": 0
+  },
+  {
+    "id": 16,
+    "name": "Waste Warrior",
+    "description": "Recycle 100 items",
+    "icon": "🗑️",
+    "points": 110,
+    "progress": 0
+  },
+  {
+    "id": 17,
+    "name": "Community Helper",
+    "description": "Participate in 5 eco events",
+    "icon": "🤝",
+    "points": 140,
+    "progress": 0
+  },
+  {
+    "id": 18,
+    "name": "Air Quality Advocate",
+    "description": "Reduce air pollution by carpooling 50 times",
+    "icon": "💨",
+    "points": 130,
+    "progress": 0
+  },
+  {
+    "id": 19,
+    "name": "Wildlife Protector",
+    "description": "Donate to 3 wildlife organizations",
+    "icon": "🦁",
+    "points": 100,
+    "progress": 0
+  },
+  {
+    "id": 20,
+    "name": "Soil Guardian",
+    "description": "Learn about and practice composting",
+    "icon": "🌿",
+    "points": 70,
+    "progress": 0
+  },
+  {
+    "id": 21,
+    "name": "Beach Cleaner",
+    "description": "Clean 5 beaches",
+    "icon": "🏖️",
+    "points": 160,
+    "progress": 0
+  },
+  {
+    "id": 22,
+    "name": "Wind Watcher",
+    "description": "Support wind energy projects",
+    "icon": "💨",
+    "points": 95,
+    "progress": 0
+  },
+  {
+    "id": 23,
+    "name": "Mountain Trekker",
+    "description": "Hike 5 eco-trails",
+    "icon": "⛰️",
+    "points": 85,
+    "progress": 0
+  },
+  {
+    "id": 24,
+    "name": "Forest Friend",
+    "description": "Spend 50 hours in nature",
+    "icon": "🌲",
+    "points": 105,
+    "progress": 0
+  },
+  {
+    "id": 25,
+    "name": "Sustainable Chef",
+    "description": "Cook 20 zero-waste meals",
+    "icon": "👨‍🍳",
+    "points": 125,
+    "progress": 0
+  },
+  {
+    "id": 26,
+    "name": "Green Commuter",
+    "description": "Use public transport 100 times",
+    "icon": "🚌",
+    "points": 115,
+    "progress": 0
+  },
+  {
+    "id": 27,
+    "name": "Carbon Neutral",
+    "description": "Achieve carbon-neutral month",
+    "icon": "0️⃣",
+    "points": 200,
+    "progress": 0
+  },
+  {
+    "id": 28,
+    "name": "Education Advocate",
+    "description": "Teach 10 people about sustainability",
+    "icon": "📚",
+    "points": 90,
+    "progress": 0
+  },
+  {
+    "id": 29,
+    "name": "Plastic Reducer",
+    "description": "Reduce plastic use by 80%",
+    "icon": "🎯",
+    "points": 140,
+    "progress": 0
+  },
+  {
+    "id": 30,
+    "name": "Renewable Energy User",
+    "description": "Switch to renewable energy",
+    "icon": "🔋",
+    "points": 175,
+    "progress": 0
+  },
+  {
+    "id": 31,
+    "name": "Water Guardian",
+    "description": "Fix 3 water leaks",
+    "icon": "🚰",
+    "points": 50,
+    "progress": 0
+  },
+  {
+    "id": 32,
+    "name": "Eco Fashion Icon",
+    "description": "Buy 10 items of sustainable fashion",
+    "icon": "👗",
+    "points": 100,
+    "progress": 0
+  },
+  {
+    "id": 33,
+    "name": "Green Thumb",
+    "description": "Grow 5 plants",
+    "icon": "🌺",
+    "points": 55,
+    "progress": 0
+  },
+  {
+    "id": 34,
+    "name": "Mindful Consumer",
+    "description": "Buy nothing new for 30 days",
+    "icon": "🛍️",
+    "points": 110,
+    "progress": 0
+  },
+  {
+    "id": 35,
+    "name": "Climate Activist",
+    "description": "Attend 5 climate protests",
+    "icon": "✊",
+    "points": 150,
+    "progress": 0
+  },
+  {
+    "id": 36,
+    "name": "Biodiversity Champion",
+    "description": "Document 50 species",
+    "icon": "🦋",
+    "points": 120,
+    "progress": 0
+  },
+  {
+    "id": 37,
+    "name": "Carbon Offset Master",
+    "description": "Offset 1 ton of carbon",
+    "icon": "🌍",
+    "points": 200,
+    "progress": 0
+  },
+  {
+    "id": 38,
+    "name": "Sustainable Builder",
+    "description": "Build eco-friendly structures",
+    "icon": "🏗️",
+    "points": 160,
+    "progress": 0
+  },
+  {
+    "id": 39,
+    "name": "Health Hiker",
+    "description": "Walk or bike instead of driving 50 times",
+    "icon": "🚴",
+    "points": 95,
+    "progress": 0
+  },
+  {
+    "id": 40,
+    "name": "Meal Prepper",
+    "description": "Meal prep 10 times using sustainable ingredients",
+    "icon": "🍱",
+    "points": 85,
+    "progress": 0
+  },
+  {
+    "id": 41,
+    "name": "Eco Entrepreneur",
+    "description": "Start a sustainable business",
+    "icon": "💼",
+    "points": 250,
+    "progress": 0
+  },
+  {
+    "id": 42,
+    "name": "Green Influencer",
+    "description": "Inspire 100 people to go green",
+    "icon": "📱",
+    "points": 180,
+    "progress": 0
+  },
+  {
+    "id": 43,
+    "name": "Sustainable Traveler",
+    "description": "Travel to 10 eco-friendly destinations",
+    "icon": "✈️",
+    "points": 220,
+    "progress": 0
+  },
+  {
+    "id": 44,
+    "name": "Waste Reduction Master",
+    "description": "Generate zero waste for 7 days",
+    "icon": "0️⃣",
+    "points": 140,
+    "progress": 0
+  },
+  {
+    "id": 45,
+    "name": "Ocean Protector",
+    "description": "Use ocean-safe sunscreen",
+    "icon": "🌊",
+    "points": 60,
+    "progress": 0
+  },
+  {
+    "id": 46,
+    "name": "Air Purifier",
+    "description": "Plant trees to purify air",
+    "icon": "🌳",
+    "points": 100,
+    "progress": 0
+  },
+  {
+    "id": 47,
+    "name": "Sustainable Sleeper",
+    "description": "Sleep on organic bedding",
+    "icon": "🛏️",
+    "points": 50,
+    "progress": 0
+  },
+  {
+    "id": 48,
+    "name": "Green Thumb Master",
+    "description": "Create a pollinator garden",
+    "icon": "🐝",
+    "points": 130,
+    "progress": 0
+  },
+  {
+    "id": 49,
+    "name": "Energy Saver",
+    "description": "Install solar panels",
+    "icon": "☀️",
+    "points": 300,
+    "progress": 0
+  },
+  {
+    "id": 50,
+    "name": "Water Activist",
+    "description": "Reduce water usage by 50%",
+    "icon": "💧",
+    "points": 110,
+    "progress": 0
+  },
+  {
+    "id": 51,
+    "name": "Sustainable Shopper",
+    "description": "Shop at 20 eco-friendly stores",
+    "icon": "🛒",
+    "points": 100,
+    "progress": 0
+  },
+  {
+    "id": 52,
+    "name": "Green Builder",
+    "description": "Use sustainable building materials",
+    "icon": "🏢",
+    "points": 175,
+    "progress": 0
+  },
+  {
+    "id": 53,
+    "name": "Eco Educator",
+    "description": "Create eco-awareness content",
+    "icon": "📖",
+    "points": 120,
+    "progress": 0
+  },
+  {
+    "id": 54,
+    "name": "Climate Scientist",
+    "description": "Learn about climate science",
+    "icon": "🔬",
+    "points": 80,
+    "progress": 0
+  },
+  {
+    "id": 55,
+    "name": "Sustainable Leader",
+    "description": "Lead an eco-friendly initiative",
+    "icon": "🎯",
+    "points": 200,
+    "progress": 0
+  },
+  {
+    "id": 56,
+    "name": "Green Chef",
+    "description": "Use only local ingredients 20 times",
+    "icon": "👨‍🍳",
+    "points": 115,
+    "progress": 0
+  },
+  {
+    "id": 57,
+    "name": "Sustainable Student",
+    "description": "Learn 10 sustainability skills",
+    "icon": "🎓",
+    "points": 130,
+    "progress": 0
+  },
+  {
+    "id": 58,
+    "name": "Carbon Tracker",
+    "description": "Track carbon emissions for 30 days",
+    "icon": "📊",
+    "points": 90,
+    "progress": 0
+  },
+  {
+    "id": 59,
+    "name": "Sustainable Dresser",
+    "description": "Wear only sustainable clothing for a month",
+    "icon": "👔",
+    "points": 140,
+    "progress": 0
+  },
+  {
+    "id": 60,
+    "name": "Green Advocate",
+    "description": "Advocate for green policies 10 times",
+    "icon": "📢",
+    "points": 150,
+    "progress": 0
+  },
+  {
+    "id": 61,
+    "name": "Ocean Wave",
+    "description": "Participate in ocean cleanup",
+    "icon": "🌊",
+    "points": 100,
+    "progress": 0
+  },
+  {
+    "id": 62,
+    "name": "Forest Guardian",
+    "description": "Protect 10 acres of forest",
+    "icon": "🌲",
+    "points": 180,
+    "progress": 0
+  },
+  {
+    "id": 63,
+    "name": "Sustainable Living",
+    "description": "Live sustainably for 365 days",
+    "icon": "🏡",
+    "points": 365,
+    "progress": 0
+  },
+  {
+    "id": 64,
+    "name": "Green Transport",
+    "description": "Use green transport 100 times",
+    "icon": "🚆",
+    "points": 120,
+    "progress": 0
+  },
+  {
+    "id": 65,
+    "name": "Eco Warrior",
+    "description": "Complete 50 eco challenges",
+    "icon": "⚔️",
+    "points": 250,
+    "progress": 0
+  },
+  {
+    "id": 66,
+    "name": "Sustainable Thinker",
+    "description": "Read 5 sustainability books",
+    "icon": "📚",
+    "points": 100,
+    "progress": 0
+  },
+  {
+    "id": 67,
+    "name": "Green Office",
+    "description": "Create a green office space",
+    "icon": "🏢",
+    "points": 140,
+    "progress": 0
+  },
+  {
+    "id": 68,
+    "name": "Sustainable Farmer",
+    "description": "Support 5 local farms",
+    "icon": "🌾",
+    "points": 110,
+    "progress": 0
+  },
+  {
+    "id": 69,
+    "name": "Eco Volunteer",
+    "description": "Volunteer for 50 hours",
+    "icon": "🤝",
+    "points": 160,
+    "progress": 0
+  },
+  {
+    "id": 70,
+    "name": "Green Artist",
+    "description": "Create eco-art 10 times",
+    "icon": "🎨",
+    "points": 100,
+    "progress": 0
+  },
+  {
+    "id": 71,
+    "name": "Sustainable Music Lover",
+    "description": "Attend 5 eco-friendly concerts",
+    "icon": "🎵",
+    "points": 85,
+    "progress": 0
+  },
+  {
+    "id": 72,
+    "name": "Green Gamer",
+    "description": "Play 10 eco-games",
+    "icon": "🎮",
+    "points": 70,
+    "progress": 0
+  },
+  {
+    "id": 73,
+    "name": "Sustainable Athlete",
+    "description": "Play 20 eco-sports",
+    "icon": "⛹️",
+    "points": 115,
+    "progress": 0
+  },
+  {
+    "id": 74,
+    "name": "Green Writer",
+    "description": "Write 5 eco-articles",
+    "icon": "✍️",
+    "points": 125,
+    "progress": 0
+  },
+  {
+    "id": 75,
+    "name": "Sustainable Listener",
+    "description": "Attend 10 eco-podcasts",
+    "icon": "🎙️",
+    "points": 90,
+    "progress": 0
+  },
+  {
+    "id": 76,
+    "name": "Green Speaker",
+    "description": "Give 5 eco-talks",
+    "icon": "🎤",
+    "points": 140,
+    "progress": 0
+  },
+  {
+    "id": 77,
+    "name": "Eco Mentor",
+    "description": "Mentor 10 people on sustainability",
+    "icon": "👨‍🏫",
+    "points": 150,
+    "progress": 0
+  },
+  {
+    "id": 78,
+    "name": "Sustainable Researcher",
+    "description": "Research 10 green technologies",
+    "icon": "🔍",
+    "points": 120,
+    "progress": 0
+  },
+  {
+    "id": 79,
+    "name": "Green Developer",
+    "description": "Build 3 eco-apps",
+    "icon": "💻",
+    "points": 200,
+    "progress": 0
+  },
+  {
+    "id": 80,
+    "name": "Sustainable Designer",
+    "description": "Design 10 eco-products",
+    "icon": "🎨",
+    "points": 130,
+    "progress": 0
+  },
+  {
+    "id": 81,
+    "name": "Green Investor",
+    "description": "Invest in 5 sustainable companies",
+    "icon": "💰",
+    "points": 180,
+    "progress": 0
+  },
+  {
+    "id": 82,
+    "name": "Eco Entrepreneur Plus",
+    "description": "Launch 2 green startups",
+    "icon": "🚀",
+    "points": 300,
+    "progress": 0
+  },
+  {
+    "id": 83,
+    "name": "Sustainable Manager",
+    "description": "Manage 5 eco-projects",
+    "icon": "📋",
+    "points": 140,
+    "progress": 0
+  },
+  {
+    "id": 84,
+    "name": "Green Leader",
+    "description": "Lead 10 eco-teams",
+    "icon": "👔",
+    "points": 160,
+    "progress": 0
+  },
+  {
+    "id": 85,
+    "name": "Sustainable Politician",
+    "description": "Support 5 green policies",
+    "icon": "🏛️",
+    "points": 200,
+    "progress": 0
+  },
+  {
+    "id": 86,
+    "name": "Eco Ambassador",
+    "description": "Represent 10 sustainability causes",
+    "icon": "🌍",
+    "points": 175,
+    "progress": 0
+  },
+  {
+    "id": 87,
+    "name": "Green Doctor",
+    "description": "Practice eco-medicine 20 times",
+    "icon": "⚕️",
+    "points": 150,
+    "progress": 0
+  },
+  {
+    "id": 88,
+    "name": "Sustainable Engineer",
+    "description": "Build 3 green structures",
+    "icon": "🏗️",
+    "points": 190,
+    "progress": 0
+  },
+  {
+    "id": 89,
+    "name": "Eco Chemist",
+    "description": "Create 5 eco-friendly products",
+    "icon": "⚗️",
+    "points": 160,
+    "progress": 0
+  },
+  {
+    "id": 90,
+    "name": "Green Physicist",
+    "description": "Study 5 renewable energies",
+    "icon": "⚡",
+    "points": 140,
+    "progress": 0
+  },
+  {
+    "id": 91,
+    "name": "Sustainable Biologist",
+    "description": "Study 10 endangered species",
+    "icon": "🦁",
+    "points": 130,
+    "progress": 0
+  },
+  {
+    "id": 92,
+    "name": "Eco Psychologist",
+    "description": "Help 20 people understand eco-anxiety",
+    "icon": "🧠",
+    "points": 140,
+    "progress": 0
+  },
+  {
+    "id": 93,
+    "name": "Green Philosopher",
+    "description": "Discuss 10 eco-philosophies",
+    "icon": "💭",
+    "points": 120,
+    "progress": 0
+  },
+  {
+    "id": 94,
+    "name": "Sustainable Theologian",
+    "description": "Connect 5 faiths to sustainability",
+    "icon": "🙏",
+    "points": 110,
+    "progress": 0
+  },
+  {
+    "id": 95,
+    "name": "Eco Ethicist",
+    "description": "Teach 10 people eco-ethics",
+    "icon": "⚖️",
+    "points": 140,
+    "progress": 0
+  },
+  {
+    "id": 96,
+    "name": "Green Storyteller",
+    "description": "Share 10 eco-stories",
+    "icon": "📖",
+    "points": 100,
+    "progress": 0
+  },
+  {
+    "id": 97,
+    "name": "Sustainable Visionary",
+    "description": "Create vision for 1 eco-future",
+    "icon": "👁️",
+    "points": 220,
+    "progress": 0
+  },
+  {
+    "id": 98,
+    "name": "Green Pioneer 2.0",
+    "description": "Complete 100 eco-challenges",
+    "icon": "🌟",
+    "points": 500,
+    "progress": 0
+  },
+  {
+    "id": 99,
+    "name": "Eco Legend",
+    "description": "Achieve 50 achievements",
+    "icon": "🏆",
+    "points": 1000,
+    "progress": 0
+  },
+  {
+    "id": 100,
+    "name": "Ultimate Eco Hero",
+    "description": "Achieve all 100 achievements",
+    "icon": "👑",
+    "points": 5000,
+    "progress": 0
+  }
+]
