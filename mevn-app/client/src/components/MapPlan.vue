@@ -25,7 +25,7 @@ export default {
         navigator.geolocation.getCurrentPosition((position) => {
           const { latitude, longitude } = position.coords;
           this.mapCenter = [longitude, latitude];
-          this.$refs.mapboxMap?.flyTo([longitude, latitude], 15);
+          this.$refs.mapboxMap?.flyTo([longitude, latitude], 15); // ? needs for prevent errors if mapboxMap is not yet loaded, there i use this.$refs to access the child component, so i can call flyTo method on it
         });
       }
     },

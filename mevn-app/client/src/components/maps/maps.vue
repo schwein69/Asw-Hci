@@ -36,7 +36,7 @@ export default {
 
     try {
       this.map = new mapboxgl.Map({
-        container: this.$refs.mapContainer,
+        container: this.$refs.mapContainer, // reference to the map container div
         style: "mapbox://styles/mapbox/standard",
         center: this.center,
         zoom: this.zoom,
