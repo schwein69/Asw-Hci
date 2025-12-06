@@ -34,11 +34,12 @@ export default {
       selectedCategory: "",
       subject: "",
       message: "",
+      // UPDATED: Added Emojis to match the icons in your screenshot
       categories: [
-        "General Feedback",
-        "Bug Report",
-        "Feature Request",
-        "Sustainability Suggestion",
+        "💡 Feature Request",
+        "🐛 Bug Report",
+        "⚡ Improvement",
+        "💬 General Feedback",
       ],
       isSubmitting: false,
 
@@ -184,7 +185,10 @@ export default {
             <div class="relative">
               <select
                 v-model="selectedCategory"
-                class="w-full p-3 bg-gray-50 rounded-xl border border-gray-200 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all appearance-none cursor-pointer"
+                class="w-full p-3 bg-gray-50 rounded-xl border border-transparent focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all appearance-none cursor-pointer"
+                :class="
+                  selectedCategory === '' ? 'text-gray-900' : 'text-gray-900'
+                "
               >
                 <option value="" disabled selected>Select category</option>
                 <option v-for="cat in categories" :key="cat" :value="cat">
@@ -234,7 +238,7 @@ export default {
             v-model="subject"
             type="text"
             placeholder="Brief description of your feedback"
-            class="w-full p-3 bg-gray-50 rounded-xl border border-gray-200 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"
+            class="w-full p-3 bg-gray-50 rounded-xl border border-transparent focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"
           />
         </div>
 
@@ -244,7 +248,7 @@ export default {
             v-model="message"
             rows="4"
             placeholder="Provide detailed feedback..."
-            class="w-full p-3 bg-gray-50 rounded-xl border border-gray-200 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all resize-none"
+            class="w-full p-3 bg-gray-50 rounded-xl border border-transparent focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all resize-none"
           ></textarea>
         </div>
 
@@ -276,19 +280,19 @@ export default {
         >
           <div class="flex items-start gap-4 mb-2">
             <div
-              class="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
+              class="w-10 h-10 rounded-full flex items-center justify-center shrink-0 border"
               :class="
                 item.icon === 'Bug'
-                  ? 'bg-red-50 text-red-600'
-                  : 'bg-yellow-50 text-yellow-600'
+                  ? 'bg-red-50 text-red-600 border-red-100'
+                  : 'bg-yellow-50 text-yellow-600 border-yellow-100'
               "
             >
-              <component :is="item.icon" class="w-6 h-6" />
+              <component :is="item.icon" class="w-5 h-5" />
             </div>
 
             <div class="flex-1">
               <div class="flex flex-wrap items-center gap-2 mb-1">
-                <h4 class="font-bold text-gray-800">{{ item.title }}</h4>
+                <h4 class="font-bold text-gray-900">{{ item.title }}</h4>
                 <span
                   class="px-2 py-0.5 rounded-full text-xs font-bold border"
                   :class="getStatusColor(item.status)"
@@ -316,7 +320,9 @@ export default {
             </div>
           </div>
 
-          <p class="text-sm text-gray-600 mb-4 pl-14">
+          <p
+            class="text-sm text-gray-800 mb-4 pl-14 leading-relaxed font-medium"
+          >
             {{ item.text }}
           </p>
 
@@ -329,7 +335,7 @@ export default {
               Upvote ({{ item.upvotes }})
             </button>
             <span
-              class="text-xs font-medium text-emerald-600 border border-emerald-200 px-2 py-1 rounded-lg"
+              class="text-xs font-semibold text-emerald-700 border border-emerald-200 px-3 py-1 rounded-full bg-white shadow-sm"
             >
               {{ item.category }}
             </span>
