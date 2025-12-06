@@ -1,5 +1,14 @@
 <script>
-import { Star, TrendingUp, Send, MessageSquare } from "lucide-vue-next";
+import {
+  Star,
+  TrendingUp,
+  Send,
+  MessageSquare,
+  ThumbsUp,
+  Lightbulb,
+  Bug,
+  Zap,
+} from "lucide-vue-next";
 
 export default {
   name: "Feedback",
@@ -8,6 +17,10 @@ export default {
     TrendingUp,
     Send,
     MessageSquare,
+    ThumbsUp,
+    Lightbulb,
+    Bug,
+    Zap,
   },
   data() {
     return {
@@ -16,7 +29,7 @@ export default {
       totalFeedback: 4,
       implementationRate: "25%",
 
-      // --- Form Data (New) ---
+      // --- Form Data ---
       userRating: 0,
       selectedCategory: "",
       subject: "",
@@ -28,36 +41,101 @@ export default {
         "Sustainability Suggestion",
       ],
       isSubmitting: false,
+
+      // --- Community Feedback Data (Commit #3) ---
+      communityFeedback: [
+        {
+          id: 1,
+          title: "Carbon offset marketplace",
+          status: "Implemented",
+          user: "Emma L.",
+          time: "2 weeks ago",
+          rating: 5,
+          text: "It would be great to have a built-in marketplace to purchase carbon offsets.",
+          upvotes: 42,
+          category: "Feature Request",
+          icon: "Lightbulb",
+        },
+        {
+          id: 2,
+          title: "Add bike-sharing integration",
+          status: "Reviewing",
+          user: "Sarah M.",
+          time: "2 days ago",
+          rating: 5,
+          text: "Would love to see real-time bike-sharing availability integrated into the map!",
+          upvotes: 23,
+          category: "Feature Request",
+          icon: "Lightbulb",
+        },
+        {
+          id: 3,
+          title: "Map zoom issue on mobile",
+          status: "Reviewing",
+          user: "Michael K.",
+          time: "1 week ago",
+          rating: 4,
+          text: "The 3D map zoom functionality is not working properly on iOS devices.",
+          upvotes: 15,
+          category: "Bug Report",
+          icon: "Bug",
+        },
+        {
+          id: 4,
+          title: "Better filtering options",
+          status: "New",
+          user: "Carlos R.",
+          time: "3 days ago",
+          rating: 4,
+          text: "Add more filtering options for eco-certifications and dietary requirements.",
+          upvotes: 8,
+          category: "Improvement",
+          icon: "Zap",
+        },
+      ],
     };
   },
   methods: {
     submitFeedback() {
-      // Validate simple inputs
       if (!this.userRating || !this.selectedCategory) {
         alert("Please select a category and a rating.");
         return;
       }
-
       this.isSubmitting = true;
-
-      // Simulate API call
       setTimeout(() => {
         alert("Thank you! Your feedback has been submitted.");
         this.isSubmitting = false;
-
-        // Reset Form
         this.userRating = 0;
         this.selectedCategory = "";
         this.subject = "";
         this.message = "";
       }, 1000);
     },
+    handleUpvote(id) {
+      const item = this.communityFeedback.find((i) => i.id === id);
+      if (item) {
+        item.upvotes++;
+      }
+    },
+    // Helper to get color classes based on status
+    getStatusColor(status) {
+      switch (status) {
+        case "Implemented":
+          return "bg-emerald-100 text-emerald-700 border-emerald-200";
+        case "Reviewing":
+          return "bg-amber-100 text-amber-700 border-amber-200";
+        case "New":
+          return "bg-blue-100 text-blue-700 border-blue-200";
+        default:
+          return "bg-gray-100 text-gray-700 border-gray-200";
+      }
+    },
   },
 };
 </script>
 
 <template>
-  <div class="space-y-6">
+  <div class="space-y-8 pb-10">
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
       <div class="bg-white p-4 rounded-xl border border-green-200 shadow-sm">
         <p class="text-gray-500 text-sm mb-1">Average User Rating</p>
@@ -183,9 +261,83 @@ export default {
       </form>
     </div>
 
-    <div
-      class="p-8 text-center text-gray-400 border-2 border-dashed border-gray-200 rounded-2xl"
-    ></div>
+    <div>
+      <div class="mb-4">
+        <h3 class="text-lg font-bold text-gray-800">Community Feedback</h3>
+        <p class="text-sm text-gray-500">
+          Browse and vote on feedback from other users
+        </p>
+      </div>
+
+      <div class="space-y-4">
+        <div
+          v-for="item in communityFeedback"
+          :key="item.id"
+          class="bg-white p-5 rounded-2xl border border-green-200 shadow-sm"
+        >
+          <div class="flex items-start gap-4 mb-2">
+            <div
+              class="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
+              :class="
+                item.icon === 'Bug'
+                  ? 'bg-red-50 text-red-600'
+                  : 'bg-yellow-50 text-yellow-600'
+              "
+            >
+              <component :is="item.icon" class="w-6 h-6" />
+            </div>
+
+            <div class="flex-1">
+              <div class="flex flex-wrap items-center gap-2 mb-1">
+                <h4 class="font-bold text-gray-800">{{ item.title }}</h4>
+                <span
+                  class="px-2 py-0.5 rounded-full text-xs font-bold border"
+                  :class="getStatusColor(item.status)"
+                >
+                  {{ item.status }}
+                </span>
+              </div>
+              <div class="flex items-center gap-2 text-xs text-gray-500">
+                <span>{{ item.user }}</span>
+                <span>•</span>
+                <span>{{ item.time }}</span>
+                <div class="flex items-center gap-0.5 ml-2">
+                  <Star
+                    v-for="i in 5"
+                    :key="i"
+                    class="w-3 h-3"
+                    :class="
+                      i <= item.rating
+                        ? 'text-yellow-400 fill-yellow-400'
+                        : 'text-gray-200'
+                    "
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <p class="text-sm text-gray-600 mb-4 pl-14">
+            {{ item.text }}
+          </p>
+
+          <div class="flex items-center justify-between pl-14">
+            <button
+              @click="handleUpvote(item.id)"
+              class="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-emerald-200 text-emerald-700 hover:bg-emerald-50 transition-colors text-sm font-medium"
+            >
+              <ThumbsUp class="w-4 h-4" />
+              Upvote ({{ item.upvotes }})
+            </button>
+            <span
+              class="text-xs font-medium text-emerald-600 border border-emerald-200 px-2 py-1 rounded-lg"
+            >
+              {{ item.category }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
