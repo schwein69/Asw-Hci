@@ -12,8 +12,8 @@ import {
   Bike,
   Share2,
   Shield,
-  Target, // Added for Streak Header
-  Flame, // Added for Streak Icon
+  Target,
+  Flame,
 } from "lucide-vue-next";
 
 export default {
@@ -43,9 +43,24 @@ export default {
       achievementsUnlocked: 4,
       totalAchievements: 8,
 
-      // NEW: Data for Streak Section
+      // Data for Streak Section
       streakDays: 14,
-      streakHistory: [true, true, true, true, true, true, true], // 7 days active
+      streakHistory: [true, true, true, true, true, true, true],
+
+      // NEW: Data for Global Leaderboard
+      leaderboard: [
+        {
+          rank: 1,
+          name: "Alexandra K.",
+          points: 1523,
+          icon: "👑",
+          isMe: false,
+        },
+        { rank: 2, name: "Marcus T.", points: 1401, icon: "🥈", isMe: false },
+        { rank: 3, name: "Yuki S.", points: 1287, icon: "🥉", isMe: false },
+        { rank: 4, name: "You", points: 892, icon: "⭐", isMe: true }, // isMe triggers green highlight
+        { rank: 5, name: "Emma W.", points: 845, icon: "#5", isMe: false },
+      ],
 
       achievements: [
         {
@@ -140,7 +155,6 @@ export default {
     pointsToNextLevel() {
       return this.maxPointsForLevel - this.progressToNextLevel;
     },
-    // Calculate how many days active in the streak history
     activeStreakCount() {
       return this.streakHistory.filter(Boolean).length;
     },
@@ -285,7 +299,7 @@ export default {
       </div>
 
       <div class="flex flex-col md:flex-row items-center gap-6">
-        <div class="flex flex-col items-center justify-center min-w-[80px]">
+        <div class="flex flex-col items-center justify-center min-w-20">
           <div class="text-4xl mb-1">🔥</div>
           <div class="text-xl font-bold text-gray-800">{{ streakDays }}</div>
           <div class="text-xs text-gray-500">Days</div>
@@ -306,6 +320,48 @@ export default {
           <p class="text-xs text-emerald-600 mt-2 font-medium">
             This week: {{ activeStreakCount }}/7 days active
           </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-2xl p-6 border border-green-200 shadow-sm">
+      <div class="mb-4">
+        <div class="flex items-center gap-2">
+          <Trophy class="w-6 h-6 text-emerald-700" />
+          <h3 class="text-lg font-bold text-gray-800">Global Leaderboard</h3>
+        </div>
+        <p class="text-sm text-gray-500">Top eco-travelers this month</p>
+      </div>
+
+      <div class="space-y-3">
+        <div
+          v-for="user in leaderboard"
+          :key="user.name"
+          class="flex items-center justify-between p-3 rounded-xl transition-colors border"
+          :class="
+            user.isMe
+              ? 'bg-emerald-50 border-emerald-300'
+              : 'bg-white border-transparent hover:bg-gray-50'
+          "
+        >
+          <div class="flex items-center gap-4">
+            <div class="w-8 text-center font-bold text-lg">
+              {{ user.icon }}
+            </div>
+            <div
+              class="font-semibold"
+              :class="user.isMe ? 'text-emerald-800' : 'text-gray-700'"
+            >
+              {{ user.name }}
+            </div>
+          </div>
+
+          <div
+            class="px-3 py-1 rounded-full text-sm font-bold text-white shadow-sm"
+            :class="user.isMe ? 'bg-emerald-500' : 'bg-emerald-600'"
+          >
+            {{ user.points }} pts
+          </div>
         </div>
       </div>
     </div>
