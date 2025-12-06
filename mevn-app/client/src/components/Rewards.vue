@@ -12,6 +12,8 @@ import {
   Bike,
   Share2,
   Shield,
+  Target, // Added for Streak Header
+  Flame, // Added for Streak Icon
 } from "lucide-vue-next";
 
 export default {
@@ -28,6 +30,8 @@ export default {
     Bike,
     Share2,
     Shield,
+    Target,
+    Flame,
   },
   data() {
     return {
@@ -38,7 +42,11 @@ export default {
       globalRank: "Top 10%",
       achievementsUnlocked: 4,
       totalAchievements: 8,
-      // UPDATED: Added 'color' property to unlocked items to match the screenshot
+
+      // NEW: Data for Streak Section
+      streakDays: 14,
+      streakHistory: [true, true, true, true, true, true, true], // 7 days active
+
       achievements: [
         {
           id: 1,
@@ -90,7 +98,7 @@ export default {
           locked: false,
           current: 163,
           target: 100,
-          color: "text-green-500", // Added Color
+          color: "text-green-500",
         },
         {
           id: 6,
@@ -132,12 +140,16 @@ export default {
     pointsToNextLevel() {
       return this.maxPointsForLevel - this.progressToNextLevel;
     },
+    // Calculate how many days active in the streak history
+    activeStreakCount() {
+      return this.streakHistory.filter(Boolean).length;
+    },
   },
 };
 </script>
 
 <template>
-  <div class="space-y-6">
+  <div class="space-y-6 pb-10">
     <div class="bg-success text-success-content rounded-2xl p-6 shadow-md">
       <div class="flex items-center gap-3 mb-4">
         <div class="text-3xl">👑</div>
@@ -262,6 +274,38 @@ export default {
               ></div>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-2xl p-6 border border-green-200 shadow-sm">
+      <div class="flex items-center gap-2 mb-4">
+        <Target class="w-6 h-6 text-emerald-700" />
+        <h3 class="text-lg font-bold text-emerald-800">Current Streak</h3>
+      </div>
+
+      <div class="flex flex-col md:flex-row items-center gap-6">
+        <div class="flex flex-col items-center justify-center min-w-[80px]">
+          <div class="text-4xl mb-1">🔥</div>
+          <div class="text-xl font-bold text-gray-800">{{ streakDays }}</div>
+          <div class="text-xs text-gray-500">Days</div>
+        </div>
+
+        <div class="flex-1 w-full">
+          <p class="text-sm text-gray-500 mb-3">
+            Keep making eco-friendly choices to maintain your streak!
+          </p>
+          <div class="flex gap-2 h-8 w-full">
+            <div
+              v-for="(active, index) in streakHistory"
+              :key="index"
+              class="flex-1 rounded-md"
+              :class="active ? 'bg-emerald-400' : 'bg-gray-200'"
+            ></div>
+          </div>
+          <p class="text-xs text-emerald-600 mt-2 font-medium">
+            This week: {{ activeStreakCount }}/7 days active
+          </p>
         </div>
       </div>
     </div>
