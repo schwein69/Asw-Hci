@@ -1,15 +1,33 @@
 <script>
-import achievementsData from "../data/achievements.json";
 // Import icons from lucide
-import { Trophy, Star, Zap } from "lucide-vue-next";
+import {
+  Trophy,
+  Star,
+  Zap,
+  Lock,
+  Sprout,
+  TrainFront,
+  Earth,
+  Heart,
+  Bike,
+  Share2,
+  Shield,
+} from "lucide-vue-next";
 
 export default {
   name: "Rewards",
-  // 2. Register the components
   components: {
     Trophy,
     Star,
     Zap,
+    Lock,
+    Sprout,
+    TrainFront,
+    Earth,
+    Heart,
+    Bike,
+    Share2,
+    Shield,
   },
   data() {
     return {
@@ -18,9 +36,93 @@ export default {
       progressToNextLevel: 0,
       maxPointsForLevel: 1000,
       globalRank: "Top 10%",
-      achievementsUnlocked: 0,
+      achievementsUnlocked: 4,
       totalAchievements: 8,
-      achievements: achievementsData.slice(0, 6),
+      // UPDATED: Added 'color' property to unlocked items to match the screenshot
+      achievements: [
+        {
+          id: 1,
+          name: "Green Pioneer",
+          description: "Complete your first carbon-neutral journey",
+          points: 50,
+          icon: "Sprout",
+          locked: false,
+          completed: true,
+          color: "text-green-600",
+        },
+        {
+          id: 2,
+          name: "Rail Rider",
+          description: "Travel 1,000 km by train",
+          points: 100,
+          icon: "TrainFront",
+          locked: false,
+          current: 1247,
+          target: 1000,
+          color: "text-emerald-600",
+        },
+        {
+          id: 3,
+          name: "Zero Waste Warrior",
+          description: "Visit 10 zero-waste restaurants",
+          points: 150,
+          icon: "Lock",
+          locked: true,
+          current: 7,
+          target: 10,
+        },
+        {
+          id: 4,
+          name: "Eco Explorer",
+          description: "Visit 5 different countries sustainably",
+          points: 200,
+          icon: "Earth",
+          locked: false,
+          completed: true,
+          color: "text-emerald-600",
+        },
+        {
+          id: 5,
+          name: "Carbon Saver",
+          description: "Save 100 kg of CO2",
+          points: 250,
+          icon: "Heart",
+          locked: false,
+          current: 163,
+          target: 100,
+          color: "text-green-500", // Added Color
+        },
+        {
+          id: 6,
+          name: "Bike Champion",
+          description: "Travel 500 km by bike",
+          points: 300,
+          icon: "Lock",
+          locked: true,
+          current: 342,
+          target: 500,
+        },
+        {
+          id: 7,
+          name: "Eco Influencer",
+          description: "Share 20 sustainable recommendations",
+          points: 350,
+          icon: "Lock",
+          locked: true,
+          current: 12,
+          target: 20,
+        },
+        {
+          id: 8,
+          name: "Planet Protector",
+          description: "Achieve a 90+ eco score for a month",
+          points: 500,
+          icon: "Lock",
+          locked: true,
+          current: 0,
+          target: 0,
+        },
+      ],
     };
   },
   computed: {
@@ -99,39 +201,67 @@ export default {
         <div
           v-for="achievement in achievements"
           :key="achievement.id"
-          class="bg-white rounded-2xl p-4 border-2 border-success"
+          class="bg-white rounded-2xl p-4 border-2"
+          :class="
+            achievement.locked ? 'border-gray-200 bg-gray-50' : 'border-success'
+          "
         >
           <div class="flex items-start justify-between mb-2">
             <div class="flex items-start gap-3">
-              <div class="text-3xl">{{ achievement.icon }}</div>
+              <div class="text-3xl">
+                <component
+                  :is="achievement.icon"
+                  :class="
+                    achievement.locked
+                      ? 'text-gray-400'
+                      : achievement.color || 'text-gray-800'
+                  "
+                  class="w-8 h-8"
+                  :fill="
+                    achievement.icon === 'Heart' && !achievement.locked
+                      ? 'currentColor'
+                      : 'none'
+                  "
+                />
+              </div>
               <div>
                 <h4 class="font-bold text-gray-800">{{ achievement.name }}</h4>
-                <p class="text-sm text-gray-600">
+                <p class="text-xs text-gray-600">
                   {{ achievement.description }}
                 </p>
               </div>
             </div>
             <div
-              class="bg-success text-white rounded-full px-2 py-1 text-xs font-bold"
+              class="rounded-full px-2 py-1 text-xs font-bold"
+              :class="
+                achievement.locked
+                  ? 'bg-gray-300 text-gray-600'
+                  : 'bg-success text-white'
+              "
             >
               {{ achievement.points }} pts
             </div>
           </div>
-          <p v-if="achievement.progress" class="text-xs text-gray-500 mb-2">
-            Progress
-          </p>
-          <div
-            v-if="achievement.progress"
-            class="w-full bg-gray-200 rounded-full h-2 overflow-hidden"
-          >
-            <div
-              class="bg-gray-400 h-full"
-              :style="{ width: achievement.progress + '%' }"
-            ></div>
+
+          <div v-if="achievement.target > 0" class="mt-4">
+            <div class="flex justify-between text-xs mb-1 text-gray-500">
+              <span>Progress</span>
+              <span>{{ achievement.current }} / {{ achievement.target }}</span>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+              <div
+                class="h-full"
+                :class="achievement.locked ? 'bg-gray-800' : 'bg-black'"
+                :style="{
+                  width:
+                    Math.min(
+                      (achievement.current / achievement.target) * 100,
+                      100
+                    ) + '%',
+                }"
+              ></div>
+            </div>
           </div>
-          <p v-if="achievement.progress" class="text-xs text-success mt-1">
-            {{ achievement.progressText }}
-          </p>
         </div>
       </div>
     </div>
