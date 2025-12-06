@@ -83,8 +83,12 @@ export default {
           <p class="text-sm text-success">Travel Green, Live Clean</p>
         </div>
         <div class="ml-auto hidden sm:flex items-center gap-2">
-          <button class="btn btn-ghost btn-sm">Profile</button>
-          <button class="btn btn-ghost btn-sm">Settings</button>
+          <button class="btn btn-ghost btn-sm text-gray-700 hover:bg-gray-100">
+            Profile
+          </button>
+          <button class="btn btn-ghost btn-sm text-gray-700 hover:bg-gray-100">
+            Settings
+          </button>
         </div>
       </div>
     </header>
