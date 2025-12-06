@@ -42,7 +42,7 @@ export default {
       ],
       isSubmitting: false,
 
-      // --- Community Feedback Data (Commit #3) ---
+      // --- Community Feedback Data ---
       communityFeedback: [
         {
           id: 1,
@@ -117,7 +117,6 @@ export default {
         item.upvotes++;
       }
     },
-    // Helper to get color classes based on status
     getStatusColor(status) {
       switch (status) {
         case "Implemented":
@@ -135,7 +134,7 @@ export default {
 </script>
 
 <template>
-  <div class="space-y-8 pb-10">
+  <div class="space-y-8 pb-10 bg-emerald-50 min-h-screen p-6">
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
       <div class="bg-white p-4 rounded-xl border border-green-200 shadow-sm">
         <p class="text-gray-500 text-sm mb-1">Average User Rating</p>
@@ -261,8 +260,8 @@ export default {
       </form>
     </div>
 
-    <div>
-      <div class="mb-4">
+    <div class="bg-white p-6 rounded-2xl border border-green-200 shadow-sm">
+      <div class="mb-6">
         <h3 class="text-lg font-bold text-gray-800">Community Feedback</h3>
         <p class="text-sm text-gray-500">
           Browse and vote on feedback from other users
