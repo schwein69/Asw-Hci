@@ -1,8 +1,18 @@
 <script>
+import { Star, TrendingUp } from "lucide-vue-next";
+
 export default {
   name: "Feedback",
+  components: {
+    Star,
+    TrendingUp,
+  },
   data() {
     return {
+      averageRating: 4.5,
+      totalFeedback: 4,
+      implementationRate: "25%",
+
       rating: 0,
     };
   },
@@ -10,33 +20,41 @@ export default {
 </script>
 
 <template>
-  <div
-    class="max-w-lg mx-auto bg-white p-8 rounded-2xl shadow-sm border border-gray-100"
-  >
-    <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">
-      We value your input
-    </h2>
-    <div class="flex justify-center gap-2 mb-6">
-      <button
-        v-for="star in 5"
-        :key="star"
-        @click="rating = star"
-        class="text-2xl transition-transform hover:scale-110 focus:outline-none"
-        :class="star <= rating ? 'text-yellow-400' : 'text-gray-200'"
-      >
-        <i class="fa-solid fa-star"></i>
-      </button>
+  <div class="space-y-6">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div class="bg-white p-4 rounded-xl border border-green-200 shadow-sm">
+        <p class="text-gray-500 text-sm mb-1">Average User Rating</p>
+        <div class="flex items-center gap-2">
+          <Star class="w-5 h-5 text-yellow-500 fill-current" />
+          <span class="text-2xl font-bold text-gray-800"
+            >{{ averageRating }} / 5</span
+          >
+        </div>
+      </div>
+
+      <div class="bg-white p-4 rounded-xl border border-green-200 shadow-sm">
+        <p class="text-gray-500 text-sm mb-1">Total Feedback</p>
+        <div class="flex items-center gap-2">
+          <span class="text-2xl font-bold text-gray-800">{{
+            totalFeedback
+          }}</span>
+        </div>
+      </div>
+
+      <div class="bg-white p-4 rounded-xl border border-green-200 shadow-sm">
+        <p class="text-gray-500 text-sm mb-1">Implementation Rate</p>
+        <div class="flex items-center gap-2">
+          <TrendingUp class="w-5 h-5 text-success" />
+          <span class="text-2xl font-bold text-gray-800">{{
+            implementationRate
+          }}</span>
+        </div>
+      </div>
     </div>
-    <textarea
-      class="w-full p-4 bg-gray-50 rounded-xl border-gray-200 focus:bg-white focus:ring-2 focus:ring-eco-brand focus:border-transparent transition-all mb-4"
-      rows="4"
-      placeholder="Tell us about your experience..."
-    ></textarea>
-    <button
-      class="w-full bg-gray-900 text-white py-3 rounded-xl font-medium hover:bg-gray-800 transition-colors"
-    >
-      Submit Feedback
-    </button>
+
+    <div
+      class="p-8 text-center text-gray-400 border-2 border-dashed border-gray-200 rounded-2xl"
+    ></div>
   </div>
 </template>
 
