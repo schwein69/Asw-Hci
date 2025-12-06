@@ -1,57 +1,24 @@
 <script>
+import { Shield } from "lucide-vue-next";
+
 export default {
   name: "Admin",
+  components: {
+    Shield,
+  },
 };
 </script>
 
 <template>
-  <div>
-    <h2 class="text-2xl font-bold text-gray-800 mb-6">Admin Settings</h2>
-    <div
-      class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden divide-y divide-gray-100"
-    >
-      <a
-        href="#"
-        class="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
-      >
-        <div class="flex items-center gap-3">
-          <div
-            class="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center"
-          >
-            <i class="fa-regular fa-user"></i>
-          </div>
-          <span class="font-medium text-gray-700">User Management</span>
-        </div>
-        <i class="fa-solid fa-chevron-right text-gray-300 text-sm"></i>
-      </a>
-      <a
-        href="#"
-        class="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
-      >
-        <div class="flex items-center gap-3">
-          <div
-            class="w-8 h-8 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center"
-          >
-            <i class="fa-solid fa-sliders"></i>
-          </div>
-          <span class="font-medium text-gray-700">App Configuration</span>
-        </div>
-        <i class="fa-solid fa-chevron-right text-gray-300 text-sm"></i>
-      </a>
-      <a
-        href="#"
-        class="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
-      >
-        <div class="flex items-center gap-3">
-          <div
-            class="w-8 h-8 rounded-full bg-red-100 text-red-600 flex items-center justify-center"
-          >
-            <i class="fa-solid fa-power-off"></i>
-          </div>
-          <span class="font-medium text-gray-700">System Logs</span>
-        </div>
-        <i class="fa-solid fa-chevron-right text-gray-300 text-sm"></i>
-      </a>
+  <div class="space-y-6 pb-10">
+    <div class="bg-emerald-600 text-white rounded-2xl p-6 shadow-md">
+      <div class="flex items-center gap-3 mb-1">
+        <Shield class="w-6 h-6" />
+        <h2 class="text-xl font-bold">Admin Panel</h2>
+      </div>
+      <p class="text-emerald-100 text-sm opacity-90">
+        General Administrator Access
+      </p>
     </div>
   </div>
 </template>
