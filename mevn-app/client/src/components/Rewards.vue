@@ -1,8 +1,16 @@
 <script>
 import achievementsData from "../data/achievements.json";
+// Import icons from lucide
+import { Trophy, Star, Zap } from "lucide-vue-next";
 
 export default {
   name: "Rewards",
+  // 2. Register the components
+  components: {
+    Trophy,
+    Star,
+    Zap,
+  },
   data() {
     return {
       userLevel: 1,
@@ -11,8 +19,8 @@ export default {
       maxPointsForLevel: 1000,
       globalRank: "Top 10%",
       achievementsUnlocked: 0,
-      totalAchievements: 0,
-      achievements: achievementsData.slice(0, 6), // Display first 6 achievements
+      totalAchievements: 8,
+      achievements: achievementsData.slice(0, 6),
     };
   },
   computed: {
@@ -28,7 +36,6 @@ export default {
 
 <template>
   <div class="space-y-6">
-    <!-- Hero Card -->
     <div class="bg-success text-success-content rounded-2xl p-6 shadow-md">
       <div class="flex items-center gap-3 mb-4">
         <div class="text-3xl">👑</div>
@@ -41,7 +48,14 @@ export default {
           <p class="text-sm opacity-90">Eco Points</p>
         </div>
       </div>
-      <p class="text-sm mb-3">Progress to Planet Guardian</p>
+
+      <div class="flex justify-between items-end mb-2">
+        <p class="text-sm">Progress to Planet Guardian</p>
+        <p class="text-sm font-medium opacity-90">
+          {{ ecoPoints }} / {{ maxPointsForLevel }}
+        </p>
+      </div>
+
       <div class="w-full bg-black/20 rounded-full h-2 overflow-hidden">
         <div
           class="bg-success-content h-full"
@@ -51,25 +65,34 @@ export default {
       <p class="text-sm mt-2">{{ pointsToNextLevel }} points to next level</p>
     </div>
 
-    <!-- Stats Cards -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
       <div class="bg-white rounded-xl p-4 border border-green-200">
         <p class="text-gray-500 text-sm mb-1">Achievements Unlocked</p>
-        <p class="text-2xl font-bold text-gray-800">
-          {{ achievementsUnlocked }} / {{ totalAchievements }}
-        </p>
+        <div class="flex items-center gap-2">
+          <Trophy class="w-6 h-6 text-yellow-500" />
+          <p class="text-2xl font-bold text-gray-800">
+            {{ achievementsUnlocked }} / {{ totalAchievements }}
+          </p>
+        </div>
       </div>
+
       <div class="bg-white rounded-xl p-4 border border-green-200">
         <p class="text-gray-500 text-sm mb-1">Total Eco Points</p>
-        <p class="text-2xl font-bold text-success">{{ ecoPoints }}</p>
+        <div class="flex items-center gap-2">
+          <Star class="w-6 h-6 text-green-500 fill-current" />
+          <p class="text-2xl font-bold text-success">{{ ecoPoints }}</p>
+        </div>
       </div>
+
       <div class="bg-white rounded-xl p-4 border border-green-200">
         <p class="text-gray-500 text-sm mb-1">Global Rank</p>
-        <p class="text-2xl font-bold text-success">{{ globalRank }}</p>
+        <div class="flex items-center gap-2">
+          <Zap class="w-6 h-6 text-green-500 fill-current" />
+          <p class="text-2xl font-bold text-success">{{ globalRank }}</p>
+        </div>
       </div>
     </div>
 
-    <!-- Achievements Section -->
     <div>
       <h3 class="text-lg font-semibold text-gray-800 mb-4">Achievements</h3>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
