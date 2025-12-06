@@ -18,22 +18,82 @@ export default {
   },
   data() {
     return {
+      // Stats Data
       stats: [
         { label: "Total Users", value: "1247" },
         { label: "Active Itineraries", value: "542" },
         { label: "Forum Posts", value: "3891" },
         { label: "Avg Eco Score", value: "87" },
       ],
-      activeTab: "settings",
+
+      // Tab State (Default to 'users' now so you can see your work immediately)
+      activeTab: "users",
+
+      // Settings Data
       platformName: "EcoVoyage",
       ecoScoreThreshold: 70,
       weatherSensitivity: 3,
       maintenanceMessage: "",
+
+      // --- NEW: User Management Data ---
+      users: [
+        {
+          id: 1,
+          name: "Sarah Mitchell",
+          email: "sarah@example.com",
+          joined: "2024-01-15",
+          role: "user",
+          status: "active",
+          initials: "SM",
+        },
+        {
+          id: 2,
+          name: "Michael Chen",
+          email: "michael@example.com",
+          joined: "2024-02-20",
+          role: "forum admin",
+          status: "active",
+          initials: "MC",
+        },
+        {
+          id: 3,
+          name: "Emma Johnson",
+          email: "emma@example.com",
+          joined: "2024-03-10",
+          role: "user",
+          status: "active",
+          initials: "EJ",
+        },
+        {
+          id: 4,
+          name: "David Brown",
+          email: "david@example.com",
+          joined: "2024-01-05",
+          role: "user",
+          status: "suspended",
+          initials: "DB",
+        },
+      ],
     };
   },
   methods: {
     saveSettings() {
       alert("System settings saved successfully!");
+    },
+    // Toggle user status between active and suspended
+    toggleUserStatus(user) {
+      user.status = user.status === "active" ? "suspended" : "active";
+    },
+    // Helper for badge colors
+    getRoleColor(role) {
+      return role === "forum admin"
+        ? "bg-blue-100 text-blue-600"
+        : "bg-gray-100 text-gray-600";
+    },
+    getStatusColor(status) {
+      return status === "active"
+        ? "bg-green-100 text-green-600"
+        : "bg-red-100 text-red-600";
     },
   },
 };
@@ -83,7 +143,7 @@ export default {
         class="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-sm font-medium transition-colors"
         :class="
           activeTab === 'users'
-            ? 'bg-emerald-50 text-emerald-700'
+            ? 'bg-emerald-50 text-emerald-700 font-bold'
             : 'text-gray-600 hover:bg-gray-50'
         "
       >
@@ -167,6 +227,69 @@ export default {
           Save Settings
         </button>
       </form>
+    </div>
+
+    <div
+      v-if="activeTab === 'users'"
+      class="bg-white p-6 rounded-2xl border border-green-200 shadow-sm"
+    >
+      <div class="mb-6">
+        <h3 class="text-emerald-700 font-medium">User Management</h3>
+        <p class="text-sm text-gray-500">
+          Manage user accounts and permissions
+        </p>
+      </div>
+
+      <div class="space-y-4">
+        <div
+          v-for="user in users"
+          :key="user.id"
+          class="flex items-center justify-between p-4 border border-green-200 rounded-xl bg-white"
+        >
+          <div class="flex items-center gap-4">
+            <div
+              class="w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold text-sm"
+            >
+              {{ user.initials }}
+            </div>
+
+            <div>
+              <div class="flex items-center gap-2 mb-0.5">
+                <span class="font-bold text-gray-900">{{ user.name }}</span>
+                <span
+                  class="text-[10px] px-1.5 py-0.5 rounded border border-gray-100"
+                  :class="getRoleColor(user.role)"
+                >
+                  {{ user.role }}
+                </span>
+                <span
+                  class="text-[10px] px-1.5 py-0.5 rounded border border-gray-100"
+                  :class="getStatusColor(user.status)"
+                >
+                  {{ user.status }}
+                </span>
+              </div>
+              <div class="text-xs text-gray-500">
+                {{ user.email }}
+                <span class="mx-1">•</span>
+                Joined {{ user.joined }}
+              </div>
+            </div>
+          </div>
+
+          <button
+            @click="toggleUserStatus(user)"
+            class="px-4 py-1.5 rounded-lg text-sm font-medium border transition-colors"
+            :class="
+              user.status === 'active'
+                ? 'border-red-200 text-red-500 hover:bg-red-50'
+                : 'border-green-200 text-green-600 hover:bg-green-50'
+            "
+          >
+            {{ user.status === "active" ? "Suspend" : "Activate" }}
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 </template>

@@ -34,7 +34,7 @@ export default {
       selectedCategory: "",
       subject: "",
       message: "",
-      // UPDATED: Added Emojis to match the icons in your screenshot
+
       categories: [
         "💡 Feature Request",
         "🐛 Bug Report",
