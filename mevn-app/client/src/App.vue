@@ -22,6 +22,8 @@ import {
   Lightbulb,
   MessageCircle,
   Shield,
+  Moon, // Added Moon icon
+  Sun, // Added Sun icon
 } from "lucide-vue-next";
 
 export default {
@@ -37,6 +39,8 @@ export default {
     Lightbulb,
     MessageCircle,
     Shield,
+    Moon,
+    Sun,
     "dashboard-comp": Dashboard,
     "map-plan-comp": MapPlan,
     "world-comp": World,
@@ -51,6 +55,7 @@ export default {
   data() {
     return {
       activeComponentId: "dashboard-comp",
+      isDarkMode: false, // State for dark mode
       navItems: [
         { id: "dashboard-comp", name: "Dashboard", icon: "Leaf" },
         { id: "map-plan-comp", name: "Plan", icon: "Map" },
@@ -65,13 +70,51 @@ export default {
       ],
     };
   },
+  mounted() {
+    // 1. Check Local Storage or System Preference on load
+    const userPref = localStorage.theme;
+    const systemPref = window.matchMedia(
+      "(prefers-color-scheme: dark)"
+    ).matches;
+
+    if (userPref === "dark" || (!userPref && systemPref)) {
+      this.setDarkMode(true);
+    } else {
+      this.setDarkMode(false);
+    }
+  },
+  methods: {
+    toggleDarkMode() {
+      this.setDarkMode(!this.isDarkMode);
+    },
+    setDarkMode(isDark) {
+      this.isDarkMode = isDark;
+      const html = document.documentElement;
+
+      if (isDark) {
+        // Set Tailwind Class (activates your @variant logic)
+        html.classList.add("dark");
+        // Set DaisyUI Theme
+        html.setAttribute("data-theme", "dark");
+        localStorage.theme = "dark";
+      } else {
+        html.classList.remove("dark");
+        html.setAttribute("data-theme", "light");
+        localStorage.theme = "light";
+      }
+    },
+  },
 };
 </script>
 
 <template>
-  <div id="app" class="min-h-screen bg-base-200 flex flex-col font-sans">
-    <!-- Top Header Section (Logo) -->
-    <header class="bg-white border-b relative z-20">
+  <div
+    id="app"
+    class="min-h-screen bg-base-200 dark:bg-gray-900 flex flex-col font-sans transition-colors duration-300"
+  >
+    <header
+      class="bg-white dark:bg-gray-800 border-b dark:border-gray-700 relative z-20 transition-colors duration-300"
+    >
       <div class="max-w-7xl mx-auto px-6 py-4 flex items-center gap-4">
         <div
           class="w-12 h-12 bg-success rounded-xl flex items-center justify-center text-success-content text-xl shadow-md"
@@ -79,34 +122,51 @@ export default {
           <Leaf class="h-6 w-6" />
         </div>
         <div>
-          <h1 class="text-lg font-semibold text-gray-800">EcoVoyage</h1>
+          <h1 class="text-lg font-semibold text-gray-800 dark:text-white">
+            EcoVoyage
+          </h1>
           <p class="text-sm text-success">Travel Green, Live Clean</p>
         </div>
         <div class="ml-auto hidden sm:flex items-center gap-2">
-          <button class="btn btn-ghost btn-sm text-gray-700 hover:bg-gray-100">
+          <button
+            @click="toggleDarkMode"
+            class="btn btn-ghost btn-sm btn-circle text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 mr-2"
+            title="Toggle Dark Mode"
+          >
+            <Moon v-if="!isDarkMode" class="w-5 h-5" />
+            <Sun v-else class="w-5 h-5" />
+          </button>
+
+          <button
+            class="btn btn-ghost btn-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+          >
             Profile
           </button>
-          <button class="btn btn-ghost btn-sm text-gray-700 hover:bg-gray-100">
+          <button
+            class="btn btn-ghost btn-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+          >
             Settings
           </button>
         </div>
       </div>
     </header>
 
-    <!-- Navigation Bar Section -->
-    <!-- Pale band with centered nav pill (desktop only) -->
-    <div class="hidden md:block bg-green-50 border-b">
+    <div
+      class="hidden md:block bg-green-50 dark:bg-gray-900 border-b dark:border-gray-700 transition-colors duration-300"
+    >
       <div class="max-w-7xl mx-auto px-6 py-4">
-        <div class="w-full bg-white rounded-full shadow-sm px-3 py-2">
+        <div
+          class="w-full bg-white dark:bg-gray-800 rounded-full shadow-sm px-3 py-2 transition-colors duration-300"
+        >
           <ul class="flex w-full">
             <li v-for="item in navItems" :key="item.id" class="flex-1">
               <a
                 @click.prevent="activeComponentId = item.id"
                 :class="[
-                  'flex items-center gap-2 justify-center py-2 px-3 rounded-full',
+                  'flex items-center gap-2 justify-center py-2 px-3 rounded-full cursor-pointer transition-colors',
                   activeComponentId === item.id
-                    ? 'bg-base-200 text-success'
-                    : 'text-gray-600',
+                    ? 'bg-base-200 dark:bg-gray-700 text-success'
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200',
                 ]"
               >
                 <component :is="item.icon" class="h-4 w-4" />
@@ -118,17 +178,18 @@ export default {
       </div>
     </div>
 
-    <!-- Bottom navigation (visible on small screens) -->
-    <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t z-30">
+    <nav
+      class="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t dark:border-gray-700 z-30 transition-colors duration-300"
+    >
       <ul class="flex w-full">
         <li v-for="item in navItems" :key="item.id" class="flex-1 text-center">
           <a
             @click.prevent="activeComponentId = item.id"
-            class="flex flex-col items-center justify-center w-full py-2"
+            class="flex flex-col items-center justify-center w-full py-2 cursor-pointer transition-colors"
             :class="
               activeComponentId === item.id
-                ? 'bg-base-200 text-success'
-                : 'text-gray-600'
+                ? 'bg-base-200 dark:bg-gray-700 text-success'
+                : 'text-gray-600 dark:text-gray-400'
             "
           >
             <component :is="item.icon" class="h-5 w-5" />
@@ -138,8 +199,9 @@ export default {
       </ul>
     </nav>
 
-    <!-- Main Content Area with Dynamic Components -->
-    <main class="grow p-6 md:p-8 w-full bg-green-50 pb-24 md:pb-8">
+    <main
+      class="grow p-6 md:p-8 w-full bg-green-50 dark:bg-gray-900 pb-24 md:pb-8 transition-colors duration-300"
+    >
       <div class="max-w-7xl mx-auto px-4">
         <transition name="fade" mode="out-in">
           <keep-alive>
