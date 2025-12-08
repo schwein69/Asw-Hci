@@ -151,33 +151,38 @@ export default {
       </div>
     </header>
 
+    <!-- Navigation Bar Section -->
+    <!-- Desktop version -->
     <div
-      class="hidden md:block bg-green-50 dark:bg-gray-900 border-b dark:border-gray-700 transition-colors duration-300"
+      class="hidden md:block bg-green-50 py-6 dark:bg-gray-900 dark:border-gray-700 transition-colors duration-300"
     >
-      <div class="max-w-7xl mx-auto px-6 py-4">
-        <div
-          class="w-full bg-white dark:bg-gray-800 rounded-full shadow-sm px-3 py-2 transition-colors duration-300"
-        >
-          <ul class="flex w-full">
-            <li v-for="item in navItems" :key="item.id" class="flex-1">
-              <a
-                @click.prevent="activeComponentId = item.id"
-                :class="[
-                  'flex items-center gap-2 justify-center py-2 px-3 rounded-full cursor-pointer transition-colors',
-                  activeComponentId === item.id
-                    ? 'bg-base-200 dark:bg-gray-700 text-success'
-                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200',
-                ]"
-              >
-                <component :is="item.icon" class="h-4 w-4" />
-                <span class="text-sm">{{ item.name }}</span>
-              </a>
-            </li>
-          </ul>
+      <div class="max-w-7xl mx-auto px-4">
+        <div class="flex justify-center">
+          <div
+            class="w-fit bg-white dark:bg-gray-800 rounded-3xl shadow-sm p-3 transition-colors duration-300"
+          >
+            <ul class="flex flex-wrap justify-center gap-2 w-full">
+              <li v-for="item in navItems" :key="item.id" class="shrink-0">
+                <a
+                  @click.prevent="activeComponentId = item.id"
+                  :class="[
+                    'flex items-center gap-2 justify-center py-2 px-4 rounded-full whitespace-nowrap cursor-pointer transition-colors',
+                    activeComponentId === item.id
+                      ? 'bg-base-200 dark:bg-gray-700 text-success'
+                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200',
+                  ]"
+                >
+                  <component :is="item.icon" class="h-4 w-4" />
+                  <span class="text-sm">{{ item.name }}</span>
+                </a>
+              </li>
+            </ul>
+          </div>
         </div>
       </div>
     </div>
 
+    <!-- Bottom navigation (visible on small screens) -->
     <nav
       class="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t dark:border-gray-700 z-30 transition-colors duration-300"
     >
@@ -185,7 +190,7 @@ export default {
         <li v-for="item in navItems" :key="item.id" class="flex-1 text-center">
           <a
             @click.prevent="activeComponentId = item.id"
-            class="flex flex-col items-center justify-center w-full py-2 cursor-pointer transition-colors"
+            class="flex flex-col items-center justify-center w-full py-2 cursor-pointer transition-colors whitespace-nowrap"
             :class="
               activeComponentId === item.id
                 ? 'bg-base-200 dark:bg-gray-700 text-success'
@@ -200,7 +205,7 @@ export default {
     </nav>
 
     <main
-      class="grow p-6 md:p-8 w-full bg-green-50 dark:bg-gray-900 pb-24 md:pb-8 transition-colors duration-300"
+      class="grow md:p-8 w-full bg-green-50 dark:bg-gray-900 pb-24 md:pb-8 transition-colors duration-300"
     >
       <div class="max-w-7xl mx-auto px-4">
         <transition name="fade" mode="out-in">
