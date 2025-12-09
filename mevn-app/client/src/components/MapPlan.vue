@@ -1,44 +1,47 @@
-<script>
+<script setup>
+import { ref } from "vue";
 import { Search, MapPin, Navigation2 } from "lucide-vue-next";
 import MapboxMap from "./maps/maps.vue";
 
-export default {
-  name: "MapPlan",
-  components: { MapboxMap, Search, MapPin, Navigation2 },
-  data() {
-    return {
-      searchQuery: "",
-      mapCenter: [-74.5, 40],
-      mapZoom: 9,
-    };
-  },
-  methods: {
-    handleSearch() {
-      if (this.searchQuery.trim()) {
-        console.log("Searching for:", this.searchQuery);
-        // TODO: Implement search functionality
+const searchQuery = ref("");
+const mapCenter = ref([-74.5, 40]);
+const mapZoom = ref(9);
+const mapboxMap = ref(null);
+
+function handleSearch() {
+  if (searchQuery.value.trim()) {
+    console.log("Searching for:", searchQuery.value);
+    // TODO: Implement search functionality
+  }
+}
+
+function handleMyLocation() {
+  console.log("Getting user location...");
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition((position) => {
+      const { latitude, longitude } = position.coords;
+      mapCenter.value = [longitude, latitude];
+      // call child's flyTo method if available
+      if (mapboxMap.value && typeof mapboxMap.value.flyTo === "function") {
+        try {
+          mapboxMap.value.flyTo([longitude, latitude], 15);
+        } catch (e) {
+          console.warn("flyTo failed:", e);
+        }
       }
-    },
-    handleMyLocation() {
-      console.log("Getting user location...");
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition((position) => {
-          const { latitude, longitude } = position.coords;
-          this.mapCenter = [longitude, latitude];
-          this.$refs.mapboxMap?.flyTo([longitude, latitude], 15); // ? needs for prevent errors if mapboxMap is not yet loaded, there i use this.$refs to access the child component, so i can call flyTo method on it
-        });
-      }
-    },
-    handleRecentRoutes() {
-      console.log("Loading recent routes...");
-      // TODO: Implement recent routes functionality
-    },
-    handleSavedPlaces() {
-      console.log("Loading saved places...");
-      // TODO: Implement saved places functionality
-    },
-  },
-};
+    });
+  }
+}
+
+function handleRecentRoutes() {
+  console.log("Loading recent routes...");
+  // TODO: Implement recent routes functionality
+}
+
+function handleSavedPlaces() {
+  console.log("Loading saved places...");
+  // TODO: Implement saved places functionality
+}
 </script>
 
 <template>
