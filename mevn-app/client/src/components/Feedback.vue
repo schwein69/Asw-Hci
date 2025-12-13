@@ -118,6 +118,7 @@ export default {
         item.upvotes++;
       }
     },
+    // REVERTED: Status colors stay the same in dark mode because cards are white
     getStatusColor(status) {
       switch (status) {
         case "Implemented":
@@ -135,7 +136,9 @@ export default {
 </script>
 
 <template>
-  <div class="space-y-8 pb-10 bg-emerald-50 min-h-screen p-6">
+  <div
+    class="space-y-8 pb-10 bg-emerald-50 dark:bg-gray-900 min-h-screen p-6 transition-colors duration-300"
+  >
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
       <div class="bg-white p-4 rounded-xl border border-green-200 shadow-sm">
         <p class="text-gray-500 text-sm mb-1">Average User Rating</p>
@@ -191,7 +194,12 @@ export default {
                 "
               >
                 <option value="" disabled selected>Select category</option>
-                <option v-for="cat in categories" :key="cat" :value="cat">
+                <option
+                  v-for="cat in categories"
+                  :key="cat"
+                  :value="cat"
+                  class="text-gray-900"
+                >
                   {{ cat }}
                 </option>
               </select>
@@ -238,7 +246,7 @@ export default {
             v-model="subject"
             type="text"
             placeholder="Brief description of your feedback"
-            class="w-full p-3 bg-gray-50 rounded-xl border border-transparent focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"
+            class="w-full p-3 bg-gray-50 rounded-xl border border-transparent focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all text-gray-900"
           />
         </div>
 
@@ -248,7 +256,7 @@ export default {
             v-model="message"
             rows="4"
             placeholder="Provide detailed feedback..."
-            class="w-full p-3 bg-gray-50 rounded-xl border border-transparent focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all resize-none"
+            class="w-full p-3 bg-gray-50 rounded-xl border border-transparent focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all resize-none text-gray-900"
           ></textarea>
         </div>
 
