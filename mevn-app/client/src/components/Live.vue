@@ -7,6 +7,9 @@ import {
   TrainFront,
   AlertTriangle,
   Info,
+  Cloud,
+  User,
+  CheckCircle,
 } from "lucide-vue-next";
 
 export default {
@@ -19,12 +22,14 @@ export default {
     TrainFront,
     AlertTriangle,
     Info,
+    Cloud,
+    User,
+    CheckCircle,
   },
   data() {
     return {
       // Change this to false to see the "No upcoming reminders" state initially
       hasUpcomingTrip: true,
-
       trip: {
         title: "European Adventure",
         status: "Departure in 24 hours",
@@ -34,18 +39,97 @@ export default {
         date: "12/17/2025",
         time: "08:30 AM",
       },
+
+      // --- NEW: Real-Time Notifications Data ---
+      notifications: [
+        {
+          id: 1,
+          type: "social",
+          city: "Berlin",
+          time: "3:55:49 PM",
+          message: "New interaction on your post",
+          icon: "Bell",
+          color: "bg-purple-100 text-purple-600",
+        },
+        {
+          id: 2,
+          type: "weather",
+          city: "Amsterdam",
+          time: "3:53:58 PM",
+          message: "Weather conditions updated",
+          icon: "Cloud",
+          color: "bg-blue-100 text-blue-600",
+        },
+        {
+          id: 3,
+          type: "social",
+          city: "Berlin",
+          time: "3:52:58 PM",
+          message: "New interaction on your post",
+          icon: "Bell",
+          color: "bg-purple-100 text-purple-600",
+        },
+        {
+          id: 4,
+          type: "weather",
+          city: "Amsterdam",
+          time: "3:35:58 PM",
+          message: "Weather conditions updated",
+          icon: "Cloud",
+          color: "bg-blue-100 text-blue-600",
+        },
+        {
+          id: 5,
+          type: "weather",
+          city: "Barcelona",
+          time: "3:30:58 PM",
+          message: "Weather conditions updated",
+          icon: "Cloud",
+          color: "bg-blue-100 text-blue-600",
+        },
+        {
+          id: 6,
+          type: "location",
+          city: "Copenhagen",
+          time: "3:27:58 PM",
+          message: "New eco-friendly location recommended",
+          icon: "MapPin",
+          color: "bg-emerald-100 text-emerald-600",
+        },
+        {
+          id: 7,
+          type: "user",
+          city: "Copenhagen",
+          time: "12:33:29 PM",
+          message: "Tourist density changed",
+          icon: "User",
+          color: "bg-yellow-100 text-yellow-600",
+        },
+        {
+          id: 8,
+          type: "location",
+          city: "Copenhagen",
+          time: "12:32:59 PM",
+          message: "New eco-friendly location recommended",
+          icon: "MapPin",
+          color: "bg-emerald-100 text-emerald-600",
+        },
+      ],
     };
   },
   methods: {
     dismissReminder() {
       this.hasUpcomingTrip = false;
     },
+    markAllRead() {
+      alert("All notifications marked as read!");
+    },
   },
 };
 </script>
 
 <template>
-  <div class="space-y-6 pb-10 max-w-5xl mx-auto">
+  <div class="space-y-8 pb-10 max-w-5xl mx-auto">
     <div class="bg-amber-50 border border-amber-200 rounded-2xl p-6">
       <div class="flex items-center gap-2 mb-1 text-amber-900">
         <Clock class="w-5 h-5" />
@@ -154,6 +238,67 @@ export default {
         <p class="text-gray-400 text-sm">
           You'll be notified 24 hours before your trips
         </p>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-2xl p-6 border border-green-200 shadow-sm">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <div class="flex items-center gap-2">
+            <Bell class="w-5 h-5 text-emerald-600" />
+            <h3 class="font-bold text-lg text-gray-900">
+              Real-Time Notifications
+            </h3>
+            <span
+              class="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full"
+              >10 new</span
+            >
+          </div>
+          <p class="text-sm text-gray-500 mt-1">
+            Live updates on weather, crowds, and social interactions
+          </p>
+        </div>
+        <button
+          @click="markAllRead"
+          class="text-xs font-medium text-gray-600 border border-gray-300 rounded px-3 py-1 hover:bg-gray-50 transition-colors"
+        >
+          Mark all as read
+        </button>
+      </div>
+
+      <div class="space-y-3">
+        <div
+          v-for="item in notifications"
+          :key="item.id"
+          class="flex items-center justify-between p-3 rounded-xl border border-emerald-100 bg-emerald-50/30 hover:bg-emerald-50 transition-colors cursor-pointer group"
+        >
+          <div class="flex items-center gap-4">
+            <div
+              class="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
+              :class="item.color"
+            >
+              <component :is="item.icon" class="w-5 h-5" />
+            </div>
+
+            <div>
+              <div class="flex items-center gap-2 mb-0.5">
+                <span
+                  class="text-[10px] px-1.5 py-0.5 border border-emerald-200 text-emerald-700 bg-white rounded font-medium"
+                >
+                  {{ item.city }}
+                </span>
+                <span class="text-xs text-gray-400">{{ item.time }}</span>
+              </div>
+              <p class="text-sm font-medium text-gray-800">
+                {{ item.message }}
+              </p>
+            </div>
+          </div>
+
+          <div class="flex items-center pr-2">
+            <div class="w-2 h-2 rounded-full bg-emerald-500"></div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
