@@ -5,7 +5,7 @@ defineProps({
     required: true,
   },
   icon: {
-    type: Object,
+    type: [Object, Function],
     required: true,
   },
   dailyTips: {
@@ -29,8 +29,6 @@ defineProps({
           :key="index"
           class="flex items-center gap-3 p-4 rounded-lg bg-teal-50 border border-teal-100 hover:bg-teal-100 transition-colors"
         >
-          <Leaf class="w-4 h-4 text-teal-600 shrink-0" />
-
           <component :is="tip.icon" :class="`w-5 h-5 shrink-0`" />
 
           <span class="text-sm text-gray-700 font-medium">{{ tip.text }}</span>

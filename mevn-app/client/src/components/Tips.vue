@@ -1,8 +1,13 @@
 <script setup>
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
+import { generateDailyTips } from "../../../server/src/services/gemini.js";
+import Guidelines from "./template/Guidelines.vue";
+import Explore from "./template/Explore.vue";
 import {
   Lightbulb,
   Sparkles,
+  Sun,
+  Wind,
   Leaf,
   Globe,
   Droplet,
@@ -12,48 +17,41 @@ import {
   Plug,
   Footprints,
   Recycle,
+  Info,
   Hamburger,
   BedDouble,
   Plane,
   ShoppingBag,
 } from "lucide-vue-next";
-import Guidelines from "./template/Guidelines.vue";
-import Explore from "./template/Explore.vue";
-// Data for Quick Daily Tips -> use Gemini api
-const dailyTips = [
-  {
-    text: "Travel during off-peak seasons to reduce overtourism",
-    icon: Globe,
-  },
-  {
-    text: "Take shorter showers to conserve water",
-    icon: Droplet,
-  },
-  {
-    text: "Use digital tickets instead of printing",
-    icon: Smartphone,
-  },
-  {
-    text: "Pack light - heavier luggage means higher fuel consumption",
-    icon: Luggage,
-  },
-  {
-    text: "Unplug chargers when not in use",
-    icon: Plug,
-  },
-  {
-    text: "Walk to nearby attractions instead of taking taxis",
-    icon: Footprints,
-  },
-  {
-    text: "Separate your waste and recycle when facilities are available",
-    icon: Recycle,
-  },
-  {
-    text: "Bring a reusable shopping bag for purchases",
-    icon: ShoppingBag,
-  },
-];
+
+const iconMap = {
+  Globe,
+  Droplet,
+  Smartphone,
+  Luggage,
+  Plug,
+  Footprints,
+  Recycle,
+  ShoppingBag,
+  Leaf,
+  Sun,
+  Wind,
+};
+const dailyTips = ref([]);
+onMounted(async () => {
+  try {
+    const tipsData = await generateDailyTips();
+    dailyTips.value = tipsData;
+    for (const tip of dailyTips.value) {
+      tip.icon = iconMap[tip.icon];
+    }
+    console.log("Successfully fetched daily tips:", tipsData);
+  } catch (err) {
+    console.error("Error fetching daily tips:", err);
+  } finally {
+    console.log("Finished attempting to fetch daily tips.");
+  }
+});
 
 const knowledgesTips = [
   {
