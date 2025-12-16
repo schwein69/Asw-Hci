@@ -71,7 +71,6 @@ export default {
 
 <template>
   <div class="space-y-6">
-    <!-- Top Stats Cards using daisyUI stats -->
     <div
       class="stats stats-vertical md:stats-horizontal shadow-sm border border-green-100 bg-white w-full md:grid-cols-2 lg:grid-cols-4"
     >
