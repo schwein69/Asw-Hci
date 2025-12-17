@@ -17,6 +17,8 @@ import {
   CloudRain,
   Wind,
   CloudSun,
+  Snowflake, // Added for snow
+  CloudLightning, // Added for storm
 } from "lucide-vue-next";
 
 export default {
@@ -39,6 +41,8 @@ export default {
     CloudRain,
     Wind,
     CloudSun,
+    Snowflake,
+    CloudLightning,
   },
   data() {
     return {
@@ -126,16 +130,18 @@ export default {
           color: "bg-emerald-100 text-emerald-600",
         },
       ],
-      // Live Location Insights Data
+
       locations: [
         {
           id: 1,
           name: "Amsterdam",
+          lat: 52.3676,
+          lon: 4.9041,
           live: true,
           weather: {
-            condition: "Sunny",
-            temp: "18°C",
-            icon: "Sun",
+            condition: "Loading...",
+            temp: "--",
+            icon: "Cloud",
             alert: false,
           },
           crowd: {
@@ -151,11 +157,13 @@ export default {
         {
           id: 2,
           name: "Barcelona",
+          lat: 41.3851,
+          lon: 2.1734,
           live: true,
           weather: {
-            condition: "Partly Cloudy",
-            temp: "24°C",
-            icon: "CloudSun",
+            condition: "Loading...",
+            temp: "--",
+            icon: "Cloud",
             alert: false,
           },
           crowd: {
@@ -171,12 +179,14 @@ export default {
         {
           id: 3,
           name: "Copenhagen",
+          lat: 55.6761,
+          lon: 12.5683,
           live: true,
           weather: {
-            condition: "Windy",
-            temp: "14°C",
-            icon: "Wind",
-            alert: true,
+            condition: "Loading...",
+            temp: "--",
+            icon: "Cloud",
+            alert: false,
           },
           crowd: {
             level: "Medium Density",
@@ -191,11 +201,13 @@ export default {
         {
           id: 4,
           name: "Berlin",
+          lat: 52.52,
+          lon: 13.405,
           live: true,
           weather: {
-            condition: "Rainy",
-            temp: "16°C",
-            icon: "CloudRain",
+            condition: "Loading...",
+            temp: "--",
+            icon: "Cloud",
             alert: false,
           },
           crowd: {
@@ -211,12 +223,54 @@ export default {
       ],
     };
   },
+  mounted() {
+    this.fetchRealWeather();
+  },
   methods: {
     dismissReminder() {
       this.hasUpcomingTrip = false;
     },
     markAllRead() {
       alert("All notifications marked as read!");
+    },
+    // Fetch Real Weather Data
+    async fetchRealWeather() {
+      for (const loc of this.locations) {
+        try {
+          const response = await fetch(
+            `https://api.open-meteo.com/v1/forecast?latitude=${loc.lat}&longitude=${loc.lon}&current_weather=true`
+          );
+          const data = await response.json();
+
+          if (data.current_weather) {
+            const { temperature, weathercode } = data.current_weather;
+            const weatherInfo = this.getWeatherInfo(weathercode);
+
+            // Update the location object with real data
+            loc.weather.temp = `${Math.round(temperature)}°C`;
+            loc.weather.condition = weatherInfo.text;
+            loc.weather.icon = weatherInfo.icon;
+            loc.weather.alert = weatherInfo.alert;
+          }
+        } catch (error) {
+          console.error(`Failed to fetch weather for ${loc.name}`, error);
+          loc.weather.condition = "Unavailable";
+        }
+      }
+    },
+    // changing codes to icons ---
+    getWeatherInfo(code) {
+      if (code === 0) return { text: "Sunny", icon: "Sun", alert: false };
+      if (code <= 3)
+        return { text: "Partly Cloudy", icon: "CloudSun", alert: false };
+      if (code <= 48) return { text: "Foggy", icon: "Cloud", alert: true };
+      if (code <= 67) return { text: "Rainy", icon: "CloudRain", alert: true };
+      if (code <= 77) return { text: "Snowy", icon: "Snowflake", alert: true };
+      if (code <= 82)
+        return { text: "Showers", icon: "CloudRain", alert: true };
+      if (code <= 99)
+        return { text: "Stormy", icon: "CloudLightning", alert: true };
+      return { text: "Unknown", icon: "Cloud", alert: false };
     },
   },
 };
