@@ -10,6 +10,13 @@ import {
   Cloud,
   User,
   CheckCircle,
+  TrendingUp,
+  TrendingDown,
+  Minus,
+  Sun,
+  CloudRain,
+  Wind,
+  CloudSun,
 } from "lucide-vue-next";
 
 export default {
@@ -25,10 +32,16 @@ export default {
     Cloud,
     User,
     CheckCircle,
+    TrendingUp,
+    TrendingDown,
+    Minus,
+    Sun,
+    CloudRain,
+    Wind,
+    CloudSun,
   },
   data() {
     return {
-      // Change this to false to see the "No upcoming reminders" state initially
       hasUpcomingTrip: true,
       trip: {
         title: "European Adventure",
@@ -39,8 +52,6 @@ export default {
         date: "12/17/2025",
         time: "08:30 AM",
       },
-
-      // --- NEW: Real-Time Notifications Data ---
       notifications: [
         {
           id: 1,
@@ -113,6 +124,89 @@ export default {
           message: "New eco-friendly location recommended",
           icon: "MapPin",
           color: "bg-emerald-100 text-emerald-600",
+        },
+      ],
+      // Live Location Insights Data
+      locations: [
+        {
+          id: 1,
+          name: "Amsterdam",
+          live: true,
+          weather: {
+            condition: "Sunny",
+            temp: "18°C",
+            icon: "Sun",
+            alert: false,
+          },
+          crowd: {
+            level: "Low Density",
+            value: 45,
+            trend: "Up",
+            trendIcon: "TrendingUp",
+            color: "text-emerald-600",
+            barColor: "bg-emerald-300",
+          },
+          alternative: null,
+        },
+        {
+          id: 2,
+          name: "Barcelona",
+          live: true,
+          weather: {
+            condition: "Partly Cloudy",
+            temp: "24°C",
+            icon: "CloudSun",
+            alert: false,
+          },
+          crowd: {
+            level: "High Density",
+            value: 81,
+            trend: "Stable",
+            trendIcon: "Minus",
+            color: "text-red-500",
+            barColor: "bg-red-300",
+          },
+          alternative: "Visit during off-peak hours (early morning or evening)",
+        },
+        {
+          id: 3,
+          name: "Copenhagen",
+          live: true,
+          weather: {
+            condition: "Windy",
+            temp: "14°C",
+            icon: "Wind",
+            alert: true,
+          },
+          crowd: {
+            level: "Medium Density",
+            value: 56,
+            trend: "Up",
+            trendIcon: "TrendingUp",
+            color: "text-orange-500",
+            barColor: "bg-orange-300",
+          },
+          alternative: "Consider indoor activities or postpone visit",
+        },
+        {
+          id: 4,
+          name: "Berlin",
+          live: true,
+          weather: {
+            condition: "Rainy",
+            temp: "16°C",
+            icon: "CloudRain",
+            alert: false,
+          },
+          crowd: {
+            level: "Medium Density",
+            value: 61,
+            trend: "Down",
+            trendIcon: "TrendingDown",
+            color: "text-orange-500",
+            barColor: "bg-orange-300",
+          },
+          alternative: null,
         },
       ],
     };
@@ -297,6 +391,106 @@ export default {
 
           <div class="flex items-center pr-2">
             <div class="w-2 h-2 rounded-full bg-emerald-500"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div
+        v-for="loc in locations"
+        :key="loc.id"
+        class="bg-white rounded-2xl p-5 border border-emerald-100 shadow-sm hover:shadow-md transition-shadow"
+      >
+        <div class="flex justify-between items-center mb-4">
+          <div class="flex items-center gap-2 text-emerald-800 font-bold">
+            <MapPin class="w-4 h-4" />
+            {{ loc.name }}
+          </div>
+          <div
+            class="flex items-center gap-1.5 text-[10px] font-bold text-emerald-500"
+          >
+            <div
+              class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"
+            ></div>
+            Live
+          </div>
+        </div>
+
+        <div
+          class="bg-sky-50 rounded-xl p-3 border border-sky-100 mb-3 flex items-center justify-between"
+        >
+          <div class="flex items-center gap-3">
+            <component :is="loc.weather.icon" class="w-5 h-5 text-sky-600" />
+            <div>
+              <p class="text-xs text-sky-800 font-bold">Weather</p>
+              <p class="text-sm text-gray-700">{{ loc.weather.condition }}</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <span
+              v-if="loc.weather.alert"
+              class="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded"
+            >
+              <AlertTriangle class="w-3 h-3 inline mr-0.5" /> Alert
+            </span>
+            <span class="text-xl font-bold text-sky-600">{{
+              loc.weather.temp
+            }}</span>
+          </div>
+        </div>
+
+        <div class="bg-amber-50 rounded-xl p-3 border border-amber-100 mb-3">
+          <div class="flex justify-between items-center mb-2">
+            <div
+              class="flex items-center gap-2 text-xs font-bold text-amber-800"
+            >
+              <User class="w-3.5 h-3.5" /> Tourist Affluence
+            </div>
+            <div
+              class="flex items-center gap-1 text-[10px] font-medium text-gray-500"
+            >
+              <component
+                :is="loc.crowd.trendIcon"
+                class="w-3 h-3"
+                :class="
+                  loc.crowd.trend === 'Up' ? 'text-red-500' : 'text-emerald-500'
+                "
+              />
+              {{ loc.crowd.trend }}
+            </div>
+          </div>
+
+          <div
+            class="w-full h-2 bg-gray-900 rounded-full overflow-hidden mb-1 flex"
+          >
+            <div
+              class="h-full bg-black"
+              :style="{ width: loc.crowd.value + '%' }"
+            ></div>
+            <div class="h-full flex-1" :class="loc.crowd.barColor"></div>
+          </div>
+
+          <div class="flex justify-between text-[10px] font-bold mt-1">
+            <span :class="loc.crowd.color">{{ loc.crowd.level }}</span>
+            <span class="text-gray-400">{{ loc.crowd.value + 40 }}.9%</span>
+          </div>
+        </div>
+
+        <div
+          v-if="loc.alternative"
+          class="bg-emerald-50 rounded-xl p-3 border border-emerald-100"
+        >
+          <div class="flex gap-2">
+            <CheckCircle class="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+            <div>
+              <p class="text-xs font-bold text-emerald-800">
+                Alternative Suggested
+              </p>
+              <p class="text-[10px] text-emerald-700 leading-tight mt-0.5">
+                {{ loc.alternative }}
+              </p>
+            </div>
           </div>
         </div>
       </div>
