@@ -1,8 +1,8 @@
 <script setup>
 import { ref, onMounted } from "vue";
-import { generateDailyTips } from "../../../server/src/services/gemini.js";
 import Guidelines from "./template/Guidelines.vue";
 import Explore from "./template/Explore.vue";
+import axios from "axios";
 import {
   Lightbulb,
   Sparkles,
@@ -40,7 +40,8 @@ const iconMap = {
 const dailyTips = ref([]);
 onMounted(async () => {
   try {
-    const tipsData = await generateDailyTips();
+    const response = await axios.get("http://localhost:3000/api/tips");
+    const tipsData = response.data;
     dailyTips.value = tipsData;
     for (const tip of dailyTips.value) {
       tip.icon = iconMap[tip.icon];
