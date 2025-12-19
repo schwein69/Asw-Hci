@@ -3,7 +3,7 @@ import { generateDailyTips } from "../services/gemini.js";
 
 const router = express.Router();
 
-router.get("/tips", async (req, res) => {
+router.get("/", async (req, res) => {
   try {
     const tips = await generateDailyTips();
 
