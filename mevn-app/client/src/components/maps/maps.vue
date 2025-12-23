@@ -2,6 +2,8 @@
 import { ref, shallowRef, onMounted, onUnmounted } from "vue";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
+import MapboxDirections from "@mapbox/mapbox-gl-directions/dist/mapbox-gl-directions";
+import "@mapbox/mapbox-gl-directions/dist/mapbox-gl-directions.css";
 
 const props = defineProps({
   center: {
@@ -45,9 +47,7 @@ defineExpose({
 
 onMounted(() => {
   if (!accessToken) {
-    console.error(
-      "Mapbox token not found. Please set VITE_MAPBOX_TOKEN in .env file"
-    );
+    console.error("Mapbox token not found.");
     isLoading.value = false;
     return;
   }
@@ -57,26 +57,40 @@ onMounted(() => {
   try {
     map.value = new mapboxgl.Map({
       container: mapContainer.value,
-      style: "mapbox://styles/mapbox/standard",
+      style: "mapbox://styles/mapbox/streets-v12",
       center: props.center,
       zoom: props.zoom,
       attributionControl: true,
       crossSourceCollation: true,
     });
 
+    // 1. Add Controls (Zoom/Rotation)
     map.value.addControl(new mapboxgl.NavigationControl(), "top-right");
 
+    // 2. Add Geolocate Control
     map.value.addControl(
       new mapboxgl.GeolocateControl({
-        positionOptions: {
-          enableHighAccuracy: true,
-        },
+        positionOptions: { enableHighAccuracy: true },
         trackUserLocation: true,
         showUserHeading: true,
       }),
       "top-right"
     );
 
+    // 3. Add Directions (Inside onMounted)
+    const directions = new MapboxDirections({
+      accessToken: mapboxgl.accessToken,
+      unit: "metric",
+      profile: "mapbox/driving",
+      controls: {
+        inputs: true,
+        instructions: true,
+        profileSwitcher: true,
+      },
+    });
+    map.value.addControl(directions, "top-left");
+
+    // 4. Add Traffic
     map.value.on("load", () => {
       map.value.addSource("mapbox-traffic", {
         type: "vector",
@@ -130,9 +144,7 @@ onUnmounted(() => {
 
 const toggleTraffic = () => {
   if (!map.value) return;
-
   const visibility = map.value.getLayoutProperty("traffic-layer", "visibility");
-
   if (visibility === "visible") {
     map.value.setLayoutProperty("traffic-layer", "visibility", "none");
   } else {
@@ -150,8 +162,11 @@ const toggleTraffic = () => {
     </div>
 
     <div class="map-overlay">
-      <button @click="toggleTraffic" class="btn btn-sm btn-neutral flex gap-2">
-        🚗 Toggle Traffic
+      <button
+        @click="toggleTraffic"
+        class="btn btn-sm btn-neutral flex gap-2 shadow-lg"
+      >
+        Traffic
       </button>
     </div>
   </div>
@@ -162,7 +177,7 @@ const toggleTraffic = () => {
   position: relative;
   width: 100%;
   height: 100%;
-  min-height: 400px;
+  min-height: 500px;
   border-radius: 8px;
   overflow: hidden;
 }
@@ -182,13 +197,25 @@ const toggleTraffic = () => {
 
 .map-overlay {
   position: absolute;
-  top: 4px;
-  left: 4px;
+  top: 140px;
+  right: 10px;
+  left: auto;
+  bottom: auto;
   pointer-events: none;
-  z-index: 1;
+  z-index: 20;
 }
 
 .map-overlay > * {
   pointer-events: auto;
+}
+
+:deep(.mapboxgl-ctrl-directions) {
+  min-width: 250px;
+  max-width: 90vw; /* Prevents overflow on mobile screens */
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+}
+
+:deep(.mapboxgl-control-container) {
+  z-index: 10 !important;
 }
 </style>
