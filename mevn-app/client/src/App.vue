@@ -77,7 +77,7 @@ export default {
             <Moon v-if="!isDarkMode" class="w-5 h-5" />
             <Sun v-else class="w-5 h-5" />
           </button>
-          <div class="hidden sm:flex gap-2">
+          <div>
             <button
               class="btn btn-ghost btn-sm text-gray-700 dark:text-gray-200"
             >
