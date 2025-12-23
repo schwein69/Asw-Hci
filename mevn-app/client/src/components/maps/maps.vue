@@ -1,104 +1,143 @@
-<script>
+<script setup>
+import { ref, shallowRef, onMounted, onUnmounted } from "vue";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
-import { Map as MapIcon } from "lucide-vue-next";
 
-export default {
-  name: "MapboxMap",
-  components: { MapIcon },
-  props: {
-    center: {
-      type: Array,
-      default: () => [-74.5, 40],
-    },
-    zoom: {
-      type: Number,
-      default: 9,
-    },
+const props = defineProps({
+  center: {
+    type: Array,
+    default: () => [-74.5, 40],
   },
-  data() {
-    return {
-      map: null,
-      isLoading: true,
-      accessToken: import.meta.env.VITE_MAPBOX_TOKEN,
-    };
+  zoom: {
+    type: Number,
+    default: 9,
   },
-  mounted() {
-    if (!this.accessToken) {
-      console.error(
-        "Mapbox token not found. Please set VITE_MAPBOX_TOKEN in .env file"
-      );
-      this.isLoading = false;
-      return;
-    }
+});
 
-    mapboxgl.accessToken = this.accessToken;
+const mapContainer = ref(null);
+const isLoading = ref(true);
+const accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
 
-    try {
-      this.map = new mapboxgl.Map({
-        container: this.$refs.mapContainer, // reference to the map container div
-        style: "mapbox://styles/mapbox/standard",
-        center: this.center,
-        zoom: this.zoom,
-        attributionControl: true,
-        crossSourceCollation: true,
+const map = shallowRef(null);
+
+const addMarker = (lngLat, options = {}) => {
+  if (!map.value) return null;
+  const marker = new mapboxgl.Marker(options)
+    .setLngLat(lngLat)
+    .addTo(map.value);
+  return marker;
+};
+
+const flyTo = (center, zoom = 15) => {
+  if (!map.value) return;
+  map.value.flyTo({
+    center,
+    zoom,
+    duration: 2000,
+  });
+};
+
+defineExpose({
+  addMarker,
+  flyTo,
+  map,
+});
+
+onMounted(() => {
+  if (!accessToken) {
+    console.error(
+      "Mapbox token not found. Please set VITE_MAPBOX_TOKEN in .env file"
+    );
+    isLoading.value = false;
+    return;
+  }
+
+  mapboxgl.accessToken = accessToken;
+
+  try {
+    map.value = new mapboxgl.Map({
+      container: mapContainer.value,
+      style: "mapbox://styles/mapbox/standard",
+      center: props.center,
+      zoom: props.zoom,
+      attributionControl: true,
+      crossSourceCollation: true,
+    });
+
+    map.value.addControl(new mapboxgl.NavigationControl(), "top-right");
+
+    map.value.addControl(
+      new mapboxgl.GeolocateControl({
+        positionOptions: {
+          enableHighAccuracy: true,
+        },
+        trackUserLocation: true,
+        showUserHeading: true,
+      }),
+      "top-right"
+    );
+
+    map.value.on("load", () => {
+      map.value.addSource("mapbox-traffic", {
+        type: "vector",
+        url: "mapbox://mapbox.mapbox-traffic-v1",
       });
-
-      // Add navigation controls
-      this.map.addControl(new mapboxgl.NavigationControl(), "top-right");
-
-      // Add geolocate control
-      this.map.addControl(
-        new mapboxgl.GeolocateControl({
-          positionOptions: {
-            enableHighAccuracy: true,
-          },
-          trackUserLocation: true,
-          showUserHeading: true,
-        }),
-        "top-right"
-      );
-
-      this.map.on("load", () => {
-        console.log("Mapbox map loaded successfully");
-        this.isLoading = false;
+      map.value.addLayer({
+        id: "traffic-layer",
+        type: "line",
+        source: "mapbox-traffic",
+        "source-layer": "traffic",
+        layout: {
+          "line-join": "round",
+          "line-cap": "round",
+          visibility: "none",
+        },
+        paint: {
+          "line-width": 2,
+          "line-color": [
+            "case",
+            ["==", ["get", "congestion"], "low"],
+            "#1aad5b",
+            ["==", ["get", "congestion"], "moderate"],
+            "#eeb830",
+            ["==", ["get", "congestion"], "heavy"],
+            "#e84236",
+            ["==", ["get", "congestion"], "severe"],
+            "#8b201d",
+            "#000000",
+          ],
+        },
       });
+      isLoading.value = false;
+    });
 
-      this.map.on("error", (error) => {
-        console.error("Mapbox error:", error);
-        this.isLoading = false;
-      });
-    } catch (error) {
-      console.error("Error initializing map:", error);
-      this.isLoading = false;
-    }
-  },
+    map.value.on("error", (error) => {
+      console.error("Mapbox error:", error);
+      isLoading.value = false;
+    });
+  } catch (error) {
+    console.error("Error initializing map:", error);
+    isLoading.value = false;
+  }
+});
 
-  unmounted() {
-    if (this.map) {
-      this.map.remove();
-      this.map = null;
-    }
-  },
+onUnmounted(() => {
+  if (map.value) {
+    map.value.remove();
+    map.value = null;
+  }
+});
 
-  methods: {
-    addMarker(lngLat, options = {}) {
-      if (!this.map) return null;
-      const marker = new mapboxgl.Marker(options)
-        .setLngLat(lngLat)
-        .addTo(this.map);
-      return marker;
-    },
+const toggleTraffic = () => {
+  if (!map.value) return;
 
-    flyTo(center, zoom = 15) {
-      if (!this.map) return;
-      this.map.flyTo({
-        center,
-        zoom,
-        duration: 2000,
-      });
-    },
-  },
+  const visibility = map.value.getLayoutProperty("traffic-layer", "visibility");
+
+  if (visibility === "visible") {
+    map.value.setLayoutProperty("traffic-layer", "visibility", "none");
+  } else {
+    map.value.setLayoutProperty("traffic-layer", "visibility", "visible");
+  }
 };
 </script>
 
@@ -106,17 +145,14 @@ export default {
   <div class="map-wrapper">
     <div ref="mapContainer" class="map-container"></div>
 
-    <!-- Loading indicator -->
     <div v-if="isLoading" class="map-loading">
       <div class="loading loading-spinner text-success"></div>
     </div>
 
-    <!-- Optional: Overlay UI elements with daisyUI -->
     <div class="map-overlay">
-      <div class="badge badge-success gap-2">
-        <MapIcon class="w-4 h-4" />
-        <span>Map View</span>
-      </div>
+      <button @click="toggleTraffic" class="btn btn-sm btn-neutral flex gap-2">
+        🚗 Toggle Traffic
+      </button>
     </div>
   </div>
 </template>
@@ -152,7 +188,7 @@ export default {
   z-index: 1;
 }
 
-.map-overlay .badge {
+.map-overlay > * {
   pointer-events: auto;
 }
 </style>
