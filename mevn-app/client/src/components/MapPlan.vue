@@ -10,7 +10,10 @@ import {
   Trash2,
   Clock,
   Bookmark,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-vue-next";
+import mapboxgl from "mapbox-gl";
 import MapboxMap from "./maps/maps.vue";
 import * as turf from "@turf/turf";
 
@@ -22,6 +25,18 @@ const mapboxMapRef = ref(null);
 const activeTab = ref("world");
 const mapCenter = ref([12.56, 41.87]);
 const mapZoom = ref(9);
+
+const fromSearchBox = ref(null);
+const toSearchBox = ref(null);
+
+const isRecsOpen = ref(true);
+const draggableMarkers = ref([
+  { id: "red", color: "#ef4444", label: "Red Marker" },
+  { id: "blue", color: "#3b82f6", label: "Blue Marker" },
+  { id: "green", color: "#10b981", label: "Green Marker" },
+  { id: "orange", color: "#f59e0b", label: "Orange Marker" },
+  { id: "purple", color: "#8b5cf6", label: "Purple Marker" },
+]);
 
 const newSegment = ref({
   fromName: "",
@@ -38,14 +53,10 @@ let animationFrameId = null;
 
 const searchOptions = computed(() => {
   const base = { language: "en", limit: 5 };
-
-  if (newSegment.value.type === "Airplane") {
+  if (newSegment.value.type === "Airplane")
     return { ...base, poi_category: ["airport"] };
-  }
-  if (newSegment.value.type === "Train") {
+  if (newSegment.value.type === "Train")
     return { ...base, poi_category: ["train_station"] };
-  }
-
   return { ...base, types: ["place", "locality", "poi", "address"] };
 });
 
@@ -78,6 +89,53 @@ function handleMyLocation() {
   }
 }
 
+function onDragStart(event, markerItem) {
+  event.dataTransfer.effectAllowed = "copy";
+  event.dataTransfer.setData("application/json", JSON.stringify(markerItem));
+}
+
+async function onMapDrop(event) {
+  const json = event.dataTransfer.getData("application/json");
+  if (!json) return;
+
+  const markerItem = JSON.parse(json);
+  const map = mapboxMapRef.value?.map;
+  if (!map) return;
+
+  const rect = event.currentTarget.getBoundingClientRect();
+  const x = event.clientX - rect.left;
+  const y = event.clientY - rect.top;
+  const lngLat = map.unproject([x, y]);
+  const finalCoords = [lngLat.lng, lngLat.lat];
+
+  let placeName = "Dropped Location"; // Fallback
+  try {
+    const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${lngLat.lng},${lngLat.lat}.json?types=poi,address,place,locality&access_token=${accessToken}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    if (data.features && data.features.length > 0) {
+      placeName = data.features[0].place_name || data.features[0].text;
+    }
+  } catch (err) {
+    console.error("Reverse geocoding failed", err);
+  }
+
+  new mapboxgl.Marker({ color: markerItem.color })
+    .setLngLat(finalCoords)
+    .setPopup(new mapboxgl.Popup().setHTML(`<b>${placeName}</b>`))
+    .addTo(map);
+
+  if (!newSegment.value.fromCoords) {
+    newSegment.value.fromName = placeName;
+    newSegment.value.fromCoords = finalCoords;
+    if (fromSearchBox.value) fromSearchBox.value.value = placeName;
+  } else {
+    newSegment.value.toName = placeName;
+    newSegment.value.toCoords = finalCoords;
+    if (toSearchBox.value) toSearchBox.value.value = placeName;
+  }
+}
+
 function handleRetrieveFrom(e) {
   const feature = e.detail?.features?.[0];
   if (feature) {
@@ -98,11 +156,14 @@ function handleRetrieveTo(e) {
 
 async function addSegment() {
   if (!newSegment.value.fromCoords || !newSegment.value.toCoords) {
-    alert("Please search and select valid locations.");
+    alert("Please select Start and End locations.");
     return;
   }
 
   const segmentId = Date.now();
+  const nextStartName = newSegment.value.toName;
+  const nextStartCoords = newSegment.value.toCoords;
+
   const segment = {
     id: segmentId,
     from: newSegment.value.fromName,
@@ -122,8 +183,13 @@ async function addSegment() {
     segment.id
   );
 
-  newSegment.value.fromName = "";
-  newSegment.value.fromCoords = null;
+  // Chain Logic: Move To -> From
+  newSegment.value.fromName = nextStartName;
+  newSegment.value.fromCoords = nextStartCoords;
+
+  if (fromSearchBox.value) fromSearchBox.value.value = nextStartName;
+  if (toSearchBox.value) toSearchBox.value.value = "";
+
   newSegment.value.toName = "";
   newSegment.value.toCoords = null;
   newSegment.value.time = "";
@@ -142,6 +208,12 @@ function removeSegment(index) {
     if (map.getSource(pointId)) map.removeSource(pointId);
   }
   savedSegments.value.splice(index, 1);
+
+  if (savedSegments.value.length === 0) {
+    newSegment.value.fromName = "";
+    newSegment.value.fromCoords = null;
+    if (fromSearchBox.value) fromSearchBox.value.value = "";
+  }
 }
 
 function saveTripToDB() {
@@ -152,7 +224,6 @@ function saveTripToDB() {
 async function visualizeRoute(startCoords, endCoords, type, segmentId) {
   const map = mapboxMapRef.value?.map;
   if (!map) return;
-
   let routeGeoJSON = null;
 
   try {
@@ -165,16 +236,10 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
       const res = await fetch(
         `https://api.mapbox.com/directions/v5/mapbox/${profile}/${startCoords[0]},${startCoords[1]};${endCoords[0]},${endCoords[1]}?steps=true&geometries=geojson&access_token=${accessToken}`
       );
-      if (!res.ok) throw new Error("API Failed");
       const json = await res.json();
-      if (json.routes?.[0]) {
-        routeGeoJSON = json.routes[0].geometry;
-      } else {
-        throw new Error("No route found");
-      }
+      if (json.routes?.[0]) routeGeoJSON = json.routes[0].geometry;
     }
   } catch (e) {
-    console.warn("Using fallback route:", e);
     routeGeoJSON = turf.lineString([startCoords, endCoords]).geometry;
   }
 
@@ -183,17 +248,14 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
   const routeId = `route-${segmentId}`;
   const pointId = `point-${segmentId}`;
 
-  // 1. Add Source FIRST
   map.addSource(routeId, {
     type: "geojson",
     data: { type: "Feature", geometry: routeGeoJSON },
   });
-
-  // 2. Add Layer referencing the Source
   map.addLayer({
     id: routeId,
     type: "line",
-    source: routeId, // Must match addSource ID
+    source: routeId,
     layout: { "line-join": "round", "line-cap": "round" },
     paint: {
       "line-color": type === "Airplane" ? "#3b82f6" : "#10b981",
@@ -203,7 +265,6 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
     },
   });
 
-  // 3. Add Point Source & Layer
   const pointData = {
     type: "FeatureCollection",
     features: [
@@ -226,16 +287,15 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
     },
   });
 
+  // Animation logic
   const pathFeature = { type: "Feature", geometry: routeGeoJSON };
   const lineDistance = turf.length(pathFeature);
   const duration = 10000;
   let startTimestamp = null;
-
   function animate(timestamp) {
     if (!map || !map.getSource(pointId)) return;
     if (!startTimestamp) startTimestamp = timestamp;
     const progress = (timestamp - startTimestamp) / duration;
-
     if (progress < 1) {
       const point = turf.along(pathFeature, progress * lineDistance);
       map.getSource(pointId).setData(point);
@@ -245,10 +305,8 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
       animationFrameId = requestAnimationFrame(animate);
     }
   }
-
   const bbox = turf.bbox(pathFeature);
   map.fitBounds(bbox, { padding: 80, maxZoom: 8 });
-
   animationFrameId = requestAnimationFrame(animate);
 }
 </script>
@@ -307,12 +365,12 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
                   class="rounded-lg overflow-hidden border border-gray-200 bg-white"
                 >
                   <mapbox-search-box
+                    ref="fromSearchBox"
                     :access-token="accessToken"
                     :options="searchOptions"
                     placeholder="Search start location..."
                     @retrieve="handleRetrieveFrom"
-                  >
-                  </mapbox-search-box>
+                  ></mapbox-search-box>
                 </div>
               </div>
 
@@ -324,12 +382,12 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
                   class="rounded-lg overflow-hidden border border-gray-200 bg-white"
                 >
                   <mapbox-search-box
+                    ref="toSearchBox"
                     :access-token="accessToken"
                     :options="searchOptions"
                     placeholder="Search destination..."
                     @retrieve="handleRetrieveTo"
-                  >
-                  </mapbox-search-box>
+                  ></mapbox-search-box>
                 </div>
               </div>
 
@@ -384,6 +442,57 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
               </button>
             </div>
 
+            <div
+              class="mt-4 border border-green-100 rounded-xl overflow-hidden"
+            >
+              <div
+                @click="isRecsOpen = !isRecsOpen"
+                class="p-3 bg-green-50 flex justify-between items-center cursor-pointer hover:bg-green-100 transition-colors"
+              >
+                <span class="text-sm font-bold text-green-800"
+                  >Drag & Drop Markers</span
+                >
+                <component
+                  :is="isRecsOpen ? ChevronUp : ChevronDown"
+                  class="w-4 h-4 text-green-700"
+                />
+              </div>
+
+              <div v-if="isRecsOpen" class="p-4 bg-white">
+                <div class="text-xs text-gray-400 mb-2">
+                  Drag a pin to the map to set a location:
+                </div>
+                <div class="flex gap-3 justify-between">
+                  <div
+                    v-for="marker in draggableMarkers"
+                    :key="marker.id"
+                    draggable="true"
+                    @dragstart="onDragStart($event, marker)"
+                    class="cursor-grab active:cursor-grabbing hover:scale-110 transition-transform"
+                    :title="marker.label"
+                  >
+                    <svg
+                      width="32"
+                      height="32"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      :style="{
+                        fill: marker.color,
+                        filter: 'drop-shadow(0px 2px 2px rgba(0,0,0,0.3))',
+                      }"
+                      stroke="white"
+                      stroke-width="1.5"
+                    >
+                      <path
+                        d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"
+                      ></path>
+                      <circle cx="12" cy="10" r="3" fill="white"></circle>
+                    </svg>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <div class="divider my-2 text-xs text-gray-400">YOUR ITINERARY</div>
             <div class="space-y-2 flex-1 overflow-y-auto custom-scrollbar h-48">
               <div
@@ -411,8 +520,8 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
                     </div>
                     <div class="text-xs text-gray-500">
                       {{ seg.date || "No date" }}
-                      <span v-if="seg.time">• {{ seg.time }}</span>
-                      • {{ seg.type }}
+                      <span v-if="seg.time">• {{ seg.time }}</span> •
+                      {{ seg.type }}
                     </div>
                   </div>
                 </div>
@@ -425,7 +534,6 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
               </div>
             </div>
           </div>
-
           <div class="p-4 border-t bg-gray-50/80 backdrop-blur">
             <button
               @click="saveTripToDB"
@@ -444,9 +552,10 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
         <div
           class="card bg-white border border-green-100 shadow-xl overflow-hidden h-full relative rounded-3xl"
           :class="{ 'hide-directions': activeTab === 'world' }"
+          @dragover.prevent
+          @drop="onMapDrop"
         >
           <MapboxMap ref="mapboxMapRef" :center="mapCenter" :zoom="mapZoom" />
-
           <div
             class="absolute top-4 left-1/2 -translate-x-1/2 z-10 pointer-events-none"
           >
@@ -463,7 +572,6 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
               }}
             </div>
           </div>
-
           <div
             v-if="activeTab === 'city'"
             class="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex gap-2"
@@ -495,5 +603,11 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
 }
 .hide-directions :deep(.mapboxgl-ctrl-directions) {
   display: none !important;
+}
+.cursor-grab {
+  cursor: grab;
+}
+.cursor-grabbing {
+  cursor: grabbing;
 }
 </style>
