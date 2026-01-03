@@ -12,11 +12,13 @@ import {
   Bookmark,
   ChevronDown,
   ChevronUp,
+  Euro,
+  Leaf,
 } from "lucide-vue-next";
 import mapboxgl from "mapbox-gl";
 import MapboxMap from "./maps/maps.vue";
 import * as turf from "@turf/turf";
-
+import axios from "axios";
 import "@mapbox/search-js-web";
 
 const accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
@@ -28,6 +30,13 @@ const mapZoom = ref(9);
 
 const fromSearchBox = ref(null);
 const toSearchBox = ref(null);
+
+const iconMap = {
+  Airplane: Plane,
+  Train: Train,
+  Car: Car,
+  Walking: Footprints,
+};
 
 const isRecsOpen = ref(true);
 const draggableMarkers = ref([
@@ -49,6 +58,7 @@ const newSegment = ref({
 });
 
 const savedSegments = ref([]);
+let tempMarkers = [];
 let animationFrameId = null;
 
 const searchOptions = computed(() => {
@@ -89,6 +99,12 @@ function handleMyLocation() {
   }
 }
 
+function areCoordsEqual(c1, c2) {
+  if (!c1 || !c2) return false;
+  const epsilon = 0.000001;
+  return Math.abs(c1[0] - c2[0]) < epsilon && Math.abs(c1[1] - c2[1]) < epsilon;
+}
+
 function onDragStart(event, markerItem) {
   event.dataTransfer.effectAllowed = "copy";
   event.dataTransfer.setData("application/json", JSON.stringify(markerItem));
@@ -108,22 +124,26 @@ async function onMapDrop(event) {
   const lngLat = map.unproject([x, y]);
   const finalCoords = [lngLat.lng, lngLat.lat];
 
-  let placeName = "Dropped Location"; // Fallback
+  const newMarker = new mapboxgl.Marker({ color: markerItem.color })
+    .setLngLat(finalCoords)
+    .addTo(map);
+
+  tempMarkers.push(newMarker);
+
+  let placeName = "Dropped Location";
+  newMarker.setPopup(new mapboxgl.Popup().setHTML(`<b>Loading...</b>`));
+
   try {
     const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${lngLat.lng},${lngLat.lat}.json?types=poi,address,place,locality&access_token=${accessToken}`;
     const res = await fetch(url);
     const data = await res.json();
     if (data.features && data.features.length > 0) {
       placeName = data.features[0].place_name || data.features[0].text;
+      newMarker.setPopup(new mapboxgl.Popup().setHTML(`<b>${placeName}</b>`));
     }
   } catch (err) {
     console.error("Reverse geocoding failed", err);
   }
-
-  new mapboxgl.Marker({ color: markerItem.color })
-    .setLngLat(finalCoords)
-    .setPopup(new mapboxgl.Popup().setHTML(`<b>${placeName}</b>`))
-    .addTo(map);
 
   if (!newSegment.value.fromCoords) {
     newSegment.value.fromName = placeName;
@@ -154,11 +174,34 @@ function handleRetrieveTo(e) {
   }
 }
 
+async function geminiEstimation(mode, distanceKm) {
+  try {
+    const response = await axios.post(
+      "http://localhost:3000/api/transportation/estimate",
+      {
+        mode,
+        distance_km: distanceKm,
+      }
+    );
+    return response.data;
+  } catch (err) {
+    console.error("Error calling Gemini estimation API:", err);
+  }
+}
+
 async function addSegment() {
   if (!newSegment.value.fromCoords || !newSegment.value.toCoords) {
     alert("Please select Start and End locations.");
     return;
   }
+
+  const distanceKm = turf.distance(
+    newSegment.value.fromCoords,
+    newSegment.value.toCoords,
+    { units: "kilometers" }
+  );
+
+  const geminiData = await geminiEstimation(newSegment.value.type, distanceKm);
 
   const segmentId = Date.now();
   const nextStartName = newSegment.value.toName;
@@ -173,7 +216,12 @@ async function addSegment() {
     type: newSegment.value.type,
     date: newSegment.value.date,
     time: newSegment.value.time,
+    markers: [...tempMarkers],
+    cost: geminiData.cost,
+    co2: geminiData.co2,
   };
+
+  tempMarkers = [];
 
   savedSegments.value.push(segment);
   await visualizeRoute(
@@ -183,7 +231,6 @@ async function addSegment() {
     segment.id
   );
 
-  // Chain Logic: Move To -> From
   newSegment.value.fromName = nextStartName;
   newSegment.value.fromCoords = nextStartCoords;
 
@@ -196,23 +243,47 @@ async function addSegment() {
 }
 
 function removeSegment(index) {
-  const segment = savedSegments.value[index];
+  const segmentToRemove = savedSegments.value[index];
+  const nextSegment = savedSegments.value[index + 1];
+
   const map = mapboxMapRef.value?.map;
 
   if (map) {
-    const routeId = `route-${segment.id}`;
-    const pointId = `point-${segment.id}`;
+    const routeId = `route-${segmentToRemove.id}`;
+    const pointId = `point-${segmentToRemove.id}`;
     if (map.getLayer(routeId)) map.removeLayer(routeId);
     if (map.getSource(routeId)) map.removeSource(routeId);
     if (map.getLayer(pointId)) map.removeLayer(pointId);
     if (map.getSource(pointId)) map.removeSource(pointId);
   }
+
+  if (segmentToRemove.markers && segmentToRemove.markers.length > 0) {
+    segmentToRemove.markers.forEach((marker) => {
+      const markerLngLat = marker.getLngLat();
+      const isShared =
+        nextSegment &&
+        areCoordsEqual(
+          [markerLngLat.lng, markerLngLat.lat],
+          nextSegment.fromCoords
+        );
+
+      if (isShared) {
+        if (!nextSegment.markers) nextSegment.markers = [];
+        nextSegment.markers.push(marker);
+      } else {
+        marker.remove();
+      }
+    });
+  }
+
   savedSegments.value.splice(index, 1);
 
   if (savedSegments.value.length === 0) {
     newSegment.value.fromName = "";
     newSegment.value.fromCoords = null;
     if (fromSearchBox.value) fromSearchBox.value.value = "";
+    tempMarkers.forEach((m) => m.remove());
+    tempMarkers = [];
   }
 }
 
@@ -287,7 +358,6 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
     },
   });
 
-  // Animation logic
   const pathFeature = { type: "Feature", geometry: routeGeoJSON };
   const lineDistance = turf.length(pathFeature);
   const duration = 10000;
@@ -504,33 +574,49 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
               <div
                 v-for="(seg, idx) in savedSegments"
                 :key="seg.id"
-                class="flex items-center justify-between p-3 border border-gray-100 rounded-xl hover:bg-green-50 bg-white shadow-sm"
+                class="flex flex-col p-3 border border-gray-100 rounded-xl hover:bg-green-50 bg-white shadow-sm"
               >
-                <div class="flex items-center gap-3">
-                  <div class="text-green-600 bg-green-100 p-2 rounded-full">
-                    <Plane v-if="seg.type === 'Airplane'" class="w-4 h-4" />
-                    <Train v-else-if="seg.type === 'Train'" class="w-4 h-4" />
-                    <Car v-else-if="seg.type === 'Car'" class="w-4 h-4" />
-                    <Footprints v-else class="w-4 h-4" />
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-3">
+                    <div class="text-green-600 bg-green-100 p-2 rounded-full">
+                      <component
+                        :is="iconMap[seg.type]"
+                        class="w-4 h-4"
+                        v-if="iconMap[seg.type]"
+                      />
+                      <Footprints v-else class="w-4 h-4" />
+                    </div>
+                    <div class="text-sm">
+                      <div class="font-bold text-gray-800">
+                        {{ seg.from }} <span class="text-gray-400 mx-1">➜</span>
+                        {{ seg.to }}
+                      </div>
+                      <div class="text-xs text-gray-500">
+                        {{ seg.date || "No date" }}
+                        <span v-if="seg.time">• {{ seg.time }}</span> •
+                        {{ seg.type }}
+                      </div>
+                    </div>
                   </div>
-                  <div class="text-sm">
-                    <div class="font-bold text-gray-800">
-                      {{ seg.from }} <span class="text-gray-400 mx-1">➜</span>
-                      {{ seg.to }}
-                    </div>
-                    <div class="text-xs text-gray-500">
-                      {{ seg.date || "No date" }}
-                      <span v-if="seg.time">• {{ seg.time }}</span> •
-                      {{ seg.type }}
-                    </div>
+                  <button
+                    @click="removeSegment(idx)"
+                    class="btn btn-ghost btn-xs text-gray-400 hover:text-red-500"
+                  >
+                    <Trash2 class="w-4 h-4" />
+                  </button>
+                </div>
+                <div class="flex gap-4 mt-2 ml-12">
+                  <div
+                    class="flex items-center text-xs text-gray-600 font-medium bg-gray-100 px-2 py-1 rounded"
+                  >
+                    <Euro class="w-3 h-3 mr-1 text-gray-500" /> €{{ seg.cost }}
+                  </div>
+                  <div
+                    class="flex items-center text-xs text-green-700 font-medium bg-green-100 px-2 py-1 rounded"
+                  >
+                    <Leaf class="w-3 h-3 mr-1" /> {{ seg.co2 }} kg CO₂
                   </div>
                 </div>
-                <button
-                  @click="removeSegment(idx)"
-                  class="btn btn-ghost btn-xs text-gray-400 hover:text-red-500"
-                >
-                  <Trash2 class="w-4 h-4" />
-                </button>
               </div>
             </div>
           </div>
