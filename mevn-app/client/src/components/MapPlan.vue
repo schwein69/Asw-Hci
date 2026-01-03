@@ -53,6 +53,7 @@ const newSegment = ref({
   toName: "",
   toCoords: null,
   type: "Airplane",
+  fuelType: "Gasoline", // Default fuel type
   date: "",
   time: "",
 });
@@ -174,18 +175,25 @@ function handleRetrieveTo(e) {
   }
 }
 
-async function geminiEstimation(mode, distanceKm) {
+async function geminiEstimation(mode, distanceKm, fuelType) {
   try {
+    const payload = {
+      mode,
+      distance_km: distanceKm,
+    };
+
+    if (mode === "Car") {
+      payload.fuel_type = fuelType;
+    }
+
     const response = await axios.post(
       "http://localhost:3000/api/transportation/estimate",
-      {
-        mode,
-        distance_km: distanceKm,
-      }
+      payload
     );
     return response.data;
   } catch (err) {
     console.error("Error calling Gemini estimation API:", err);
+    return { cost: "0.00", co2: "0.0" };
   }
 }
 
@@ -201,7 +209,11 @@ async function addSegment() {
     { units: "kilometers" }
   );
 
-  const geminiData = await geminiEstimation(newSegment.value.type, distanceKm);
+  const geminiData = await geminiEstimation(
+    newSegment.value.type,
+    distanceKm,
+    newSegment.value.fuelType
+  );
 
   const segmentId = Date.now();
   const nextStartName = newSegment.value.toName;
@@ -214,6 +226,8 @@ async function addSegment() {
     fromCoords: newSegment.value.fromCoords,
     toCoords: newSegment.value.toCoords,
     type: newSegment.value.type,
+    fuelType:
+      newSegment.value.type === "Car" ? newSegment.value.fuelType : null,
     date: newSegment.value.date,
     time: newSegment.value.time,
     markers: [...tempMarkers],
@@ -488,6 +502,20 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
                 </div>
               </div>
 
+              <div v-if="newSegment.type === 'Car'" class="space-y-1">
+                <label class="text-xs font-bold text-gray-500 uppercase"
+                  >Fuel Type</label
+                >
+                <select
+                  v-model="newSegment.fuelType"
+                  class="select select-sm select-bordered bg-white w-full rounded-lg"
+                >
+                  <option>Gasoline</option>
+                  <option>Diesel</option>
+                  <option>Electric</option>
+                </select>
+              </div>
+
               <div
                 v-if="
                   newSegment.type === 'Airplane' || newSegment.type === 'Train'
@@ -595,6 +623,9 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
                         {{ seg.date || "No date" }}
                         <span v-if="seg.time">• {{ seg.time }}</span> •
                         {{ seg.type }}
+                        <span v-if="seg.type === 'Car' && seg.fuelType"
+                          >({{ seg.fuelType }})</span
+                        >
                       </div>
                     </div>
                   </div>
@@ -609,12 +640,14 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
                   <div
                     class="flex items-center text-xs text-gray-600 font-medium bg-gray-100 px-2 py-1 rounded"
                   >
-                    <Euro class="w-3 h-3 mr-1 text-gray-500" /> €{{ seg.cost }}
+                    <Euro class="w-3 h-3 mr-1 text-gray-500" />
+                    {{ seg.cost || "0.00" }}
                   </div>
                   <div
                     class="flex items-center text-xs text-green-700 font-medium bg-green-100 px-2 py-1 rounded"
                   >
-                    <Leaf class="w-3 h-3 mr-1" /> {{ seg.co2 }} kg CO₂
+                    <Leaf class="w-3 h-3 mr-1" />
+                    {{ seg.co2 || "0.0" }} kg CO₂
                   </div>
                 </div>
               </div>
