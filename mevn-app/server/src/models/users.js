@@ -13,6 +13,8 @@ const UserSchema = new mongoose.Schema({
   ecoPoints: { type: Number, default: 0 },
   travelCards: [{ type: mongoose.Schema.Types.ObjectId, ref: "TravelCard" }],
   feedbacks: [{ type: mongoose.Schema.Types.ObjectId, ref: "Feedback" }],
+  resetToken: { type: String },
+  resetTokenExpiry: { type: Date },
   createdAt: { type: Date, default: Date.now },
 });
 

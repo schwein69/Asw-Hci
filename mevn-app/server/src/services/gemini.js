@@ -31,3 +31,39 @@ export async function generateDailyTips() {
     return [];
   }
 }
+export async function generateTravelItineraryEstimation(payload) {
+  const model = genAI.getGenerativeModel({
+    model: "gemini-2.5-flash-lite",
+    generationConfig: {
+      responseMimeType: "application/json",
+    },
+  });
+
+  const { mode, distance_km, fuel_type } = payload;
+
+  let vehicleContext = "";
+  if (fuel_type) {
+    vehicleContext = ` using a ${fuel_type} vehicle`;
+  }
+
+  const prompt = `
+    Estimate the average travel cost (in Euros) and CO2 emissions (in kg) for a ${mode} trip covering ${distance_km} km${vehicleContext}.
+    
+    Return a JSON object with exactly these keys:
+    {
+      "cost": "String (e.g. '25.50')",
+      "co2": "String (e.g. '4.2')"
+    }
+  `;
+
+  try {
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text();
+
+    return JSON.parse(text);
+  } catch (error) {
+    console.error("Gemini API Error:", error);
+    return { cost: "0.00", co2: "0.0" };
+  }
+}
