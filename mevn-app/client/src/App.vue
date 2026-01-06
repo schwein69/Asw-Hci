@@ -1,6 +1,7 @@
 <script>
 import { Leaf, Moon, Sun } from "lucide-vue-next";
 import TheNavigation from "./components/NavigationBar.vue";
+import { useRoute } from "vue-router";
 
 export default {
   name: "App",
@@ -10,10 +11,20 @@ export default {
     Sun,
     TheNavigation,
   },
+  setup() {
+    const route = useRoute();
+    return { route };
+  },
   data() {
     return {
       isDarkMode: false,
     };
+  },
+  computed: {
+    isAuthPage() {
+      const authRoutes = ['Login', 'ResetPassword'];
+      return this.route && authRoutes.includes(this.route.name);
+    },
   },
   mounted() {
     const userPref = localStorage.theme;
@@ -52,22 +63,29 @@ export default {
 <template>
   <div
     id="app"
-    class="min-h-screen bg-base-200 dark:bg-gray-900 flex flex-col font-sans transition-colors duration-300"
+    :class="[
+      'min-h-screen flex flex-col font-sans transition-colors duration-300',
+      isAuthPage ? 'bg-[#f0fdf4] dark:bg-gray-900' : 'bg-base-200 dark:bg-gray-900'
+    ]"
   >
+    <!-- Header - Hidden on auth pages -->
     <header
+      v-if="!isAuthPage"
       class="bg-white dark:bg-gray-800 border-b dark:border-gray-700 relative z-20 transition-colors duration-300"
     >
       <div class="max-w-7xl mx-auto px-6 py-4 flex items-center gap-4">
         <div
-          class="w-12 h-12 bg-success rounded-xl flex items-center justify-center text-success-content text-xl shadow-md"
+          class="w-14 h-14 bg-success rounded-2xl flex items-center justify-center shadow-md"
         >
-          <Leaf class="h-6 w-6" />
+          <Leaf class="text-white w-8 h-8" />
         </div>
         <div>
-          <h1 class="text-lg font-semibold text-gray-800 dark:text-white">
+          <h1 class="text-xl font-semibold text-gray-900 dark:text-white tracking-tight">
             EcoVoyage
           </h1>
-          <p class="text-sm text-success">Travel Green, Live Clean</p>
+          <p class="text-[9px] text-success font-light uppercase tracking-[0.2em]">
+            Travel Green • Live Clean
+          </p>
         </div>
         <div class="ml-auto flex items-center gap-2">
           <button
@@ -88,12 +106,19 @@ export default {
       </div>
     </header>
 
-    <TheNavigation />
+    <!-- Navigation - Hidden on auth pages -->
+    <TheNavigation v-if="!isAuthPage" />
 
+    <!-- Main content -->
     <main
-      class="grow md:p-8 w-full bg-green-50 dark:bg-gray-900 pb-24 md:pb-8 transition-colors duration-300"
+      :class="[
+        'grow w-full transition-colors duration-300',
+        isAuthPage 
+          ? 'bg-[#f0fdf4] dark:bg-gray-900' 
+          : 'md:p-8 bg-green-50 dark:bg-gray-900 pb-24 md:pb-8'
+      ]"
     >
-      <div class="max-w-7xl mx-auto px-4">
+      <div :class="isAuthPage ? '' : 'max-w-7xl mx-auto px-4'">
         <RouterView v-slot="{ Component }">
           <transition name="fade" mode="out-in">
             <component :is="Component" />
