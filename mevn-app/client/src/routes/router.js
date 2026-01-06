@@ -52,7 +52,18 @@ const routes = [
     name: "Admin",
     component: () => import("../components/Admin.vue"),
   },
+  {
+    path: '/login',
+    name: 'Login',
+    component: () => import("../components/Login.vue"),
+  },
+  {
+    path: '/reset-password',
+    name: 'ResetPassword',
+    component: () => import("../components/ResetPassword.vue"),
+  },
 ];
+
 
 const router = createRouter({
   history: createWebHistory(),
