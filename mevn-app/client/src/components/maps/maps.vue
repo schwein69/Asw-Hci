@@ -6,52 +6,47 @@ import MapboxDirections from "@mapbox/mapbox-gl-directions/dist/mapbox-gl-direct
 import "@mapbox/mapbox-gl-directions/dist/mapbox-gl-directions.css";
 
 const props = defineProps({
-  center: {
-    type: Array,
-    default: () => [-74.5, 40],
-  },
-  zoom: {
-    type: Number,
-    default: 9,
-  },
+  center: { type: Array, default: () => [-74.5, 40] },
+  zoom: { type: Number, default: 9 },
 });
 
 const mapContainer = ref(null);
 const isLoading = ref(true);
 const accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
-
 const map = shallowRef(null);
+
+let directions = null;
 
 const addMarker = (lngLat, options = {}) => {
   if (!map.value) return null;
-  const marker = new mapboxgl.Marker(options)
-    .setLngLat(lngLat)
-    .addTo(map.value);
-  return marker;
+  return new mapboxgl.Marker(options).setLngLat(lngLat).addTo(map.value);
 };
 
 const flyTo = (center, zoom = 15) => {
   if (!map.value) return;
-  map.value.flyTo({
-    center,
-    zoom,
-    duration: 2000,
+  map.value.flyTo({ center, zoom, duration: 2000 });
+};
+
+defineExpose({ addMarker, flyTo, map });
+
+const clearRoute = () => {
+  if (directions) {
+    directions.removeRoutes();
+    directions.setOrigin("");
+    directions.setDestination("");
+  }
+  // Clear input fields with Dom manipulation
+  const inputs = document.querySelectorAll(".mapboxgl-ctrl-geocoder input");
+  inputs.forEach((input) => {
+    input.value = "";
   });
 };
 
-defineExpose({
-  addMarker,
-  flyTo,
-  map,
-});
-
 onMounted(() => {
   if (!accessToken) {
-    console.error("Mapbox token not found.");
     isLoading.value = false;
     return;
   }
-
   mapboxgl.accessToken = accessToken;
 
   try {
@@ -64,10 +59,8 @@ onMounted(() => {
       crossSourceCollation: true,
     });
 
-    // 1. Add Controls (Zoom/Rotation)
     map.value.addControl(new mapboxgl.NavigationControl(), "top-right");
 
-    // 2. Add Geolocate Control
     map.value.addControl(
       new mapboxgl.GeolocateControl({
         positionOptions: { enableHighAccuracy: true },
@@ -77,25 +70,22 @@ onMounted(() => {
       "top-right"
     );
 
-    // 3. Add Directions (Inside onMounted)
-    const directions = new MapboxDirections({
+    // 3. Directions Setup
+    directions = new MapboxDirections({
       accessToken: mapboxgl.accessToken,
       unit: "metric",
       profile: "mapbox/driving",
-      controls: {
-        inputs: true,
-        instructions: true,
-        profileSwitcher: true,
-      },
+      controls: { inputs: true, instructions: true, profileSwitcher: true },
     });
     map.value.addControl(directions, "top-left");
 
-    // 4. Add Traffic
     map.value.on("load", () => {
+      // Add Traffic Source
       map.value.addSource("mapbox-traffic", {
         type: "vector",
         url: "mapbox://mapbox.mapbox-traffic-v1",
       });
+      // Add Traffic Layer
       map.value.addLayer({
         id: "traffic-layer",
         type: "line",
@@ -124,13 +114,8 @@ onMounted(() => {
       });
       isLoading.value = false;
     });
-
-    map.value.on("error", (error) => {
-      console.error("Mapbox error:", error);
-      isLoading.value = false;
-    });
   } catch (error) {
-    console.error("Error initializing map:", error);
+    console.error(error);
     isLoading.value = false;
   }
 });
@@ -145,11 +130,11 @@ onUnmounted(() => {
 const toggleTraffic = () => {
   if (!map.value) return;
   const visibility = map.value.getLayoutProperty("traffic-layer", "visibility");
-  if (visibility === "visible") {
-    map.value.setLayoutProperty("traffic-layer", "visibility", "none");
-  } else {
-    map.value.setLayoutProperty("traffic-layer", "visibility", "visible");
-  }
+  map.value.setLayoutProperty(
+    "traffic-layer",
+    "visibility",
+    visibility === "visible" ? "none" : "visible"
+  );
 };
 </script>
 
@@ -162,12 +147,20 @@ const toggleTraffic = () => {
     </div>
 
     <div class="map-overlay">
-      <button
-        @click="toggleTraffic"
-        class="btn btn-sm btn-neutral flex gap-2 shadow-lg"
-      >
-        Traffic
-      </button>
+      <div class="flex flex-col gap-2">
+        <button
+          @click="toggleTraffic"
+          class="btn btn-sm btn-neutral shadow-lg w-full"
+        >
+          Traffic
+        </button>
+        <button
+          @click="clearRoute"
+          class="btn btn-sm btn-error text-white shadow-lg w-full"
+        >
+          Clear Route
+        </button>
+      </div>
     </div>
   </div>
 </template>
@@ -181,12 +174,10 @@ const toggleTraffic = () => {
   border-radius: 8px;
   overflow: hidden;
 }
-
 .map-container {
   width: 100%;
   height: 100%;
 }
-
 .map-loading {
   position: absolute;
   top: 50%;
@@ -194,27 +185,22 @@ const toggleTraffic = () => {
   transform: translate(-50%, -50%);
   z-index: 10;
 }
-
 .map-overlay {
   position: absolute;
   top: 140px;
   right: 10px;
-  left: auto;
-  bottom: auto;
   pointer-events: none;
   z-index: 20;
 }
-
 .map-overlay > * {
   pointer-events: auto;
 }
 
 :deep(.mapboxgl-ctrl-directions) {
   min-width: 250px;
-  max-width: 90vw; /* Prevents overflow on mobile screens */
+  max-width: 90vw;
   box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
 }
-
 :deep(.mapboxgl-control-container) {
   z-index: 10 !important;
 }
