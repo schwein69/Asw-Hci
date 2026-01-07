@@ -187,7 +187,7 @@ async function geminiEstimation(mode, distanceKm, fuelType) {
     }
 
     const response = await axios.post(
-      "http://localhost:3000/api/transportation/estimate",
+      "http://localhost:3000/api/plan/estimate",
       payload
     );
     return response.data;
