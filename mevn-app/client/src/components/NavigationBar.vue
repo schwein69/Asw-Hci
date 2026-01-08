@@ -22,7 +22,7 @@ const user = ref(null);
 
 // Get user info from localStorage
 onMounted(() => {
-  const userData = localStorage.getItem('user');
+  const userData = localStorage.getItem("user");
   if (userData) {
     user.value = JSON.parse(userData);
   }
@@ -48,11 +48,14 @@ const navItems = computed(() => {
   if (userRole === "GeneralAdmin" || userRole === "ForumAdmin") {
     return allNavItems;
   }
-  return allNavItems.filter(item => !item.adminOnly);
+  return allNavItems.filter((item) => !item.adminOnly);
 });
 
 const activeItem = computed(() => {
-  return navItems.value.find((item) => item.routeName === route.name) || navItems.value[0];
+  return (
+    navItems.value.find((item) => item.routeName === route.name) ||
+    navItems.value[0]
+  );
 });
 
 const leftStack = computed(() => {
