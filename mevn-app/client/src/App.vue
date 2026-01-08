@@ -28,11 +28,13 @@ export default {
   },
   computed: {
     isAuthPage() {
-      const authRoutes = ['Login', 'ForgotPassword', 'ResetPassword'];
+      const authRoutes = ["Login", "ForgotPassword", "ResetPassword"];
       return this.route && authRoutes.includes(this.route.name);
     },
     isAdmin() {
-      return this.user?.role === 'GeneralAdmin' || this.user?.role === 'ForumAdmin';
+      return (
+        this.user?.role === "GeneralAdmin" || this.user?.role === "ForumAdmin"
+      );
     },
     shouldShowNavbar() {
       return !this.isAuthPage && !this.isAdmin;
@@ -44,7 +46,7 @@ export default {
   mounted() {
     // Load user from localStorage
     this.loadUser();
-    
+
     const userPref = localStorage.theme;
     const systemPref = window.matchMedia(
       "(prefers-color-scheme: dark)"
@@ -55,33 +57,33 @@ export default {
     } else {
       this.setDarkMode(false);
     }
-    
+
     // Set background for auth pages
     this.updateBodyBackground();
-    
+
     // Close profile menu when clicking outside
-    document.addEventListener('click', this.handleClickOutside);
-    
+    document.addEventListener("click", this.handleClickOutside);
+
     // Listen for storage changes (when user logs in from another tab)
-    window.addEventListener('storage', this.handleStorageChange);
-    
+    window.addEventListener("storage", this.handleStorageChange);
+
     // Listen for profile image updates
-    window.addEventListener('profileImageUpdated', this.loadUser);
+    window.addEventListener("profileImageUpdated", this.loadUser);
   },
   beforeUnmount() {
-    document.removeEventListener('click', this.handleClickOutside);
-    window.removeEventListener('storage', this.handleStorageChange);
-    window.removeEventListener('profileImageUpdated', this.loadUser);
+    document.removeEventListener("click", this.handleClickOutside);
+    window.removeEventListener("storage", this.handleStorageChange);
+    window.removeEventListener("profileImageUpdated", this.loadUser);
   },
   methods: {
     loadUser() {
-      const userData = localStorage.getItem('user');
+      const userData = localStorage.getItem("user");
       if (userData) {
         try {
           this.user = JSON.parse(userData);
           this.profileImageUrl = this.user?.profileImage || null;
         } catch (e) {
-          console.error('Error parsing user data:', e);
+          console.error("Error parsing user data:", e);
           this.user = null;
           this.profileImageUrl = null;
         }
@@ -91,7 +93,7 @@ export default {
       }
     },
     handleStorageChange(e) {
-      if (e.key === 'user') {
+      if (e.key === "user") {
         this.loadUser();
       }
     },
@@ -115,19 +117,27 @@ export default {
     updateBodyBackground() {
       if (this.isAuthPage) {
         // Force green background even in dark mode
-        document.body.style.setProperty('background-color', '#f0fdf4', 'important');
-        document.documentElement.style.setProperty('background-color', '#f0fdf4', 'important');
+        document.body.style.setProperty(
+          "background-color",
+          "#f0fdf4",
+          "important"
+        );
+        document.documentElement.style.setProperty(
+          "background-color",
+          "#f0fdf4",
+          "important"
+        );
         // Also set on the app div
-        const appDiv = document.getElementById('app');
+        const appDiv = document.getElementById("app");
         if (appDiv) {
-          appDiv.style.setProperty('background-color', '#f0fdf4', 'important');
+          appDiv.style.setProperty("background-color", "#f0fdf4", "important");
         }
       } else {
-        document.body.style.removeProperty('background-color');
-        document.documentElement.style.removeProperty('background-color');
-        const appDiv = document.getElementById('app');
+        document.body.style.removeProperty("background-color");
+        document.documentElement.style.removeProperty("background-color");
+        const appDiv = document.getElementById("app");
         if (appDiv) {
-          appDiv.style.removeProperty('background-color');
+          appDiv.style.removeProperty("background-color");
         }
       }
     },
@@ -138,26 +148,26 @@ export default {
       }
       this.loadUser(); // Always reload user data
       this.showProfileMenu = !this.showProfileMenu;
-      console.log('Profile menu toggled:', this.showProfileMenu);
-      console.log('User data:', this.user);
+      console.log("Profile menu toggled:", this.showProfileMenu);
+      console.log("User data:", this.user);
     },
     handleClickOutside(event) {
-      const profileButton = event.target.closest('.profile-button');
-      const profileMenu = event.target.closest('.profile-menu');
+      const profileButton = event.target.closest(".profile-button");
+      const profileMenu = event.target.closest(".profile-menu");
       if (!profileButton && !profileMenu) {
         this.showProfileMenu = false;
       }
     },
     logout() {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
       this.user = null;
       this.showProfileMenu = false;
-      this.router.push('/login');
+      this.router.push("/login");
     },
   },
   watch: {
-    '$route'() {
+    $route() {
       // Reload user when route changes (in case user just logged in)
       this.loadUser();
       // Update background when route changes
@@ -170,7 +180,7 @@ export default {
       this.$nextTick(() => {
         this.updateBodyBackground();
       });
-    }
+    },
   },
 };
 </script>
@@ -180,7 +190,9 @@ export default {
     id="app"
     :class="[
       'min-h-screen flex flex-col font-sans transition-colors duration-300',
-      isAuthPage ? 'bg-[#f0fdf4] dark:bg-[#f0fdf4]' : 'bg-base-200 dark:bg-gray-900'
+      isAuthPage
+        ? 'bg-[#f0fdf4] dark:bg-[#f0fdf4]'
+        : 'bg-base-200 dark:bg-gray-900',
     ]"
     :style="isAuthPage ? { backgroundColor: '#f0fdf4' } : {}"
   >
@@ -196,10 +208,14 @@ export default {
           <Leaf class="text-white w-8 h-8" />
         </div>
         <div>
-          <h1 class="text-xl font-semibold text-gray-900 dark:text-white tracking-tight">
+          <h1
+            class="text-xl font-semibold text-gray-900 dark:text-white tracking-tight"
+          >
             EcoVoyage
           </h1>
-          <p class="text-[9px] text-success font-light uppercase tracking-[0.2em]">
+          <p
+            class="text-[9px] text-success font-light uppercase tracking-[0.2em]"
+          >
             Travel Green • Live Clean
           </p>
         </div>
@@ -211,7 +227,7 @@ export default {
             <Moon v-if="!isDarkMode" class="w-5 h-5" />
             <Sun v-else class="w-5 h-5" />
           </button>
-          
+
           <!-- Profile Menu -->
           <div class="relative profile-button z-50">
             <button
@@ -219,7 +235,9 @@ export default {
               class="btn btn-ghost btn-sm text-gray-700 dark:text-gray-200 flex items-center gap-2 relative z-50"
             >
               <!-- Profile Image or Icon -->
-              <div class="w-8 h-8 rounded-full overflow-hidden bg-success flex items-center justify-center flex-shrink-0">
+              <div
+                class="w-8 h-8 rounded-full overflow-hidden bg-success flex items-center justify-center shrink-0"
+              >
                 <img
                   v-if="profileImageUrl"
                   :src="profileImageUrl"
@@ -228,58 +246,71 @@ export default {
                 />
                 <User v-else class="w-5 h-5 text-white" />
               </div>
-              <span class="hidden sm:inline">{{ user?.username || 'Profile' }}</span>
+              <span class="hidden sm:inline">{{
+                user?.username || "Profile"
+              }}</span>
             </button>
-            
+
             <!-- Dropdown Menu -->
             <Teleport to="body">
               <div
                 v-if="showProfileMenu"
-                class="profile-menu fixed w-64 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 z-[9999] overflow-hidden"
+                class="profile-menu fixed w-64 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 z-9999 overflow-hidden"
                 :style="{ top: '80px', right: '24px' }"
               >
-              <!-- User Info Section -->
-              <div class="p-5 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-gray-700 dark:to-gray-800 border-b border-gray-200 dark:border-gray-700">
-                <div class="flex items-center gap-3 mb-3">
-                  <div class="w-12 h-12 bg-success rounded-full overflow-hidden flex items-center justify-center flex-shrink-0">
-                    <img
-                      v-if="profileImageUrl"
-                      :src="profileImageUrl"
-                      alt="Profile"
-                      class="w-full h-full object-cover"
-                    />
-                    <span v-else class="text-white font-semibold text-lg">
-                      {{ user?.username?.charAt(0).toUpperCase() || 'U' }}
-                    </span>
-                  </div>
-                  <div class="flex-1 min-w-0">
-                    <p class="text-sm font-semibold text-gray-900 dark:text-white truncate">
-                      {{ user?.username || 'User' }}
-                    </p>
-                    <p class="text-xs text-gray-500 dark:text-gray-400 truncate">
-                      {{ user?.email || 'No email' }}
-                    </p>
+                <!-- User Info Section -->
+                <div
+                  class="p-5 bg-linear-to-r from-green-50 to-emerald-50 dark:from-gray-700 dark:to-gray-800 border-b border-gray-200 dark:border-gray-700"
+                >
+                  <div class="flex items-center gap-3 mb-3">
+                    <div
+                      class="w-12 h-12 bg-success rounded-full overflow-hidden flex items-center justify-center shrink-0"
+                    >
+                      <img
+                        v-if="profileImageUrl"
+                        :src="profileImageUrl"
+                        alt="Profile"
+                        class="w-full h-full object-cover"
+                      />
+                      <span v-else class="text-white font-semibold text-lg">
+                        {{ user?.username?.charAt(0).toUpperCase() || "U" }}
+                      </span>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <p
+                        class="text-sm font-semibold text-gray-900 dark:text-white truncate"
+                      >
+                        {{ user?.username || "User" }}
+                      </p>
+                      <p
+                        class="text-xs text-gray-500 dark:text-gray-400 truncate"
+                      >
+                        {{ user?.email || "No email" }}
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
-              
-              <!-- Actions Section -->
-              <div class="p-2 space-y-1">
-                <button
-                  @click="router.push('/profile'); showProfileMenu = false;"
-                  class="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                >
-                  <User class="w-5 h-5" />
-                  <span>View Profile</span>
-                </button>
-                <button
-                  @click="logout"
-                  class="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                >
-                  <LogOut class="w-5 h-5" />
-                  <span>Logout</span>
-                </button>
-              </div>
+
+                <!-- Actions Section -->
+                <div class="p-2 space-y-1">
+                  <button
+                    @click="
+                      router.push('/profile');
+                      showProfileMenu = false;
+                    "
+                    class="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                  >
+                    <User class="w-5 h-5" />
+                    <span>View Profile</span>
+                  </button>
+                  <button
+                    @click="logout"
+                    class="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                  >
+                    <LogOut class="w-5 h-5" />
+                    <span>Logout</span>
+                  </button>
+                </div>
               </div>
             </Teleport>
           </div>
@@ -294,9 +325,9 @@ export default {
     <main
       :class="[
         'grow w-full transition-colors duration-300',
-        isAuthPage 
-          ? 'bg-[#f0fdf4] dark:bg-[#f0fdf4]' 
-          : 'md:p-8 bg-green-50 dark:bg-gray-900 pb-24 md:pb-8'
+        isAuthPage
+          ? 'bg-[#f0fdf4] dark:bg-[#f0fdf4]'
+          : 'md:p-8 bg-green-50 dark:bg-gray-900 pb-24 md:pb-8',
       ]"
       :style="isAuthPage ? { backgroundColor: '#f0fdf4' } : {}"
     >
