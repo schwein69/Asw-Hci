@@ -31,3 +31,48 @@ export async function generateDailyTips() {
     return [];
   }
 }
+export async function generateTravelItineraryEstimation(payload) {
+  const model = genAI.getGenerativeModel({
+    model: "gemini-2.5-flash-lite",
+    generationConfig: {
+      responseMimeType: "application/json",
+    },
+  });
+
+  const { mode, distance_km, fuel_type } = payload;
+
+  let contextDetails = "";
+
+  if (mode === "Airplane") {
+    contextDetails =
+      "Assume a standard Economy Class commercial airline ticket booked 2 weeks in advance. Include taxes and fees.";
+  } else if (mode === "Train") {
+    contextDetails = "Assume a standard second-class train ticket.";
+  } else if (mode === "Car") {
+    contextDetails = `Assume a vehicle powered by ${fuel_type}.`;
+  }
+
+  const prompt = `
+    Act as a travel analyst. Estimate the average travel cost (in Euros) and CO2 emissions (in kg) for a ${mode} trip covering ${distance_km} km.
+    
+    Specific Constraints:
+    - ${contextDetails}
+    - Provide a realistic market price for this specific distance.
+    
+    Return a JSON object with exactly these keys:
+    {
+      "cost": "String (e.g. '125.50')",
+      "co2": "String (e.g. '4.2')"
+    }
+  `;
+  try {
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text();
+
+    return JSON.parse(text);
+  } catch (error) {
+    console.error("Gemini API Error:", error);
+    return { cost: "0.00", co2: "0.0" };
+  }
+}
