@@ -478,9 +478,9 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
 </script>
 
 <template>
-  <div class="space-y-4 pb-40">
+  <div class="pb-40">
     <div
-      class="flex flex-col md:flex-row justify-between items-center gap-4 bg-success rounded-2xl"
+      class="flex flex-col md:flex-row justify-between items-center gap-4 bg-success rounded-2xl my-2"
     >
       <div class="flex gap-2 items-center">
         <h2 class="text-2xl font-bold text-gray-800 tracking-tight p-2">
