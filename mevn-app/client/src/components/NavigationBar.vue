@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import {
   Leaf,
@@ -15,7 +15,21 @@ import {
   X,
 } from "lucide-vue-next";
 
-const navItems = [
+const route = useRoute();
+const router = useRouter();
+const isMenuOpen = ref(false);
+const user = ref(null);
+
+// Get user info from localStorage
+onMounted(() => {
+  const userData = localStorage.getItem('user');
+  if (userData) {
+    user.value = JSON.parse(userData);
+  }
+});
+
+// Filter nav items based on user role
+const allNavItems = [
   { routeName: "Dashboard", label: "Dashboard", icon: Leaf },
   { routeName: "Plan", label: "Plan", icon: Map },
   { routeName: "World", label: "World", icon: Globe },
@@ -25,29 +39,39 @@ const navItems = [
   { routeName: "Rewards", label: "Rewards", icon: Trophy },
   { routeName: "Tips", label: "Tips", icon: Lightbulb },
   { routeName: "Feedback", label: "Feedback", icon: MessageCircle },
-  { routeName: "Admin", label: "Admin", icon: Shield },
+  { routeName: "Admin", label: "Admin", icon: Shield, adminOnly: true },
 ];
 
-const route = useRoute();
-const isMenuOpen = ref(false);
-
-const activeItem = computed(() => {
-  return navItems.find((item) => item.routeName === route.name) || navItems[0];
+// Show Admin link only for admins
+const navItems = computed(() => {
+  const userRole = user.value?.role;
+  if (userRole === "GeneralAdmin" || userRole === "ForumAdmin") {
+    return allNavItems;
+  }
+  return allNavItems.filter(item => !item.adminOnly);
 });
 
-const leftStack = [
-  navItems[0], // Dashboard
-  navItems[1], // Plan
-  navItems[2], // World
-  navItems[3], // Past Trips
-];
+const activeItem = computed(() => {
+  return navItems.value.find((item) => item.routeName === route.name) || navItems.value[0];
+});
 
-const rightStack = [
-  navItems[4], // Live
-  navItems[5], // Discover
-  navItems[6], // Rewards
-  navItems[7], // Tips
-];
+const leftStack = computed(() => {
+  return [
+    navItems.value[0], // Dashboard
+    navItems.value[1], // Plan
+    navItems.value[2], // World
+    navItems.value[3], // Past Trips
+  ];
+});
+
+const rightStack = computed(() => {
+  return [
+    navItems.value[4], // Live
+    navItems.value[5], // Discover
+    navItems.value[6], // Rewards
+    navItems.value[7], // Tips
+  ];
+});
 
 function toggleMenu() {
   isMenuOpen.value = !isMenuOpen.value;
@@ -55,7 +79,7 @@ function toggleMenu() {
 </script>
 
 <template>
-  <div class="relative z-100">
+  <div class="relative z-10">
     <div
       class="hidden md:block bg-green-50 py-6 dark:bg-gray-900 dark:border-gray-700 transition-colors duration-300"
     >

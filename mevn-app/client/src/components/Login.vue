@@ -11,12 +11,8 @@ const isLoading = ref(false);
 const errorMessage = ref('');
 const successMessage = ref('');
 const fieldErrors = ref({ username: '', email: '', password: '' });
-const showForgotPassword = ref(false);
-const forgotPasswordEmail = ref('');
-const forgotPasswordError = ref('');
-const isLoadingForgotPassword = ref(false);
 
-// Switches between login and register mode, clears all form data and errors
+
 const switchMode = () => {
   errorMessage.value = '';
   successMessage.value = '';
@@ -25,14 +21,14 @@ const switchMode = () => {
   isLogin.value = !isLogin.value;
 };
 
-// Clears the error message for a specific form field when user starts typing
+
 const clearFieldError = (field) => {
   if (fieldErrors.value[field]) {
     fieldErrors.value[field] = '';
   }
 };
 
-// Validates username field: checks if it exists and has at least 3 characters (only for registration)
+
 const validateUsername = () => {
   if (!isLogin.value) {
     if (!form.value.username.trim()) {
@@ -45,7 +41,7 @@ const validateUsername = () => {
   }
 };
 
-// Validates email field: checks if it contains @ and . characters
+
 const validateEmail = () => {
   if (!form.value.email.trim()) {
     fieldErrors.value.email = 'Email is required';
@@ -56,7 +52,7 @@ const validateEmail = () => {
   }
 };
 
-// Validates password field: checks if it exists and has at least 6 characters for registration
+
 const validatePassword = () => {
   if (!form.value.password) {
     fieldErrors.value.password = 'Password is required';
@@ -67,29 +63,29 @@ const validatePassword = () => {
   }
 };
 
-// Validates all form fields before submission and returns true if everything is valid
+
 const validateForm = () => {
   fieldErrors.value = { username: '', email: '', password: '' };
   let isValid = true;
 
-  // Registration validation
+ 
   if (!isLogin.value) {
     validateUsername();
     if (fieldErrors.value.username) isValid = false;
   }
 
-  // Email validation
+  
   validateEmail();
   if (fieldErrors.value.email) isValid = false;
 
-  // Password validation
+ 
   validatePassword();
   if (fieldErrors.value.password) isValid = false;
 
   return isValid;
 };
 
-// Handles form submission: sends login or register request to the backend API
+
 const handleSubmit = async () => {
   errorMessage.value = '';
   successMessage.value = '';
@@ -104,10 +100,16 @@ const handleSubmit = async () => {
     const endpoint = isLogin.value ? 'login' : 'register';
     const response = await axios.post(`http://localhost:3000/api/users/${endpoint}`, form.value);
     
-    if (isLogin.value) {
+      if (isLogin.value) {
       localStorage.setItem('token', response.data.token);
       localStorage.setItem('user', JSON.stringify(response.data.user));
-      router.push('/dashboard'); 
+      
+      const userRole = response.data.user.role;
+      if (userRole === 'GeneralAdmin' || userRole === 'ForumAdmin') {
+        router.push('/admin');
+      } else {
+        router.push('/dashboard');
+      }
     } else {
       successMessage.value = 'Account created successfully! You can now log in.';
       setTimeout(() => {
@@ -118,51 +120,18 @@ const handleSubmit = async () => {
     }
   } catch (error) {
     errorMessage.value = error.response?.data?.error || 'An error occurred. Please try again.';
+    setTimeout(() => {
+      errorMessage.value = '';
+    }, 5000);
   } finally {
     isLoading.value = false;
   }
 };
 
-// Handles forgot password request: validates email and sends reset link to user
-const handleForgotPassword = async () => {
-  forgotPasswordError.value = '';
-  
-  if (!forgotPasswordEmail.value.trim()) {
-    forgotPasswordError.value = 'Email is required';
-    return;
-  }
-  
-  if (!forgotPasswordEmail.value.includes('@') || !forgotPasswordEmail.value.includes('.')) {
-    forgotPasswordError.value = 'Please enter a valid email';
-    return;
-  }
-  
-  isLoadingForgotPassword.value = true;
-  
-  try {
-    const response = await axios.post('http://localhost:3000/api/users/forgot-password', { 
-      email: forgotPasswordEmail.value 
-    });
-    
-    successMessage.value = response.data.message || 'Password reset link sent to your email!';
-    
-   
-    if (response.data.resetLink) {
-      console.log('Reset link:', response.data.resetLink);
-    }
-    
-    showForgotPassword.value = false;
-    forgotPasswordEmail.value = '';
-    
-    setTimeout(() => {
-      successMessage.value = '';
-    }, 5000);
-  } catch (error) {
-    forgotPasswordError.value = error.response?.data?.error || 'An error occurred. Please try again.';
-  } finally {
-    isLoadingForgotPassword.value = false;
-  }
+const goToForgotPassword = () => {
+  router.push('/forgot-password');
 };
+
 </script>
 
 <template>
@@ -184,7 +153,7 @@ const handleForgotPassword = async () => {
         </p>
       </div>
 
-      <!-- Success message -->
+     
       <div v-if="successMessage" class="alert alert-success mb-4 rounded-full shadow-md">
         <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -192,7 +161,7 @@ const handleForgotPassword = async () => {
         <span class="text-sm">{{ successMessage }}</span>
       </div>
 
-      <!-- Error message -->
+     
       <div v-if="errorMessage" class="alert alert-error mb-4 rounded-full shadow-md">
         <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -246,10 +215,10 @@ const handleForgotPassword = async () => {
           <p v-if="fieldErrors.password" class="text-error text-xs mt-1 ml-2">{{ fieldErrors.password }}</p>
         </div>
 
-        <!-- Forgot Password Link (only in login mode) -->
+        
         <div v-if="isLogin" class="text-right -mt-2">
           <button 
-            @click="showForgotPassword = true"
+            @click="goToForgotPassword"
             class="text-xs text-success hover:underline"
           >
             Forgot Password?
@@ -273,42 +242,6 @@ const handleForgotPassword = async () => {
           >
             {{ isLogin ? 'Create Account' : 'Back to Login' }}
           </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Forgot Password Modal -->
-    <div v-if="showForgotPassword" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div class="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
-        <h3 class="text-lg font-bold text-gray-800 mb-4">Reset Password</h3>
-        
-        <div class="space-y-4">
-          <div>
-            <input 
-              v-model="forgotPasswordEmail" 
-              type="email" 
-              placeholder="Enter your email address" 
-              class="input input-bordered input-success w-full rounded-full bg-white text-sm focus:outline-none" 
-            />
-            <p v-if="forgotPasswordError" class="text-error text-xs mt-1 ml-2">{{ forgotPasswordError }}</p>
-          </div>
-
-          <div class="flex gap-3">
-            <button 
-              @click="handleForgotPassword" 
-              :disabled="isLoadingForgotPassword"
-              class="btn btn-sm btn-success text-white rounded-full flex-1 disabled:opacity-50"
-            >
-              <span v-if="isLoadingForgotPassword" class="loading loading-spinner loading-sm"></span>
-              <span v-else>Send Reset Link</span>
-            </button>
-            <button 
-              @click="showForgotPassword = false; forgotPasswordEmail = ''; forgotPasswordError = ''"
-              class="btn btn-sm btn-ghost rounded-full"
-            >
-              Cancel
-            </button>
-          </div>
         </div>
       </div>
     </div>
