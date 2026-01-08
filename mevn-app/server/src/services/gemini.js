@@ -44,10 +44,11 @@ export async function generateTravelItineraryEstimation(payload) {
   let contextDetails = "";
 
   if (mode === "Airplane") {
-    // Estimate TICKET price, not just operation cost
     contextDetails =
       "Assume a standard Economy Class commercial airline ticket booked 2 weeks in advance. Include taxes and fees.";
-  } else if (fuel_type) {
+  } else if (mode === "Train") {
+    contextDetails = "Assume a standard second-class train ticket.";
+  } else if (mode === "Car") {
     contextDetails = `Assume a vehicle powered by ${fuel_type}.`;
   }
 
@@ -64,7 +65,6 @@ export async function generateTravelItineraryEstimation(payload) {
       "co2": "String (e.g. '4.2')"
     }
   `;
-
   try {
     const result = await model.generateContent(prompt);
     const response = await result.response;

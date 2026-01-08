@@ -202,7 +202,7 @@ async function addSegment() {
     alert("Please select Start and End locations.");
     return;
   }
-
+  console.log("Adding segment:", newSegment.value);
   const distanceKm = turf.distance(
     newSegment.value.fromCoords,
     newSegment.value.toCoords,
@@ -390,7 +390,7 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
     }
   }
   const bbox = turf.bbox(pathFeature);
-  map.fitBounds(bbox, { padding: 80, maxZoom: 8 });
+  map.fitBounds(bbox, { padding: 80, maxZoom: 10 });
   animationFrameId = requestAnimationFrame(animate);
 }
 </script>
