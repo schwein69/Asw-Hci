@@ -6,6 +6,7 @@ import {
   Train,
   Car,
   Footprints,
+  Bike,
   Save,
   Trash2,
   Clock,
@@ -14,6 +15,7 @@ import {
   ChevronUp,
   Euro,
   Leaf,
+  Shuffle,
 } from "lucide-vue-next";
 import mapboxgl from "mapbox-gl";
 import MapboxMap from "./maps/maps.vue";
@@ -36,6 +38,7 @@ const iconMap = {
   Train: Train,
   Car: Car,
   Walking: Footprints,
+  Cycling: Bike,
 };
 
 const isRecsOpen = ref(true);
@@ -53,9 +56,12 @@ const newSegment = ref({
   toName: "",
   toCoords: null,
   type: "Airplane",
-  fuelType: "Gasoline", // Default fuel type
+  fuelType: "Gasoline",
   date: "",
-  time: "",
+  departureTime: "",
+  arrivalTime: "",
+  gate: "",
+  transportNumber: "",
 });
 
 const savedSegments = ref([]);
@@ -177,17 +183,11 @@ function handleRetrieveTo(e) {
 
 async function geminiEstimation(mode, distanceKm, fuelType) {
   try {
-    const payload = {
-      mode,
-      distance_km: distanceKm,
-    };
-
-    if (mode === "Car") {
-      payload.fuel_type = fuelType;
-    }
+    const payload = { mode, distance_km: distanceKm };
+    if (mode === "Car") payload.fuel_type = fuelType;
 
     const response = await axios.post(
-      "http://localhost:3000/api/transportation/estimate",
+      "http://localhost:3000/api/plan/estimate",
       payload
     );
     return response.data;
@@ -197,17 +197,62 @@ async function geminiEstimation(mode, distanceKm, fuelType) {
   }
 }
 
+async function geocodeText(searchText) {
+  if (!searchText) return null;
+  try {
+    const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
+      searchText
+    )}.json?access_token=${accessToken}&limit=1`;
+    const res = await fetch(url);
+    const data = await res.json();
+    if (data.features && data.features.length > 0) {
+      return {
+        name: data.features[0].place_name || data.features[0].text,
+        coords: data.features[0].geometry.coordinates,
+      };
+    }
+  } catch (err) {
+    console.error("Geocoding fallback failed", err);
+  }
+  return null;
+}
+
 async function addSegment() {
+  if (
+    !newSegment.value.fromCoords &&
+    fromSearchBox.value &&
+    fromSearchBox.value.value
+  ) {
+    const result = await geocodeText(fromSearchBox.value.value);
+    if (result) {
+      newSegment.value.fromName = result.name;
+      newSegment.value.fromCoords = result.coords;
+    }
+  }
+
+  if (
+    !newSegment.value.toCoords &&
+    toSearchBox.value &&
+    toSearchBox.value.value
+  ) {
+    const result = await geocodeText(toSearchBox.value.value);
+    if (result) {
+      newSegment.value.toName = result.name;
+      newSegment.value.toCoords = result.coords;
+    }
+  }
+
   if (!newSegment.value.fromCoords || !newSegment.value.toCoords) {
     alert("Please select Start and End locations.");
     return;
   }
 
-  const distanceKm = turf.distance(
+  const rawDistance = turf.distance(
     newSegment.value.fromCoords,
     newSegment.value.toCoords,
     { units: "kilometers" }
   );
+  const distanceKm = parseFloat(rawDistance.toFixed(2));
 
   const geminiData = await geminiEstimation(
     newSegment.value.type,
@@ -229,10 +274,16 @@ async function addSegment() {
     fuelType:
       newSegment.value.type === "Car" ? newSegment.value.fuelType : null,
     date: newSegment.value.date,
-    time: newSegment.value.time,
+    departureTime: newSegment.value.departureTime,
+    arrivalTime: newSegment.value.arrivalTime,
+    gate: newSegment.value.gate,
+    transportNumber: newSegment.value.transportNumber,
     markers: [...tempMarkers],
     cost: geminiData.cost,
     co2: geminiData.co2,
+    distance: distanceKm,
+    activeRoute: "fastest",
+    alternatives: null,
   };
 
   tempMarkers = [];
@@ -253,7 +304,40 @@ async function addSegment() {
 
   newSegment.value.toName = "";
   newSegment.value.toCoords = null;
-  newSegment.value.time = "";
+  newSegment.value.departureTime = "";
+  newSegment.value.arrivalTime = "";
+  newSegment.value.gate = "";
+  newSegment.value.transportNumber = "";
+}
+
+async function toggleAlternativeRoute(index) {
+  const segment = savedSegments.value[index];
+
+  // If we haven't generated an alternative yet, simulate one
+  if (!segment.alternatives) {
+    // Simulation: Eco route saves 15% CO2 but costs 10% more (or takes longer)
+    const baseCo2 = parseFloat(segment.co2);
+    const baseCost = parseFloat(segment.cost);
+
+    segment.alternatives = {
+      fastest: { cost: segment.cost, co2: segment.co2 },
+      eco: {
+        cost: (baseCost * 1.1).toFixed(2),
+        co2: (baseCo2 * 0.85).toFixed(1),
+      },
+    };
+  }
+
+  // Toggle state
+  if (segment.activeRoute === "fastest") {
+    segment.activeRoute = "eco";
+    segment.cost = segment.alternatives.eco.cost;
+    segment.co2 = segment.alternatives.eco.co2;
+  } else {
+    segment.activeRoute = "fastest";
+    segment.cost = segment.alternatives.fastest.cost;
+    segment.co2 = segment.alternatives.fastest.co2;
+  }
 }
 
 function removeSegment(index) {
@@ -317,7 +401,10 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
         npoints: 100,
       }).geometry;
     } else {
-      let profile = type === "Walking" ? "walking" : "driving";
+      let profile = "driving";
+      if (type === "Walking") profile = "walking";
+      if (type === "Cycling") profile = "cycling";
+
       const res = await fetch(
         `https://api.mapbox.com/directions/v5/mapbox/${profile}/${startCoords[0]},${startCoords[1]};${endCoords[0]},${endCoords[1]}?steps=true&geometries=geojson&access_token=${accessToken}`
       );
@@ -390,7 +477,7 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
     }
   }
   const bbox = turf.bbox(pathFeature);
-  map.fitBounds(bbox, { padding: 80, maxZoom: 8 });
+  map.fitBounds(bbox, { padding: 80, maxZoom: 10 });
   animationFrameId = requestAnimationFrame(animate);
 }
 </script>
@@ -425,7 +512,7 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
       </div>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 h-[650px]">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
       <div
         v-if="activeTab === 'world'"
         class="lg:col-span-4 h-full flex flex-col"
@@ -488,6 +575,7 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
                     <option>Train</option>
                     <option>Car</option>
                     <option>Walking</option>
+                    <option>Cycling</option>
                   </select>
                 </div>
                 <div>
@@ -502,6 +590,63 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
                 </div>
               </div>
 
+              <div
+                v-if="newSegment.type === 'Airplane'"
+                class="grid grid-cols-2 gap-2 p-2 bg-blue-50 rounded-lg border border-blue-100"
+              >
+                <div class="col-span-2 text-xs font-bold text-blue-500">
+                  FLIGHT DETAILS
+                </div>
+                <input
+                  v-model="newSegment.transportNumber"
+                  placeholder="Flight #"
+                  class="input input-sm input-bordered w-full rounded-md"
+                />
+                <input
+                  v-model="newSegment.gate"
+                  placeholder="Gate"
+                  class="input input-sm input-bordered w-full rounded-md"
+                />
+                <input
+                  v-model="newSegment.departureTime"
+                  type="time"
+                  class="input input-sm input-bordered w-full rounded-md"
+                  aria-label="Departure"
+                />
+                <input
+                  v-model="newSegment.arrivalTime"
+                  type="time"
+                  class="input input-sm input-bordered w-full rounded-md"
+                  aria-label="Arrival"
+                />
+              </div>
+
+              <div
+                v-if="newSegment.type === 'Train'"
+                class="grid grid-cols-2 gap-2 p-2 bg-orange-50 rounded-lg border border-orange-100"
+              >
+                <div class="col-span-2 text-xs font-bold text-orange-500">
+                  TRAIN DETAILS
+                </div>
+                <input
+                  v-model="newSegment.transportNumber"
+                  placeholder="Train #"
+                  class="input input-sm input-bordered w-full col-span-2 rounded-md"
+                />
+                <div class="text-[10px] text-gray-500 uppercase">Departs</div>
+                <div class="text-[10px] text-gray-500 uppercase">Arrives</div>
+                <input
+                  v-model="newSegment.departureTime"
+                  type="time"
+                  class="input input-sm input-bordered w-full rounded-md"
+                />
+                <input
+                  v-model="newSegment.arrivalTime"
+                  type="time"
+                  class="input input-sm input-bordered w-full rounded-md"
+                />
+              </div>
+
               <div v-if="newSegment.type === 'Car'" class="space-y-1">
                 <label class="text-xs font-bold text-gray-500 uppercase"
                   >Fuel Type</label
@@ -514,22 +659,6 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
                   <option>Diesel</option>
                   <option>Electric</option>
                 </select>
-              </div>
-
-              <div
-                v-if="
-                  newSegment.type === 'Airplane' || newSegment.type === 'Train'
-                "
-                class="space-y-1"
-              >
-                <label class="text-xs font-bold text-gray-500 uppercase"
-                  >Departure Time</label
-                >
-                <input
-                  v-model="newSegment.time"
-                  type="time"
-                  class="input input-sm input-bordered bg-white w-full rounded-lg"
-                />
               </div>
 
               <button
@@ -621,10 +750,11 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
                       </div>
                       <div class="text-xs text-gray-500">
                         {{ seg.date || "No date" }}
-                        <span v-if="seg.time">• {{ seg.time }}</span> •
-                        {{ seg.type }}
                         <span v-if="seg.type === 'Car' && seg.fuelType"
                           >({{ seg.fuelType }})</span
+                        >
+                        <span class="font-bold text-green-700 ml-1"
+                          >• {{ seg.distance }} km</span
                         >
                       </div>
                     </div>
@@ -636,19 +766,57 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
                     <Trash2 class="w-4 h-4" />
                   </button>
                 </div>
-                <div class="flex gap-4 mt-2 ml-12">
-                  <div
-                    class="flex items-center text-xs text-gray-600 font-medium bg-gray-100 px-2 py-1 rounded"
-                  >
-                    <Euro class="w-3 h-3 mr-1 text-gray-500" />
-                    {{ seg.cost || "0.00" }}
+
+                <div
+                  v-if="seg.type === 'Airplane' || seg.type === 'Train'"
+                  class="mt-2 ml-12 text-xs text-gray-600 grid grid-cols-2 gap-x-2 bg-gray-50 p-1.5 rounded"
+                >
+                  <div v-if="seg.transportNumber">
+                    <b>#:</b> {{ seg.transportNumber }}
                   </div>
-                  <div
-                    class="flex items-center text-xs text-green-700 font-medium bg-green-100 px-2 py-1 rounded"
-                  >
-                    <Leaf class="w-3 h-3 mr-1" />
-                    {{ seg.co2 || "0.0" }} kg CO₂
+                  <div v-if="seg.gate"><b>Gate:</b> {{ seg.gate }}</div>
+                  <div v-if="seg.departureTime">
+                    <b>Dep:</b> {{ seg.departureTime }}
                   </div>
+                  <div v-if="seg.arrivalTime">
+                    <b>Arr:</b> {{ seg.arrivalTime }}
+                  </div>
+                </div>
+
+                <div class="flex items-center justify-between mt-2 ml-12">
+                  <div class="flex gap-2">
+                    <div
+                      class="flex items-center text-xs font-medium bg-gray-100 px-2 py-1 rounded"
+                    >
+                      <Euro class="w-3 h-3 mr-1 text-gray-500" />
+                      {{ seg.cost || "0.00" }}
+                    </div>
+                    <div
+                      class="flex items-center text-xs font-medium bg-green-100 px-2 py-1 rounded"
+                      :class="
+                        seg.activeRoute === 'eco'
+                          ? 'text-green-800 ring-1 ring-green-500'
+                          : 'text-green-700'
+                      "
+                    >
+                      <Leaf class="w-3 h-3 mr-1" />
+                      {{ seg.co2 || "0.0" }} kg
+                    </div>
+                  </div>
+
+                  <button
+                    @click="toggleAlternativeRoute(idx)"
+                    class="btn btn-xs rounded-full gap-1 border-none shadow-sm"
+                    :class="
+                      seg.activeRoute === 'eco'
+                        ? 'bg-green-600 text-white hover:bg-green-700'
+                        : 'bg-white text-gray-500 hover:bg-gray-100 border border-gray-200'
+                    "
+                    title="Find Eco Alternative"
+                  >
+                    <Shuffle class="w-3 h-3" />
+                    {{ seg.activeRoute === "eco" ? "Eco Mode" : "Alt" }}
+                  </button>
                 </div>
               </div>
             </div>
