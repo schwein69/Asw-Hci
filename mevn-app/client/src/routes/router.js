@@ -53,27 +53,26 @@ const routes = [
     component: () => import("../components/Admin.vue"),
   },
   {
-    path: '/login',
-    name: 'Login',
+    path: "/login",
+    name: "Login",
     component: () => import("../components/Login.vue"),
   },
   {
-    path: '/forgot-password',
-    name: 'ForgotPassword',
+    path: "/forgot-password",
+    name: "ForgotPassword",
     component: () => import("../components/ForgotPassword.vue"),
   },
   {
-    path: '/reset-password',
-    name: 'ResetPassword',
+    path: "/reset-password",
+    name: "ResetPassword",
     component: () => import("../components/ResetPassword.vue"),
   },
   {
-    path: '/profile',
-    name: 'Profile',
+    path: "/profile",
+    name: "Profile",
     component: () => import("../components/Profile.vue"),
   },
 ];
-
 
 const router = createRouter({
   history: createWebHistory(),
@@ -81,11 +80,11 @@ const router = createRouter({
 });
 
 // Public routes that don't require authentication
-const publicRoutes = ['Login', 'ForgotPassword', 'ResetPassword'];
-const publicPaths = ['/login', '/forgot-password', '/reset-password'];
+const publicRoutes = ["Login", "ForgotPassword", "ResetPassword"];
+const publicPaths = ["/login", "/forgot-password", "/reset-password"];
 
 // Navigation guard to protect routes
-router.beforeEach((to, from, next) => {
+/*router.beforeEach((to, from, next) => {
   const token = localStorage.getItem('token');
   const isPublicRoute = publicRoutes.includes(to.name) || publicPaths.includes(to.path);
   
@@ -116,6 +115,6 @@ router.beforeEach((to, from, next) => {
   }
   
   next();
-});
+});*/
 
 export default router;
