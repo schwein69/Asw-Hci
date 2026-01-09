@@ -22,6 +22,15 @@ import MapboxMap from "./maps/maps.vue";
 import * as turf from "@turf/turf";
 import axios from "axios";
 import "@mapbox/search-js-web";
+import { getLanguage, t as translate } from "../utils/translations.js";
+
+const language = ref(getLanguage());
+
+const t = computed(() => (key) => translate(key, language.value));
+
+const handleLanguageChange = (event) => {
+  language.value = event.detail.language;
+};
 
 const accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
 
@@ -79,10 +88,12 @@ const searchOptions = computed(() => {
 
 onMounted(() => {
   handleMyLocation();
+  window.addEventListener('languageChanged', handleLanguageChange);
 });
 
 onUnmounted(() => {
   if (animationFrameId) cancelAnimationFrame(animationFrameId);
+  window.removeEventListener('languageChanged', handleLanguageChange);
 });
 
 watch(activeTab, () => {
@@ -489,7 +500,7 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
     >
       <div class="flex gap-2 items-center">
         <h2 class="text-2xl font-bold text-gray-800 tracking-tight p-2">
-          EcoTravel Planner
+          {{ t('plan.ecoTravelPlanner') }}
         </h2>
       </div>
       <div class="tabs tabs-boxed rounded-xl p-1">
@@ -499,7 +510,7 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
             'tab-active bg-white text-green-700': activeTab === 'world',
           }"
           @click="activeTab = 'world'"
-          >Plan Trip</a
+          >{{ t('plan.planTrip') }}</a
         >
         <a
           class="tab rounded-lg"
@@ -507,7 +518,7 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
             'tab-active bg-white text-green-700': activeTab === 'city',
           }"
           @click="activeTab = 'city'"
-          >Navigate City</a
+          >{{ t('plan.navigateCity') }}</a
         >
       </div>
     </div>
@@ -522,7 +533,7 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
         >
           <div class="card-body p-5">
             <h3 class="font-bold text-gray-700 flex items-center gap-2 mb-2">
-              <Plus class="w-5 h-5 text-green-600" /> Add Trip Segment
+              <Plus class="w-5 h-5 text-green-600" /> {{ t('plan.addTripSegment') }}
             </h3>
 
             <div
@@ -530,7 +541,7 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
             >
               <div class="space-y-1">
                 <label class="text-xs font-bold text-gray-500 uppercase"
-                  >From</label
+                  >{{ t('plan.from') }}</label
                 >
                 <div
                   class="rounded-lg overflow-hidden border border-gray-200 bg-white"
@@ -539,7 +550,7 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
                     ref="fromSearchBox"
                     :access-token="accessToken"
                     :options="searchOptions"
-                    placeholder="Search start location..."
+                    :placeholder="t('plan.searchStartLocation')"
                     @retrieve="handleRetrieveFrom"
                   ></mapbox-search-box>
                 </div>
@@ -547,7 +558,7 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
 
               <div class="space-y-1">
                 <label class="text-xs font-bold text-gray-500 uppercase"
-                  >To</label
+                  >{{ t('plan.to') }}</label
                 >
                 <div
                   class="rounded-lg overflow-hidden border border-gray-200 bg-white"
@@ -556,7 +567,7 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
                     ref="toSearchBox"
                     :access-token="accessToken"
                     :options="searchOptions"
-                    placeholder="Search destination..."
+                    :placeholder="t('plan.searchDestination')"
                     @retrieve="handleRetrieveTo"
                   ></mapbox-search-box>
                 </div>
@@ -565,22 +576,22 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
               <div class="grid grid-cols-2 gap-2">
                 <div>
                   <label class="text-xs font-bold text-gray-500 uppercase"
-                    >Mode</label
+                    >{{ t('plan.mode') }}</label
                   >
                   <select
                     v-model="newSegment.type"
                     class="select select-sm select-bordered bg-white w-full rounded-lg mt-1"
                   >
-                    <option>Airplane</option>
-                    <option>Train</option>
-                    <option>Car</option>
-                    <option>Walking</option>
-                    <option>Cycling</option>
+                    <option value="Airplane">{{ t('plan.transportTypes.airplane') }}</option>
+                    <option value="Train">{{ t('plan.transportTypes.train') }}</option>
+                    <option value="Car">{{ t('plan.transportTypes.car') }}</option>
+                    <option value="Walking">{{ t('plan.transportTypes.walking') }}</option>
+                    <option value="Cycling">{{ t('plan.transportTypes.cycling') }}</option>
                   </select>
                 </div>
                 <div>
                   <label class="text-xs font-bold text-gray-500 uppercase"
-                    >Date</label
+                    >{{ t('plan.date') }}</label
                   >
                   <input
                     v-model="newSegment.date"
@@ -595,16 +606,16 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
                 class="grid grid-cols-2 gap-2 p-2 bg-blue-50 rounded-lg border border-blue-100"
               >
                 <div class="col-span-2 text-xs font-bold text-blue-500">
-                  FLIGHT DETAILS
+                  {{ t('plan.flightDetails') }}
                 </div>
                 <input
                   v-model="newSegment.transportNumber"
-                  placeholder="Flight #"
+                  :placeholder="t('plan.flightNumber')"
                   class="input input-sm input-bordered w-full rounded-md"
                 />
                 <input
                   v-model="newSegment.gate"
-                  placeholder="Gate"
+                  :placeholder="t('plan.gate')"
                   class="input input-sm input-bordered w-full rounded-md"
                 />
                 <input
@@ -626,15 +637,15 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
                 class="grid grid-cols-2 gap-2 p-2 bg-orange-50 rounded-lg border border-orange-100"
               >
                 <div class="col-span-2 text-xs font-bold text-orange-500">
-                  TRAIN DETAILS
+                  {{ t('plan.trainDetails') }}
                 </div>
                 <input
                   v-model="newSegment.transportNumber"
-                  placeholder="Train #"
+                  :placeholder="t('plan.trainNumber')"
                   class="input input-sm input-bordered w-full col-span-2 rounded-md"
                 />
-                <div class="text-[10px] text-gray-500 uppercase">Departs</div>
-                <div class="text-[10px] text-gray-500 uppercase">Arrives</div>
+                <div class="text-[10px] text-gray-500 uppercase">{{ t('plan.departs') }}</div>
+                <div class="text-[10px] text-gray-500 uppercase">{{ t('plan.arrives') }}</div>
                 <input
                   v-model="newSegment.departureTime"
                   type="time"
@@ -649,15 +660,15 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
 
               <div v-if="newSegment.type === 'Car'" class="space-y-1">
                 <label class="text-xs font-bold text-gray-500 uppercase"
-                  >Fuel Type</label
+                  >{{ t('plan.fuelType') }}</label
                 >
                 <select
                   v-model="newSegment.fuelType"
                   class="select select-sm select-bordered bg-white w-full rounded-lg"
                 >
-                  <option>Gasoline</option>
-                  <option>Diesel</option>
-                  <option>Electric</option>
+                  <option value="Gasoline">{{ t('plan.fuelTypes.gasoline') }}</option>
+                  <option value="Diesel">{{ t('plan.fuelTypes.diesel') }}</option>
+                  <option value="Electric">{{ t('plan.fuelTypes.electric') }}</option>
                 </select>
               </div>
 
@@ -665,7 +676,7 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
                 @click="addSegment"
                 class="btn btn-sm btn-success w-full text-white rounded-lg shadow-sm mt-2"
               >
-                Add Segment
+                {{ t('plan.addSegment') }}
               </button>
             </div>
 
@@ -677,7 +688,7 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
                 class="p-3 bg-green-50 flex justify-between items-center cursor-pointer hover:bg-green-100 transition-colors"
               >
                 <span class="text-sm font-bold text-green-800"
-                  >Drag & Drop Markers</span
+                  >{{ t('plan.dragDropMarkers') }}</span
                 >
                 <component
                   :is="isRecsOpen ? ChevronUp : ChevronDown"
@@ -687,7 +698,7 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
 
               <div v-if="isRecsOpen" class="p-4 bg-white">
                 <div class="text-xs text-gray-400 mb-2">
-                  Drag a pin to the map to set a location:
+                  {{ t('plan.dragPinInstruction') }}
                 </div>
                 <div class="flex gap-3 justify-between">
                   <div
@@ -720,13 +731,13 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
               </div>
             </div>
 
-            <div class="divider my-2 text-xs text-gray-400">YOUR ITINERARY</div>
+            <div class="divider my-2 text-xs text-gray-400">{{ t('plan.yourItinerary') }}</div>
             <div class="space-y-2 flex-1 overflow-y-auto custom-scrollbar h-48">
               <div
                 v-if="savedSegments.length === 0"
                 class="text-center py-8 text-gray-400 text-sm italic"
               >
-                No trips added yet.
+                {{ t('plan.noTripsAdded') }}
               </div>
               <div
                 v-for="(seg, idx) in savedSegments"
@@ -749,7 +760,7 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
                         {{ seg.to }}
                       </div>
                       <div class="text-xs text-gray-500">
-                        {{ seg.date || "No date" }}
+                        {{ seg.date || t('plan.noDate') }}
                         <span v-if="seg.type === 'Car' && seg.fuelType"
                           >({{ seg.fuelType }})</span
                         >
@@ -772,14 +783,14 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
                   class="mt-2 ml-12 text-xs text-gray-600 grid grid-cols-2 gap-x-2 bg-gray-50 p-1.5 rounded"
                 >
                   <div v-if="seg.transportNumber">
-                    <b>#:</b> {{ seg.transportNumber }}
+                    <b>{{ t('plan.labels.number') }}</b> {{ seg.transportNumber }}
                   </div>
-                  <div v-if="seg.gate"><b>Gate:</b> {{ seg.gate }}</div>
+                  <div v-if="seg.gate"><b>{{ t('plan.labels.gate') }}</b> {{ seg.gate }}</div>
                   <div v-if="seg.departureTime">
-                    <b>Dep:</b> {{ seg.departureTime }}
+                    <b>{{ t('plan.labels.dep') }}</b> {{ seg.departureTime }}
                   </div>
                   <div v-if="seg.arrivalTime">
-                    <b>Arr:</b> {{ seg.arrivalTime }}
+                    <b>{{ t('plan.labels.arr') }}</b> {{ seg.arrivalTime }}
                   </div>
                 </div>
 
@@ -812,10 +823,10 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
                         ? 'bg-green-600 text-white hover:bg-green-700'
                         : 'bg-white text-gray-500 hover:bg-gray-100 border border-gray-200'
                     "
-                    title="Find Eco Alternative"
+                    :title="t('plan.findEcoAlternative')"
                   >
                     <Shuffle class="w-3 h-3" />
-                    {{ seg.activeRoute === "eco" ? "Eco Mode" : "Alt" }}
+                    {{ seg.activeRoute === "eco" ? t('plan.ecoMode') : t('plan.alt') }}
                   </button>
                 </div>
               </div>
@@ -826,7 +837,7 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
               @click="saveTripToDB"
               class="btn btn-success w-full text-white gap-2 rounded-xl shadow-md"
             >
-              <Save class="w-4 h-4" /> Save Full Trip
+              <Save class="w-4 h-4" /> {{ t('plan.saveFullTrip') }}
             </button>
           </div>
         </div>
@@ -855,7 +866,7 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
               "
             >
               {{
-                activeTab === "world" ? "🌍 World View" : "🏙️ Navigation Mode"
+                activeTab === "world" ? `🌍 ${t('plan.worldView')}` : `🏙️ ${t('plan.navigationMode')}`
               }}
             </div>
           </div>
@@ -871,7 +882,7 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
             <button
               class="btn btn-sm glass text-gray-800 gap-2 rounded-full shadow-lg hover:text-green-700"
             >
-              <Bookmark class="w-4 h-4" /> Saved
+              <Bookmark class="w-4 h-4" /> {{ t('plan.saved') }}
             </button>
           </div>
         </div>
