@@ -401,214 +401,216 @@ const handleDeleteAccount = async () => {
         Profile Settings
       </h1>
 
-      <div v-if="user" class="space-y-6">
-        <div class="bg-white dark:bg-gray-800 rounded-3xl shadow-sm p-6 md:p-8 transition-colors duration-300">
-          <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            Profile Image
-          </h3>
-          <div class="flex items-center gap-4">
-            <div class="relative">
-              <div class="w-20 h-20 rounded-full overflow-hidden bg-success flex items-center justify-center shadow-md">
+      <div v-if="user">
+        <div class="bg-white dark:bg-gray-800 rounded-3xl shadow-sm p-6 md:p-8 transition-colors duration-300 space-y-6">
+          <div class="flex flex-col items-center pb-6 border-b border-gray-200 dark:border-gray-700">
+            <div class="relative mb-4">
+              <div class="w-28 h-28 rounded-full overflow-hidden bg-success flex items-center justify-center shadow-lg ring-4 ring-green-100 dark:ring-gray-700">
                 <img v-if="profileImagePreview || (user && user.profileImage)" :src="profileImagePreview || user.profileImage" :alt="user.username" class="w-full h-full object-cover" />
-                <User v-else class="text-white w-10 h-10" />
+                <User v-else class="text-white w-14 h-14" />
               </div>
               <button
                 @click="showImageUpload = !showImageUpload"
-                class="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-success text-white flex items-center justify-center shadow-md hover:opacity-90 active:scale-95 transition-all"
+                class="absolute bottom-0 right-0 w-9 h-9 rounded-full bg-success text-white flex items-center justify-center shadow-lg hover:opacity-90 active:scale-95 transition-all ring-4 ring-white dark:ring-gray-800"
               >
-                <Upload class="w-3.5 h-3.5" />
+                <Upload class="w-4 h-4" />
               </button>
             </div>
-            <div class="flex-1">
-              <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
+            <div class="text-center">
+              <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-1">
                 {{ user.username }}
               </h2>
+              <p class="text-sm text-gray-500 dark:text-gray-400 mb-3">
+                {{ user.email }}
+              </p>
               <button
                 v-if="user.profileImage || profileImagePreview"
                 @click="deleteProfileImage"
-                class="mt-2 text-xs text-red-600 dark:text-red-400 hover:underline flex items-center gap-1"
+                class="text-xs text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 hover:underline flex items-center gap-1 mx-auto transition-colors"
               >
-                <Trash2 class="w-3 h-3" />
+                <Trash2 class="w-3.5 h-3.5" />
                 Delete Image
               </button>
             </div>
-          </div>
 
-          <div v-if="showImageUpload" class="mt-4 p-4 bg-green-50 dark:bg-gray-700 rounded-2xl border border-green-100 dark:border-gray-600">
-            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Select Image
-            </label>
-            <input
-              id="profile-image-input"
-              type="file"
-              accept="image/*"
-              @change="handleImageUpload"
-              class="hidden"
-            />
-            <div class="flex items-center gap-2 mb-3">
-              <button
-                @click="triggerFileInput"
-                class="btn btn-sm btn-success text-white rounded-full no-animation hover:opacity-90 active:scale-95 transition-all text-xs"
-              >
-                Choose File
-              </button>
-              <span class="text-xs text-gray-600 dark:text-gray-400">
-                {{ selectedFileName || 'No file chosen' }}
-              </span>
-            </div>
-            <div class="flex gap-2">
-              <button
-                @click="saveProfileImage"
-                :disabled="!profileImage"
-                class="btn btn-sm btn-success text-white rounded-full no-animation hover:opacity-90 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-xs h-8"
-              >
-                Save Image
-              </button>
-              <button
-                @click="showImageUpload = false; profileImage = null; selectedFileName = ''"
-                class="btn btn-sm btn-ghost rounded-full no-animation active:scale-95 text-xs h-8"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div class="bg-white dark:bg-gray-800 rounded-3xl shadow-sm p-6 md:p-8 transition-colors duration-300">
-          <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            Account Information
-          </h3>
-          <div class="space-y-3">
-            <div class="flex items-center gap-3 p-3 bg-green-50 dark:bg-gray-700 rounded-2xl border border-green-100 dark:border-gray-600">
-              <Mail class="text-success w-4 h-4 shrink-0" />
-              <div>
-                <p class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Email</p>
-                <p class="text-sm font-medium text-gray-900 dark:text-white mt-0.5">
-                  {{ user.email }}
-                </p>
+            <div v-if="showImageUpload" class="w-full max-w-md mt-4 p-4 bg-green-50 dark:bg-gray-700 rounded-2xl border border-green-100 dark:border-gray-600">
+              <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Select Image
+              </label>
+              <input
+                id="profile-image-input"
+                type="file"
+                accept="image/*"
+                @change="handleImageUpload"
+                class="hidden"
+              />
+              <div class="flex items-center gap-2 mb-3">
+                <button
+                  @click="triggerFileInput"
+                  class="btn btn-sm btn-success text-white rounded-full no-animation hover:opacity-90 active:scale-95 transition-all text-xs"
+                >
+                  Choose File
+                </button>
+                <span class="text-xs text-gray-600 dark:text-gray-400">
+                  {{ selectedFileName || 'No file chosen' }}
+                </span>
+              </div>
+              <div class="flex gap-2">
+                <button
+                  @click="saveProfileImage"
+                  :disabled="!profileImage"
+                  class="btn btn-sm btn-success text-white rounded-full no-animation hover:opacity-90 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-xs h-8"
+                >
+                  Save Image
+                </button>
+                <button
+                  @click="showImageUpload = false; profileImage = null; selectedFileName = ''"
+                  class="btn btn-sm btn-ghost rounded-full no-animation active:scale-95 text-xs h-8"
+                >
+                  Cancel
+                </button>
               </div>
             </div>
           </div>
-        </div>
-
-        <div class="bg-white dark:bg-gray-800 rounded-3xl shadow-sm p-6 md:p-8 transition-colors duration-300">
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-              <Lock class="w-4 h-4" />
-              Change Password
+          <div>
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+              <Mail class="w-5 h-5 text-success" />
+              Account Information
             </h3>
-            <button
-              @click="toggleChangePassword"
-              class="btn btn-sm btn-ghost rounded-full no-animation active:scale-95 text-xs"
-            >
-              {{ showChangePassword ? 'Cancel' : 'Change' }}
-            </button>
+            <div class="space-y-3">
+              <div class="flex items-center gap-3 p-4 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-gray-700 dark:to-gray-600 rounded-2xl border border-green-100 dark:border-gray-600 hover:shadow-md transition-shadow">
+                <div class="w-10 h-10 rounded-full bg-success flex items-center justify-center shrink-0">
+                  <Mail class="text-white w-5 h-5" />
+                </div>
+                <div class="flex-1">
+                  <p class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Email</p>
+                  <p class="text-sm font-semibold text-gray-900 dark:text-white mt-0.5">
+                    {{ user.email }}
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <div v-if="showChangePassword" class="space-y-4">
-            <div>
-              <input
-                v-model="passwordForm.currentPassword"
-                type="password"
-                placeholder="Current Password"
-                class="input input-bordered w-full rounded-full bg-white text-sm focus:outline-none"
-                :class="passwordErrors.currentPassword ? 'input-error' : 'input-success'"
-              />
-              <p v-if="passwordErrors.currentPassword" class="text-error text-xs mt-1 ml-2">{{ passwordErrors.currentPassword }}</p>
-            </div>
-            <div>
-              <input
-                v-model="passwordForm.newPassword"
-                type="password"
-                placeholder="New Password"
-                class="input input-bordered w-full rounded-full bg-white text-sm focus:outline-none"
-                :class="passwordErrors.newPassword ? 'input-error' : 'input-success'"
-              />
-              <p v-if="passwordErrors.newPassword" class="text-error text-xs mt-1 ml-2">{{ passwordErrors.newPassword }}</p>
-            </div>
-            <div>
-              <input
-                v-model="passwordForm.confirmPassword"
-                type="password"
-                placeholder="Confirm New Password"
-                class="input input-bordered w-full rounded-full bg-white text-sm focus:outline-none"
-                :class="passwordErrors.confirmPassword ? 'input-error' : 'input-success'"
-              />
-              <p v-if="passwordErrors.confirmPassword" class="text-error text-xs mt-1 ml-2">{{ passwordErrors.confirmPassword }}</p>
-            </div>
-            <button
-              @click="handleChangePassword"
-              class="btn btn-success w-full text-white rounded-full no-animation hover:opacity-90 active:scale-95 transition-all shadow-md"
-            >
-              Update Password
-            </button>
-          </div>
-        </div>
-
-        <div class="bg-white dark:bg-gray-800 rounded-3xl shadow-sm p-6 md:p-8 transition-colors duration-300">
-          <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-            <Globe class="w-4 h-4" />
-            Language Preferences
-          </h3>
-          <div class="flex gap-3 flex-wrap">
-            <button
-              @click="handleLanguageChange('en')"
-              :class="[
-                'btn btn-sm rounded-full no-animation active:scale-95 transition-all',
-                language === 'en' ? 'btn-success text-white' : 'btn-outline'
-              ]"
-            >
-              English
-            </button>
-            <button
-              @click="handleLanguageChange('it')"
-              :class="[
-                'btn btn-sm rounded-full no-animation active:scale-95 transition-all',
-                language === 'it' ? 'btn-success text-white' : 'btn-outline'
-              ]"
-            >
-              Italiano
-            </button>
-          </div>
-        </div>
-
-        <div class="bg-white dark:bg-gray-800 rounded-3xl shadow-sm p-6 md:p-8 transition-colors duration-300">
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-2">
-              <Bell class="w-4 h-4 text-gray-900 dark:text-white" />
-              <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-                Notifications
+          <div class="border-t border-gray-200 dark:border-gray-700 pt-6">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                <Lock class="w-5 h-5 text-success" />
+                Change Password
               </h3>
+              <button
+                @click="toggleChangePassword"
+                class="btn btn-sm btn-success rounded-full no-animation active:scale-95 text-xs text-white"
+              >
+                {{ showChangePassword ? 'Cancel' : 'Change' }}
+              </button>
             </div>
-            <input
-              type="checkbox"
-              :checked="notifications"
-              @change="handleNotificationsToggle"
-              class="toggle toggle-success"
-            />
-          </div>
-          <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">
-            {{ notifications ? 'Notifications are enabled' : 'Notifications are disabled' }}
-          </p>
-        </div>
 
-        <div class="bg-white dark:bg-gray-800 rounded-3xl shadow-sm p-6 md:p-8 border-2 border-red-200 dark:border-red-800 transition-colors duration-300">
-          <div class="flex items-center justify-between flex-wrap gap-4">
-            <div>
-              <h3 class="text-lg font-semibold text-red-600 dark:text-red-400 flex items-center gap-2">
-                <Trash2 class="w-4 h-4" />
+            <div v-if="showChangePassword" class="space-y-4">
+              <div>
+                <input
+                  v-model="passwordForm.currentPassword"
+                  type="password"
+                  placeholder="Current Password"
+                  class="input input-bordered w-full rounded-full bg-white text-sm focus:outline-none"
+                  :class="passwordErrors.currentPassword ? 'input-error' : 'input-success'"
+                />
+                <p v-if="passwordErrors.currentPassword" class="text-error text-xs mt-1 ml-2">{{ passwordErrors.currentPassword }}</p>
+              </div>
+              <div>
+                <input
+                  v-model="passwordForm.newPassword"
+                  type="password"
+                  placeholder="New Password"
+                  class="input input-bordered w-full rounded-full bg-white text-sm focus:outline-none"
+                  :class="passwordErrors.newPassword ? 'input-error' : 'input-success'"
+                />
+                <p v-if="passwordErrors.newPassword" class="text-error text-xs mt-1 ml-2">{{ passwordErrors.newPassword }}</p>
+              </div>
+              <div>
+                <input
+                  v-model="passwordForm.confirmPassword"
+                  type="password"
+                  placeholder="Confirm New Password"
+                  class="input input-bordered w-full rounded-full bg-white text-sm focus:outline-none"
+                  :class="passwordErrors.confirmPassword ? 'input-error' : 'input-success'"
+                />
+                <p v-if="passwordErrors.confirmPassword" class="text-error text-xs mt-1 ml-2">{{ passwordErrors.confirmPassword }}</p>
+              </div>
+              <button
+                @click="handleChangePassword"
+                class="btn btn-success w-full text-white rounded-full no-animation hover:opacity-90 active:scale-95 transition-all shadow-md"
+              >
+                Update Password
+              </button>
+            </div>
+          </div>
+
+          <div class="border-t border-gray-200 dark:border-gray-700 pt-6">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+              <Globe class="w-5 h-5 text-success" />
+              Language Preferences
+            </h3>
+            <div class="flex gap-3 flex-wrap">
+              <button
+                @click="handleLanguageChange('en')"
+                :class="[
+                  'btn btn-sm rounded-full no-animation active:scale-95 transition-all',
+                  language === 'en' ? 'btn-success text-white' : 'btn-outline'
+                ]"
+              >
+                English
+              </button>
+              <button
+                @click="handleLanguageChange('it')"
+                :class="[
+                  'btn btn-sm rounded-full no-animation active:scale-95 transition-all',
+                  language === 'it' ? 'btn-success text-white' : 'btn-outline'
+                ]"
+              >
+                Italiano
+              </button>
+            </div>
+          </div>
+
+          <div class="border-t border-gray-200 dark:border-gray-700 pt-6">
+            <div class="flex items-center justify-between mb-2">
+              <div class="flex items-center gap-2">
+                <Bell class="w-5 h-5 text-success" />
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                  Notifications
+                </h3>
+              </div>
+              <input
+                type="checkbox"
+                :checked="notifications"
+                @change="handleNotificationsToggle"
+                class="toggle toggle-success"
+              />
+            </div>
+            <p class="text-sm text-gray-500 dark:text-gray-400 ml-7">
+              {{ notifications ? 'Notifications are enabled' : 'Notifications are disabled' }}
+            </p>
+          </div>
+
+          <div class="border-t border-red-200 dark:border-red-800 pt-6">
+            <div class="flex items-center justify-between flex-wrap gap-4">
+              <div>
+                <h3 class="text-lg font-semibold text-red-600 dark:text-red-400 flex items-center gap-2">
+                  <Trash2 class="w-4 h-4" />
+                  Delete Account
+                </h3>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  Once you delete your account, there is no going back. Please be certain.
+                </p>
+              </div>
+              <button
+                @click="showDeleteConfirm = true"
+                class="btn btn-sm btn-error rounded-full no-animation hover:opacity-90 active:scale-95 transition-all text-xs"
+              >
                 Delete Account
-              </h3>
-              <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                Once you delete your account, there is no going back. Please be certain.
-              </p>
+              </button>
             </div>
-            <button
-              @click="showDeleteConfirm = true"
-              class="btn btn-sm btn-error rounded-full no-animation hover:opacity-90 active:scale-95 transition-all text-xs"
-            >
-              Delete Account
-            </button>
           </div>
         </div>
       </div>
