@@ -9,6 +9,7 @@ import {
   X,
   Trash2,
 } from "lucide-vue-next";
+import { getLanguage, t as translate } from "../utils/translations.js";
 
 export default {
   name: "Admin",
@@ -24,12 +25,13 @@ export default {
   },
   data() {
     return {
+      language: getLanguage(),
       // Stats Data
       stats: [
-        { label: "Total Users", value: "1247" },
-        { label: "Active Itineraries", value: "542" },
-        { label: "Forum Posts", value: "3891" },
-        { label: "Avg Eco Score", value: "87" },
+        { labelKey: "admin.totalUsers", value: "1247" },
+        { labelKey: "admin.activeItineraries", value: "542" },
+        { labelKey: "admin.forumPosts", value: "3891" },
+        { labelKey: "admin.avgEcoScore", value: "87" },
       ],
 
       // Tab State
@@ -114,9 +116,24 @@ export default {
       ],
     };
   },
+  computed: {
+    t() {
+      return (key) => translate(key, this.language);
+    },
+  },
+  mounted() {
+    this.language = getLanguage();
+    window.addEventListener('languageChanged', this.handleLanguageChange);
+  },
+  beforeUnmount() {
+    window.removeEventListener('languageChanged', this.handleLanguageChange);
+  },
   methods: {
+    handleLanguageChange(event) {
+      this.language = event.detail.language;
+    },
     saveSettings() {
-      alert("System settings saved successfully!");
+      alert(this.t('admin.systemSettingsSaved'));
     },
     toggleUserStatus(user) {
       user.status = user.status === "active" ? "suspended" : "active";
@@ -137,16 +154,16 @@ export default {
       if (post) {
         post.status = "approved";
         post.reports = 0;
-        alert("Post approved");
+        alert(this.t('admin.postApproved'));
       }
     },
     rejectPost(id) {
       this.forumPosts = this.forumPosts.filter((p) => p.id !== id);
-      alert("Post rejected and removed");
+      alert(this.t('admin.postRejected'));
     },
     deletePost(id) {
       this.forumPosts = this.forumPosts.filter((p) => p.id !== id);
-      alert("Post permanently deleted");
+      alert(this.t('admin.postDeleted'));
     },
   },
 };
@@ -157,10 +174,10 @@ export default {
     <div class="bg-emerald-600 text-white rounded-2xl p-6 shadow-md">
       <div class="flex items-center gap-3 mb-1">
         <Shield class="w-6 h-6" />
-        <h2 class="text-xl font-bold">Admin Panel</h2>
+        <h2 class="text-xl font-bold">{{ t('admin.adminPanel') }}</h2>
       </div>
       <p class="text-emerald-100 text-sm opacity-90">
-        General Administrator Access
+        {{ t('admin.generalAdministratorAccess') }}
       </p>
     </div>
 
@@ -170,7 +187,7 @@ export default {
         :key="index"
         class="bg-white p-6 rounded-2xl border border-green-100 shadow-sm"
       >
-        <p class="text-gray-500 text-sm mb-2">{{ stat.label }}</p>
+        <p class="text-gray-500 text-sm mb-2">{{ t(stat.labelKey) }}</p>
         <p class="text-3xl font-bold text-gray-800">{{ stat.value }}</p>
       </div>
     </div>
@@ -186,36 +203,36 @@ export default {
             ? 'bg-emerald-50 text-emerald-700 font-bold'
             : 'text-gray-600 hover:bg-gray-50'
         "
-      >
-        <MessageCircle class="w-4 h-4" />
-        Forum Moderation
-      </button>
+        >
+          <MessageCircle class="w-4 h-4" />
+          {{ t('admin.forumModeration') }}
+        </button>
 
-      <button
-        @click="activeTab = 'users'"
-        class="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-sm font-medium transition-colors"
-        :class="
-          activeTab === 'users'
-            ? 'bg-emerald-50 text-emerald-700 font-bold'
-            : 'text-gray-600 hover:bg-gray-50'
-        "
-      >
-        <UserCog class="w-4 h-4" />
-        User Management
-      </button>
+        <button
+          @click="activeTab = 'users'"
+          class="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-sm font-medium transition-colors"
+          :class="
+            activeTab === 'users'
+              ? 'bg-emerald-50 text-emerald-700 font-bold'
+              : 'text-gray-600 hover:bg-gray-50'
+          "
+        >
+          <UserCog class="w-4 h-4" />
+          {{ t('admin.userManagement') }}
+        </button>
 
-      <button
-        @click="activeTab = 'settings'"
-        class="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-sm font-medium transition-colors"
-        :class="
-          activeTab === 'settings'
-            ? 'bg-emerald-50 text-emerald-700 font-bold'
-            : 'text-gray-600 hover:bg-gray-50'
-        "
-      >
-        <Settings class="w-4 h-4" />
-        System Settings
-      </button>
+        <button
+          @click="activeTab = 'settings'"
+          class="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-sm font-medium transition-colors"
+          :class="
+            activeTab === 'settings'
+              ? 'bg-emerald-50 text-emerald-700 font-bold'
+              : 'text-gray-600 hover:bg-gray-50'
+          "
+        >
+          <Settings class="w-4 h-4" />
+          {{ t('admin.systemSettings') }}
+        </button>
     </div>
 
     <div
@@ -223,13 +240,13 @@ export default {
       class="bg-white p-6 rounded-2xl border border-green-200 shadow-sm"
     >
       <div class="mb-6">
-        <h3 class="text-emerald-700 font-medium">System Settings</h3>
-        <p class="text-sm text-gray-500">Configure platform parameters</p>
+        <h3 class="text-emerald-700 font-medium">{{ t('admin.systemSettingsTitle') }}</h3>
+        <p class="text-sm text-gray-500">{{ t('admin.configurePlatformParameters') }}</p>
       </div>
       <form @submit.prevent="saveSettings" class="space-y-4">
         <div class="space-y-1">
           <label class="text-xs font-bold text-gray-800 ml-1"
-            >Platform Name</label
+            >{{ t('admin.platformName') }}</label
           >
           <input
             v-model="platformName"
@@ -239,7 +256,7 @@ export default {
         </div>
         <div class="space-y-1">
           <label class="text-xs font-bold text-gray-800 ml-1"
-            >Default Eco Score Threshold</label
+            >{{ t('admin.defaultEcoScoreThreshold') }}</label
           >
           <input
             v-model="ecoScoreThreshold"
@@ -249,7 +266,7 @@ export default {
         </div>
         <div class="space-y-1">
           <label class="text-xs font-bold text-gray-800 ml-1"
-            >Weather Alert Sensitivity</label
+            >{{ t('admin.weatherAlertSensitivity') }}</label
           >
           <input
             v-model="weatherSensitivity"
@@ -259,12 +276,12 @@ export default {
         </div>
         <div class="space-y-1">
           <label class="text-xs font-bold text-gray-800 ml-1"
-            >Maintenance Message</label
+            >{{ t('admin.maintenanceMessage') }}</label
           >
           <input
             v-model="maintenanceMessage"
             type="text"
-            placeholder="Enter system-wide message for users..."
+            :placeholder="t('admin.maintenanceMessagePlaceholder')"
             class="w-full p-3 bg-gray-50 rounded-xl border border-gray-200 text-gray-900 placeholder-gray-500 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"
           />
         </div>
@@ -272,7 +289,7 @@ export default {
           type="submit"
           class="bg-emerald-600 text-white py-3 px-6 rounded-lg font-bold hover:bg-emerald-700 transition-colors shadow-sm mt-2"
         >
-          Save Settings
+          {{ t('admin.saveSettings') }}
         </button>
       </form>
     </div>
@@ -282,9 +299,9 @@ export default {
       class="bg-white p-6 rounded-2xl border border-green-200 shadow-sm"
     >
       <div class="mb-6">
-        <h3 class="text-emerald-700 font-medium">User Management</h3>
+        <h3 class="text-emerald-700 font-medium">{{ t('admin.userManagementTitle') }}</h3>
         <p class="text-sm text-gray-500">
-          Manage user accounts and permissions
+          {{ t('admin.manageUserAccounts') }}
         </p>
       </div>
       <div class="space-y-4">
@@ -318,7 +335,7 @@ export default {
               <div class="text-xs text-gray-500">
                 {{ user.email }}
                 <span class="mx-1">•</span>
-                Joined {{ user.joined }}
+                {{ t('admin.joined') }} {{ user.joined }}
               </div>
             </div>
           </div>
@@ -331,7 +348,7 @@ export default {
                 : 'border-green-200 text-green-600 hover:bg-green-50'
             "
           >
-            {{ user.status === "active" ? "Suspend" : "Activate" }}
+            {{ user.status === "active" ? t('admin.suspend') : t('admin.activate') }}
           </button>
         </div>
       </div>
@@ -342,9 +359,9 @@ export default {
       class="bg-white p-6 rounded-2xl border border-green-200 shadow-sm"
     >
       <div class="mb-6">
-        <h3 class="text-emerald-700 font-medium">Forum Posts Moderation</h3>
+        <h3 class="text-emerald-700 font-medium">{{ t('admin.forumPostsModeration') }}</h3>
         <p class="text-sm text-gray-500">
-          Review and moderate community content
+          {{ t('admin.reviewAndModerate') }}
         </p>
       </div>
 
@@ -382,7 +399,7 @@ export default {
                 class="px-2 py-0.5 rounded bg-red-500 text-white text-[10px] font-bold"
               >
                 <i class="fa-solid fa-flag mr-1"></i>
-                {{ post.reports }} reports
+                {{ post.reports }} {{ t('admin.reports') }}
               </span>
               <span
                 class="px-2 py-0.5 rounded text-[10px] font-bold uppercase"
@@ -392,7 +409,7 @@ export default {
                     : 'bg-amber-400 text-white'
                 "
               >
-                {{ post.status }}
+                {{ post.status === 'approved' ? t('admin.approved') : t('admin.pending') }}
               </span>
             </div>
           </div>
@@ -410,21 +427,21 @@ export default {
               class="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white text-xs font-bold rounded-lg hover:bg-emerald-700 transition-colors"
             >
               <Check class="w-3.5 h-3.5" />
-              Approve
+              {{ t('admin.approve') }}
             </button>
             <button
               @click="rejectPost(post.id)"
               class="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-red-200 text-red-600 text-xs font-bold rounded-lg hover:bg-red-50 transition-colors"
             >
               <X class="w-3.5 h-3.5" />
-              Reject
+              {{ t('admin.reject') }}
             </button>
             <button
               @click="deletePost(post.id)"
               class="flex items-center gap-1.5 px-3 py-1.5 text-red-500 text-xs font-medium hover:text-red-700 transition-colors ml-auto"
             >
               <Trash2 class="w-3.5 h-3.5" />
-              Delete
+              {{ t('admin.delete') }}
             </button>
           </div>
         </div>
