@@ -59,7 +59,7 @@ const allNavItems = computed(() => [
 // Show Admin link only for admins
 const navItems = computed(() => {
   const userRole = user.value?.role;
-  if (userRole === "Admin") {
+  if (userRole === "AdminGeneral" || userRole === "AdminForum") {
     return allNavItems.value;
   }
   return allNavItems.value.filter(item => !item.adminOnly);

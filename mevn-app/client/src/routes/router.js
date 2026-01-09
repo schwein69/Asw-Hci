@@ -97,7 +97,7 @@ router.beforeEach((to, from, next) => {
     const userData = localStorage.getItem('user');
     if (userData) {
       const user = JSON.parse(userData);
-      if (user.role === 'Admin') {
+      if (user.role === 'AdminGeneral' || user.role === 'AdminForum') {
         return next('/admin');
       }
     }

@@ -122,7 +122,7 @@ export default {
       user.status = user.status === "active" ? "suspended" : "active";
     },
     getRoleColor(role) {
-      return role === "admin" || role === "Admin"
+      return role === "admin" || role === "AdminGeneral" || role === "AdminForum"
         ? "bg-blue-100 text-blue-600"
         : "bg-gray-100 text-gray-600";
     },

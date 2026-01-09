@@ -32,7 +32,8 @@ const notifications = ref(localStorage.getItem('notifications') !== 'false');
 const t = computed(() => (key) => translate(key, language.value));
 
 const isAdmin = computed(() => {
-  return user.value?.role === 'Admin' || user.value?.role === 'GeneralAdmin';
+  return user.value?.role === 'AdminGeneral' || 
+         user.value?.role === 'AdminForum';
 });
 
 const profileImage = ref(null);
