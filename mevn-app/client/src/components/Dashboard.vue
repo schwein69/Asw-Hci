@@ -57,11 +57,14 @@ export default {
         },
       ],
       environmentalImpact: {
-        trees: "7 trees",
+        treesValue: 7,
+        treesKey: "dashboard.trees",
         treesDescKey: "dashboard.treesDesc",
-        energy: "340 kWh",
+        energyValue: 340,
+        energyKey: "dashboard.energy",
         energyDescKey: "dashboard.energyDesc",
-        miles: "458 miles",
+        milesValue: 458,
+        milesKey: "dashboard.miles",
         milesDescKey: "dashboard.milesDesc",
       },
     };
@@ -80,8 +83,11 @@ export default {
     environmentalImpactWithTranslations() {
       return {
         ...this.environmentalImpact,
+        trees: `${this.environmentalImpact.treesValue} ${this.t(this.environmentalImpact.treesKey)}`,
         treesDesc: this.t(this.environmentalImpact.treesDescKey),
+        energy: `${this.environmentalImpact.energyValue} ${this.t(this.environmentalImpact.energyKey)}`,
         energyDesc: this.t(this.environmentalImpact.energyDescKey),
+        miles: `${this.environmentalImpact.milesValue} ${this.t(this.environmentalImpact.milesKey)}`,
         milesDesc: this.t(this.environmentalImpact.milesDescKey)
       };
     }
@@ -153,7 +159,7 @@ export default {
             <TreePine class="w-10 h-10 shrink-0" />
             <div>
               <div class="text-2xl font-bold">
-                {{ environmentalImpact.trees }}
+                {{ environmentalImpactWithTranslations.trees }}
               </div>
               <div class="text-sm opacity-90">
                 {{ environmentalImpactWithTranslations.treesDesc }}
@@ -167,7 +173,7 @@ export default {
             <Zap class="w-10 h-10 shrink-0" />
             <div>
               <div class="text-2xl font-bold">
-                {{ environmentalImpact.energy }}
+                {{ environmentalImpactWithTranslations.energy }}
               </div>
               <div class="text-sm opacity-90">
                 {{ environmentalImpactWithTranslations.energyDesc }}
@@ -181,7 +187,7 @@ export default {
             <Fuel class="w-10 h-10 shrink-0" />
             <div>
               <div class="text-2xl font-bold">
-                {{ environmentalImpact.miles }}
+                {{ environmentalImpactWithTranslations.miles }}
               </div>
               <div class="text-sm opacity-90">
                 {{ environmentalImpactWithTranslations.milesDesc }}

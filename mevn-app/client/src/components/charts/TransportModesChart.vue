@@ -1,6 +1,7 @@
 <script>
 import { Pie } from "vue-chartjs";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
+import { getLanguage, t as translate } from "../../utils/translations.js";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
@@ -8,9 +9,17 @@ export default {
   name: "TransportModesChart",
   components: { Pie },
   data() {
+    const lang = getLanguage();
     return {
+      language: lang,
       chartData: {
-        labels: ["Train", "Bus", "Bike", "Walk", "Car"],
+        labels: [
+          translate("dashboard.transportTypes.train", lang),
+          translate("dashboard.transportTypes.bus", lang),
+          translate("dashboard.transportTypes.bike", lang),
+          translate("dashboard.transportTypes.walk", lang),
+          translate("dashboard.transportTypes.car", lang),
+        ],
         datasets: [
           {
             data: [35, 28, 20, 12, 5],
@@ -56,14 +65,40 @@ export default {
       },
     };
   },
+  computed: {
+    t() {
+      return (key) => translate(key, this.language);
+    },
+  },
+  mounted() {
+    window.addEventListener('languageChanged', this.handleLanguageChange);
+  },
+  beforeUnmount() {
+    window.removeEventListener('languageChanged', this.handleLanguageChange);
+  },
+  methods: {
+    handleLanguageChange(event) {
+      this.language = event.detail.language;
+      this.updateChartData();
+    },
+    updateChartData() {
+      this.chartData.labels = [
+        this.t('dashboard.transportTypes.train'),
+        this.t('dashboard.transportTypes.bus'),
+        this.t('dashboard.transportTypes.bike'),
+        this.t('dashboard.transportTypes.walk'),
+        this.t('dashboard.transportTypes.car'),
+      ];
+    },
+  },
 };
 </script>
 
 <template>
   <div class="card bg-white border border-green-100 shadow-sm">
     <div class="card-body">
-      <h3 class="text-xl font-bold text-success mb-1">Transport Modes</h3>
-      <p class="text-sm text-gray-600 mb-4">Your eco-friendly choices</p>
+      <h3 class="text-xl font-bold text-success mb-1">{{ t('dashboard.transportModes') }}</h3>
+      <p class="text-sm text-gray-600 mb-4">{{ t('dashboard.ecoFriendlyChoices') }}</p>
       <div class="h-56 flex justify-center items-center">
         <Pie :data="chartData" :options="chartOptions" class="w-full" />
       </div>

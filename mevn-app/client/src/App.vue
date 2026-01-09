@@ -228,7 +228,7 @@ export default {
           <p
             class="text-[9px] text-success font-light uppercase tracking-[0.2em]"
           >
-            {{ t('app.travelGreen') }}
+            Travel Green • Live Clean
           </p>
         </div>
         <div class="ml-auto flex items-center gap-2">
