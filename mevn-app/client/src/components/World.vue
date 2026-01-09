@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed } from "vue";
 import {
-  CheckCircle2, // Changed icon
+  CheckCircle2,
   Train,
   Trash2,
   Clock,
