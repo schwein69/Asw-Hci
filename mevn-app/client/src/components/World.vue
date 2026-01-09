@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, onMounted, onUnmounted } from "vue";
 import {
   CheckCircle2, // Changed icon
   Train,
@@ -19,6 +19,24 @@ import {
 } from "lucide-vue-next";
 import actualMap from "./maps/actualMap.vue";
 import * as turf from "@turf/turf";
+import { getLanguage, t as translate } from "../utils/translations.js";
+
+const language = ref(getLanguage());
+
+const t = computed(() => (key) => translate(key, language.value));
+
+const handleLanguageChange = (event) => {
+  language.value = event.detail.language;
+};
+
+onMounted(() => {
+  language.value = getLanguage();
+  window.addEventListener('languageChanged', handleLanguageChange);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('languageChanged', handleLanguageChange);
+});
 
 const tripSummary = ref({
   totalDestinations: 6,
@@ -233,6 +251,21 @@ function toggleComplete(id) {
   if (seg) seg.completed = !seg.completed;
 }
 
+const translateTransportType = (type) => {
+  const typeMap = {
+    'Train': t.value('world.transportTypes.train'),
+    'Airplane': t.value('world.transportTypes.airplane'),
+    'Car': t.value('world.transportTypes.car')
+  };
+  return typeMap[type] || type;
+};
+
+const translatePlatform = (platform) => {
+  if (!platform) return '';
+  const platformWord = language.value === 'it' ? 'Binario' : 'Platform';
+  return platform.replace(/Platform/gi, platformWord);
+};
+
 function completeTrip() {
   if (confirm("Are you sure you want to complete and archive this trip?")) {
     journeySegments.value = [];
@@ -253,19 +286,17 @@ function completeTrip() {
     >
       <div>
         <h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2">
-          <Clock class="w-6 h-6 text-green-600" /> Actual Trip - Detailed
-          Itinerary
+          <Clock class="w-6 h-6 text-green-600" /> {{ t('world.tripSummary') }}
         </h2>
         <p class="text-gray-500 text-sm">
-          Complete breakdown of your journey with all transport methods and
-          timings.
+          {{ t('world.tripSummary') }}
         </p>
       </div>
       <button
         @click="completeTrip"
         class="btn btn-success text-white gap-2 rounded-xl shadow-md font-bold hover:scale-105 transition-transform"
       >
-        <CheckCircle2 class="w-5 h-5" /> Complete Trip
+        <CheckCircle2 class="w-5 h-5" /> {{ t('world.completed') }}
       </button>
     </div>
 
@@ -274,7 +305,7 @@ function completeTrip() {
         class="card bg-white border border-green-100 shadow-sm p-5 text-center rounded-2xl"
       >
         <div class="text-xs uppercase font-bold text-gray-400 tracking-wider">
-          Total Destinations
+          {{ t('world.totalDestinations') }}
         </div>
         <div class="text-4xl font-extrabold text-gray-800 mt-2">
           {{ tripSummary.totalDestinations }}
@@ -284,7 +315,7 @@ function completeTrip() {
         class="card bg-white border border-green-100 shadow-sm p-5 text-center rounded-2xl"
       >
         <div class="text-xs uppercase font-bold text-gray-400 tracking-wider">
-          Carbon Footprint
+          {{ t('world.carbonFootprint') }}
         </div>
         <div
           class="text-4xl font-extrabold text-green-600 mt-2 flex justify-center items-center gap-1"
@@ -297,7 +328,7 @@ function completeTrip() {
         class="card bg-white border border-green-100 shadow-sm p-5 text-center rounded-2xl"
       >
         <div class="text-xs uppercase font-bold text-gray-400 tracking-wider">
-          Total Cost
+          {{ t('world.totalCost') }}
         </div>
         <div
           class="text-4xl font-extrabold text-gray-800 mt-2 flex justify-center items-center"
@@ -310,7 +341,7 @@ function completeTrip() {
     <div
       class="space-y-3 border border-green-500 rounded-2xl p-4 bg-green-50/30"
     >
-      <h3 class="text-lg font-bold text-green-800">Journey Segments</h3>
+      <h3 class="text-lg font-bold text-green-800">{{ t('world.journeySegments') }}</h3>
 
       <div
         class="max-h-[600px] overflow-y-auto pr-2 space-y-4 custom-scrollbar p-1"
@@ -373,7 +404,7 @@ function completeTrip() {
                     ? 'text-green-600 bg-green-100'
                     : 'text-gray-300 hover:text-green-600 hover:bg-green-50'
                 "
-                :title="segment.completed ? 'Mark Incomplete' : 'Mark Complete'"
+                :title="segment.completed ? t('world.markIncomplete') : t('world.markComplete')"
               >
                 <Check class="w-5 h-5" />
               </button>
@@ -381,7 +412,7 @@ function completeTrip() {
               <button
                 @click="removeSegment(segment.id)"
                 class="btn btn-sm btn-ghost btn-circle text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors"
-                title="Delete Segment"
+                :title="t('world.deleteSegment')"
               >
                 <Trash2 class="w-4 h-4" />
               </button>
@@ -433,7 +464,7 @@ function completeTrip() {
                     : 'bg-green-50 text-green-700'
                 "
               >
-                {{ segment.type.toUpperCase() }}
+                {{ translateTransportType(segment.type).toUpperCase() }}
               </div>
             </div>
 
@@ -449,7 +480,7 @@ function completeTrip() {
                 <div
                   class="text-[9px] text-gray-400 font-bold uppercase flex items-center gap-1"
                 >
-                  <Building2 class="w-3 h-3" /> Terminal
+                  <Building2 class="w-3 h-3" /> {{ t('world.terminal') }}
                 </div>
                 <div class="text-xs font-semibold text-gray-700">
                   {{ segment.terminal }}
@@ -459,7 +490,7 @@ function completeTrip() {
                 <div
                   class="text-[9px] text-gray-400 font-bold uppercase flex items-center gap-1"
                 >
-                  <DoorOpen class="w-3 h-3" /> Gate
+                  <DoorOpen class="w-3 h-3" /> {{ t('world.gate') }}
                 </div>
                 <div class="text-xs font-semibold text-gray-700">
                   {{ segment.gate }}
@@ -469,7 +500,7 @@ function completeTrip() {
                 <div
                   class="text-[9px] text-gray-400 font-bold uppercase flex items-center gap-1"
                 >
-                  <Armchair class="w-3 h-3" /> Seat
+                  <Armchair class="w-3 h-3" /> {{ t('world.seat') }}
                 </div>
                 <div class="text-xs font-semibold text-gray-700">
                   {{ segment.seat }}
@@ -477,7 +508,7 @@ function completeTrip() {
               </div>
               <div v-if="segment.class">
                 <div class="text-[9px] text-gray-400 font-bold uppercase">
-                  Class
+                  {{ t('world.class') }}
                 </div>
                 <div class="text-xs font-semibold text-gray-700">
                   {{ segment.class }}
@@ -497,7 +528,7 @@ function completeTrip() {
                 <div
                   class="text-[10px] text-gray-400 font-bold uppercase flex items-center gap-1 mb-1"
                 >
-                  <Clock class="w-3 h-3" /> Departure
+                  <Clock class="w-3 h-3" /> {{ t('world.departure') }}
                 </div>
                 <div
                   class="text-lg font-bold"
@@ -511,7 +542,7 @@ function completeTrip() {
                     segment.completed ? 'text-gray-400' : 'text-green-600'
                   "
                 >
-                  {{ segment.depPlatform }}
+                  {{ translatePlatform(segment.depPlatform) }}
                 </div>
               </div>
               <div
@@ -525,7 +556,7 @@ function completeTrip() {
                 <div
                   class="text-[10px] text-gray-400 font-bold uppercase flex items-center gap-1 mb-1"
                 >
-                  <MapPin class="w-3 h-3" /> Arrival
+                  <MapPin class="w-3 h-3" /> {{ t('world.arrival') }}
                 </div>
                 <div
                   class="text-lg font-bold"
@@ -539,7 +570,7 @@ function completeTrip() {
                     segment.completed ? 'text-gray-400' : 'text-green-600'
                   "
                 >
-                  {{ segment.arrPlatform }}
+                  {{ translatePlatform(segment.arrPlatform) }}
                 </div>
               </div>
             </div>
@@ -549,7 +580,7 @@ function completeTrip() {
             >
               <div class="text-center">
                 <div class="text-[10px] text-gray-400 font-bold uppercase">
-                  Duration
+                  {{ t('world.duration') }}
                 </div>
                 <div class="font-bold text-gray-700">
                   {{ segment.duration }}
@@ -557,7 +588,7 @@ function completeTrip() {
               </div>
               <div class="text-center">
                 <div class="text-[10px] text-gray-400 font-bold uppercase">
-                  Emissions
+                  {{ t('world.carbonFootprint') }}
                 </div>
                 <div
                   class="font-bold"
@@ -570,7 +601,7 @@ function completeTrip() {
               </div>
               <div class="text-center">
                 <div class="text-[10px] text-gray-400 font-bold uppercase">
-                  Cost
+                  {{ t('world.cost') }}
                 </div>
                 <div class="font-bold text-gray-800">€{{ segment.cost }}</div>
               </div>
@@ -588,10 +619,10 @@ function completeTrip() {
       >
         <div>
           <h3 class="text-lg font-bold text-green-800 flex items-center gap-2">
-            <MapPin class="w-5 h-5" /> Interactive Route Map
+            <MapPin class="w-5 h-5" /> {{ t('world.interactiveRouteMap') }}
           </h3>
           <p class="text-gray-500 text-xs">
-            Visualize your journey on an interactive world map
+            {{ t('world.visualizeJourney') }}
           </p>
         </div>
         <button
@@ -599,7 +630,7 @@ function completeTrip() {
           class="btn btn-xs sm:btn-sm btn-outline btn-success gap-2 font-bold rounded-full"
         >
           <component :is="is3D ? Minimize2 : Maximize2" class="w-4 h-4" />
-          {{ is3D ? "2D View" : "Switch to 3D" }}
+          {{ is3D ? t('world.expand') : t('world.collapse') }}
         </button>
       </div>
 
@@ -616,7 +647,7 @@ function completeTrip() {
           <button
             class="btn btn-xs bg-white/90 backdrop-blur text-gray-600 shadow-md border-none pointer-events-auto"
           >
-            Reset
+            {{ t('world.reset') }}
           </button>
         </div>
       </div>
@@ -626,15 +657,13 @@ function completeTrip() {
       >
         <div class="flex gap-4">
           <span class="flex items-center gap-1"
-            ><MousePointerClick class="w-3 h-3" /> Use controls to
-            navigate</span
+            ><MousePointerClick class="w-3 h-3" /> {{ t('world.useControlsToNavigate') }}</span
           >
           <span class="flex items-center gap-1"
-            ><Maximize2 class="w-3 h-3" /> {{ is3D ? "3D" : "2D" }} view
-            active</span
+            ><Maximize2 class="w-3 h-3" /> {{ is3D ? "3D" : "2D" }} {{ t('world.view') }} {{ t('world.active') }}</span
           >
         </div>
-        <span>{{ tripSummary.totalDestinations }} destinations on route</span>
+        <span>{{ tripSummary.totalDestinations }} {{ t('world.destinationsOnRoute') }}</span>
       </div>
     </div>
   </div>

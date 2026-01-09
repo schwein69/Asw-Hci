@@ -57,7 +57,7 @@ export default {
           name: "Michael Chen",
           email: "michael@example.com",
           joined: "2024-02-20",
-          role: "forum admin",
+          role: "admin",
           status: "active",
           initials: "MC",
         },
@@ -122,7 +122,7 @@ export default {
       user.status = user.status === "active" ? "suspended" : "active";
     },
     getRoleColor(role) {
-      return role === "forum admin"
+      return role === "admin" || role === "Admin"
         ? "bg-blue-100 text-blue-600"
         : "bg-gray-100 text-gray-600";
     },

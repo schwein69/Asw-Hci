@@ -11,6 +11,7 @@ import {
 import CarbonTrendChart from "./charts/CarbonTrendChart.vue";
 import TransportModesChart from "./charts/TransportModesChart.vue";
 import DestinationChart from "./charts/DestinationChart.vue";
+import { getLanguage, t as translate } from "../utils/translations.js";
 
 export default {
   name: "Dashboard",
@@ -28,43 +29,79 @@ export default {
   },
   data() {
     return {
-      // Top Stats - Placeholder data
+      language: getLanguage(),
       stats: [
         {
-          label: "Total CO₂ Saved",
+          labelKey: "dashboard.totalCo2Saved",
           value: "183 kg",
-          subtitle: "↑ 15% vs last month",
+          subtitleKey: "dashboard.vsLastMonth",
           icon: Leaf,
         },
         {
-          label: "Green Miles",
+          labelKey: "dashboard.greenMiles",
           value: "2,847",
-          subtitle: "✓ 1,200 this month",
+          subtitleKey: "dashboard.thisMonth",
           icon: TrendingUp,
         },
         {
-          label: "Eco Score",
+          labelKey: "dashboard.ecoScore",
           value: "892",
-          subtitle: "🏆 Top 10% globally",
+          subtitleKey: "dashboard.topGlobally",
           icon: Gauge,
         },
         {
-          label: "Monthly Goal",
+          labelKey: "dashboard.monthlyGoal",
           value: "54 / 100 kg",
-          subtitle: "Progress bar visualization",
+          subtitleKey: "dashboard.progressBar",
           icon: Target,
         },
       ],
-      // Environmental Impact - Placeholder
       environmentalImpact: {
-        trees: "7 trees",
-        treesDesc: "Equivalent to planting",
-        energy: "340 kWh",
-        energyDesc: "Energy saved equals",
-        miles: "458 miles",
-        milesDesc: "Car miles avoided",
+        treesValue: 7,
+        treesKey: "dashboard.trees",
+        treesDescKey: "dashboard.treesDesc",
+        energyValue: 340,
+        energyKey: "dashboard.energy",
+        energyDescKey: "dashboard.energyDesc",
+        milesValue: 458,
+        milesKey: "dashboard.miles",
+        milesDescKey: "dashboard.milesDesc",
       },
     };
+  },
+  computed: {
+    t() {
+      return (key) => translate(key, this.language);
+    },
+    statsWithTranslations() {
+      return this.stats.map(stat => ({
+        ...stat,
+        label: this.t(stat.labelKey),
+        subtitle: this.t(stat.subtitleKey)
+      }));
+    },
+    environmentalImpactWithTranslations() {
+      return {
+        ...this.environmentalImpact,
+        trees: `${this.environmentalImpact.treesValue} ${this.t(this.environmentalImpact.treesKey)}`,
+        treesDesc: this.t(this.environmentalImpact.treesDescKey),
+        energy: `${this.environmentalImpact.energyValue} ${this.t(this.environmentalImpact.energyKey)}`,
+        energyDesc: this.t(this.environmentalImpact.energyDescKey),
+        miles: `${this.environmentalImpact.milesValue} ${this.t(this.environmentalImpact.milesKey)}`,
+        milesDesc: this.t(this.environmentalImpact.milesDescKey)
+      };
+    }
+  },
+  mounted() {
+    window.addEventListener('languageChanged', this.handleLanguageChange);
+  },
+  beforeUnmount() {
+    window.removeEventListener('languageChanged', this.handleLanguageChange);
+  },
+  methods: {
+    handleLanguageChange(event) {
+      this.language = event.detail.language;
+    },
   },
 };
 </script>
@@ -74,7 +111,7 @@ export default {
     <div
       class="stats stats-vertical md:stats-horizontal shadow-sm border border-green-100 bg-white w-full md:grid-cols-2 lg:grid-cols-4"
     >
-      <div v-for="(stat, idx) in stats" :key="idx" class="stat">
+      <div v-for="(stat, idx) in statsWithTranslations" :key="idx" class="stat">
         <div class="stat-figure text-success">
           <component :is="stat.icon" class="w-6 h-6" />
         </div>
@@ -112,7 +149,7 @@ export default {
       <div class="card-body">
         <div class="flex items-center gap-2 mb-6">
           <Leaf class="w-6 h-6" />
-          <h3 class="text-xl font-bold">Your Environmental Impact</h3>
+          <h3 class="text-xl font-bold">{{ t('dashboard.environmentalImpact') }}</h3>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
           <!-- Trees -->
@@ -122,10 +159,10 @@ export default {
             <TreePine class="w-10 h-10 shrink-0" />
             <div>
               <div class="text-2xl font-bold">
-                {{ environmentalImpact.trees }}
+                {{ environmentalImpactWithTranslations.trees }}
               </div>
               <div class="text-sm opacity-90">
-                {{ environmentalImpact.treesDesc }}
+                {{ environmentalImpactWithTranslations.treesDesc }}
               </div>
             </div>
           </div>
@@ -136,10 +173,10 @@ export default {
             <Zap class="w-10 h-10 shrink-0" />
             <div>
               <div class="text-2xl font-bold">
-                {{ environmentalImpact.energy }}
+                {{ environmentalImpactWithTranslations.energy }}
               </div>
               <div class="text-sm opacity-90">
-                {{ environmentalImpact.energyDesc }}
+                {{ environmentalImpactWithTranslations.energyDesc }}
               </div>
             </div>
           </div>
@@ -150,10 +187,10 @@ export default {
             <Fuel class="w-10 h-10 shrink-0" />
             <div>
               <div class="text-2xl font-bold">
-                {{ environmentalImpact.miles }}
+                {{ environmentalImpactWithTranslations.miles }}
               </div>
               <div class="text-sm opacity-90">
-                {{ environmentalImpact.milesDesc }}
+                {{ environmentalImpactWithTranslations.milesDesc }}
               </div>
             </div>
           </div>

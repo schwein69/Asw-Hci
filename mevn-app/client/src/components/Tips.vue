@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, onUnmounted, computed, reactive, watch } from "vue";
 import Guidelines from "./template/Guidelines.vue";
 import Explore from "./template/Explore.vue";
 import axios from "axios";
@@ -23,6 +23,23 @@ import {
   Plane,
   ShoppingBag,
 } from "lucide-vue-next";
+import { getLanguage, t as translate } from "../utils/translations.js";
+
+const language = ref(getLanguage());
+
+const t = computed(() => (key) => translate(key, language.value));
+
+const handleLanguageChange = (event) => {
+  language.value = event.detail.language;
+};
+
+onMounted(() => {
+  window.addEventListener('languageChanged', handleLanguageChange);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('languageChanged', handleLanguageChange);
+});
 
 const iconMap = {
   Globe,
@@ -54,162 +71,159 @@ onMounted(async () => {
   }
 });
 
-const knowledgesTips = [
+const knowledgesTipsBase = computed(() => [
   {
-    text: "A single round-trip flight from New York to London generates about 1.5 tons of CO₂ per passenger.",
+    textKey: "tips.knowledgeTips.flightCo2",
     icon: Plane,
   },
   {
-    text: "One tree absorbs approximately 22 kg of CO₂ per year. You'd need 68 trees to offset that one flight!",
+    textKey: "tips.knowledgeTips.treeAbsorption",
     icon: Leaf,
   },
-
   {
-    text: "Choosing train travel over flying can reduce your carbon footprint by up to 90% for the same route.",
+    textKey: "tips.knowledgeTips.trainVsPlane",
     icon: Heart,
   },
   {
-    text: "Staying at eco-certified hotels can reduce water and energy consumption by up to 30%.",
+    textKey: "tips.knowledgeTips.ecoHotels",
     icon: BedDouble,
   },
-];
-const transportGuidelines = ref([
+]);
+const transportGuidelinesBase = computed(() => [
   {
-    title: "Choose Train Over Plane",
+    titleKey: "tips.guidelines.transport.chooseTrain.title",
+    descriptionKey: "tips.guidelines.transport.chooseTrain.description",
     impact: "High Impact",
     impactColor: "badge-success",
     difficulty: "Easy",
-    description:
-      "Trains emit up to 90% less CO₂ than flights for the same journey. For trips under 500km, trains are often faster when you include airport time!",
     isOpen: false,
   },
   {
-    title: "Direct Flights When Flying",
+    titleKey: "tips.guidelines.transport.directFlights.title",
+    descriptionKey: "tips.guidelines.transport.directFlights.description",
     impact: "Medium Impact",
     impactColor: "badge-warning",
     difficulty: "Easy",
-    description:
-      "Takeoffs and landings use the most fuel. Direct flights reduce carbon emissions significantly compared to layovers.",
     isOpen: false,
   },
   {
-    title: "Offset Your Carbon",
+    titleKey: "tips.guidelines.transport.offsetCarbon.title",
+    descriptionKey: "tips.guidelines.transport.offsetCarbon.description",
     impact: "Medium Impact",
     impactColor: "badge-warning",
     difficulty: "Easy",
-    description:
-      "Calculate your travel footprint and donate to verified reforestation or renewable energy projects.",
     isOpen: false,
   },
 ]);
 
-const accomodationGuidelines = ref([
+const accomodationGuidelinesBase = computed(() => [
   {
-    title: "Choose Eco-Certified Stays",
+    titleKey: "tips.guidelines.accommodation.ecoCertified.title",
+    descriptionKey: "tips.guidelines.accommodation.ecoCertified.description",
     impact: "High Impact",
     impactColor: "badge-success",
     difficulty: "Medium",
-    description:
-      "Look for hotels with Green Key, LEED, or EarthCheck certifications. These properties actively reduce water, waste, and energy consumption.",
     isOpen: false,
   },
   {
-    title: "Reuse Towels & Linens",
+    titleKey: "tips.guidelines.accommodation.reuseTowels.title",
+    descriptionKey: "tips.guidelines.accommodation.reuseTowels.description",
     impact: "Medium Impact",
     impactColor: "badge-warning",
     difficulty: "Easy",
-    description:
-      "Hang up your towels to signal you'll reuse them. This saves huge amounts of water and electricity used for daily laundry.",
     isOpen: false,
   },
   {
-    title: "Conserve Room Energy",
+    titleKey: "tips.guidelines.accommodation.conserveEnergy.title",
+    descriptionKey: "tips.guidelines.accommodation.conserveEnergy.description",
     impact: "Medium Impact",
     impactColor: "badge-warning",
     difficulty: "Easy",
-    description:
-      "Always turn off lights, AC, and TV when leaving your room. Close curtains on hot days to keep the room cool naturally.",
     isOpen: false,
   },
 ]);
 
-const foodGuidelines = ref([
+const foodGuidelinesBase = computed(() => [
   {
-    title: "Eat Local & Seasonal",
+    titleKey: "tips.guidelines.food.eatLocal.title",
+    descriptionKey: "tips.guidelines.food.eatLocal.description",
     impact: "High Impact",
     impactColor: "badge-success",
     difficulty: "Easy",
-    description:
-      "Imported ingredients have a high carbon footprint. Local food supports the community economy and usually tastes fresher!",
     isOpen: false,
   },
   {
-    title: "Plant-Based Options",
+    titleKey: "tips.guidelines.food.plantBased.title",
+    descriptionKey: "tips.guidelines.food.plantBased.description",
     impact: "High Impact",
     impactColor: "badge-success",
     difficulty: "Medium",
-    description:
-      "Animal agriculture is a major greenhouse gas contributor. Try eating vegetarian or vegan for at least one meal a day.",
     isOpen: false,
   },
   {
-    title: "Avoid Single-Use Plastics",
+    titleKey: "tips.guidelines.food.avoidPlastics.title",
+    descriptionKey: "tips.guidelines.food.avoidPlastics.description",
     impact: "Medium Impact",
     impactColor: "badge-warning",
     difficulty: "Easy",
-    description:
-      "Refuse plastic straws and cutlery. Carry a reusable water bottle and fill up at filtered water stations.",
     isOpen: false,
   },
 ]);
 
-const shoppingGuidelines = ref([
+const shoppingGuidelinesBase = computed(() => [
   {
-    title: "Support Local Artisans",
+    titleKey: "tips.guidelines.shopping.supportArtisans.title",
+    descriptionKey: "tips.guidelines.shopping.supportArtisans.description",
     impact: "High Impact",
     impactColor: "badge-success",
     difficulty: "Easy",
-    description:
-      "Buy souvenirs made locally rather than mass-produced imports. This puts money directly into the hands of local families.",
     isOpen: false,
   },
   {
-    title: "Ethical Souvenirs",
+    titleKey: "tips.guidelines.shopping.ethicalSouvenirs.title",
+    descriptionKey: "tips.guidelines.shopping.ethicalSouvenirs.description",
     impact: "High Impact",
     impactColor: "badge-success",
     difficulty: "Medium",
-    description:
-      "Never buy products made from endangered species, ivory, coral, or turtle shells. It fuels illegal poaching and ecosystem destruction.",
     isOpen: false,
   },
 ]);
 
-const activitiesGuidelines = ref([
+const activitiesGuidelinesBase = computed(() => [
   {
-    title: "Respect Wildlife",
+    titleKey: "tips.guidelines.activities.respectWildlife.title",
+    descriptionKey: "tips.guidelines.activities.respectWildlife.description",
     impact: "High Impact",
     impactColor: "badge-success",
     difficulty: "Easy",
-    description:
-      "Observe animals from a distance. Never feed them, as it disrupts their natural diet and can make them aggressive.",
     isOpen: false,
   },
   {
-    title: "Low-Carbon Tours",
+    titleKey: "tips.guidelines.activities.lowCarbonTours.title",
+    descriptionKey: "tips.guidelines.activities.lowCarbonTours.description",
     impact: "Medium Impact",
     impactColor: "badge-warning",
     difficulty: "Easy",
-    description:
-      "Opt for human-powered activities like kayaking, hiking, or cycling tours instead of jet skis, ATVs, or helicopter rides.",
     isOpen: false,
   },
 ]);
 
-/**
- * Toggles the 'isOpen' state of a guideline item by its index.
- * @param {Array} list - The array containing the guideline objects.
- * @param {Number} index - The index of the item to toggle.
- */
+const transportGuidelines = reactive(transportGuidelinesBase.value.map(g => ({ ...g })));
+const accomodationGuidelines = reactive(accomodationGuidelinesBase.value.map(g => ({ ...g })));
+const foodGuidelines = reactive(foodGuidelinesBase.value.map(g => ({ ...g })));
+const shoppingGuidelines = reactive(shoppingGuidelinesBase.value.map(g => ({ ...g })));
+const activitiesGuidelines = reactive(activitiesGuidelinesBase.value.map(g => ({ ...g })));
+const knowledgesTips = reactive(knowledgesTipsBase.value.map(t => ({ ...t })));
+
+watch(() => language.value, () => {
+  transportGuidelines.splice(0, transportGuidelines.length, ...transportGuidelinesBase.value.map(g => ({ ...g })));
+  accomodationGuidelines.splice(0, accomodationGuidelines.length, ...accomodationGuidelinesBase.value.map(g => ({ ...g })));
+  foodGuidelines.splice(0, foodGuidelines.length, ...foodGuidelinesBase.value.map(g => ({ ...g })));
+  shoppingGuidelines.splice(0, shoppingGuidelines.length, ...shoppingGuidelinesBase.value.map(g => ({ ...g })));
+  activitiesGuidelines.splice(0, activitiesGuidelines.length, ...activitiesGuidelinesBase.value.map(g => ({ ...g })));
+  knowledgesTips.splice(0, knowledgesTips.length, ...knowledgesTipsBase.value.map(t => ({ ...t })));
+});
+
 const toggleGeneric = (list, index) => {
   if (list && list[index]) {
     list[index].isOpen = !list[index].isOpen;
@@ -222,31 +236,31 @@ const toggleGeneric = (list, index) => {
     <div class="bg-success rounded-xl shadow-lg p-6 mb-6">
       <div class="flex items-center gap-3 mb-2">
         <Lightbulb class="w-6 h-6" />
-        <h1 class="text-2xl font-bold">Sustainable Travel Guide</h1>
+        <h1 class="text-2xl font-bold">{{ t('tips.title') }}</h1>
       </div>
       <p class="opacity-90 ml-9">
-        Small changes make a big difference for our planet
+        {{ t('tips.subtitle') }}
       </p>
     </div>
 
     <Explore
-      title="Quick Daily Tips"
+      :title="t('tips.quickDailyTips')"
       :icon="Sparkles"
       :daily-tips="dailyTips"
     />
 
     <h3 class="text-xl font-semibold text-teal-900 mb-4 pl-1">
-      Detailed Guidelines
+      {{ t('tips.detailedGuidelines') }}
     </h3>
     <Guidelines
-      title="Transportation"
+      :title="t('tips.transportation')"
       :icon="Plane"
       :guidelines="transportGuidelines"
       @toggle-guideline="(index) => toggleGeneric(transportGuidelines, index)"
     />
 
     <Guidelines
-      title="Accommodation"
+      :title="t('tips.accommodation')"
       :icon="BedDouble"
       :guidelines="accomodationGuidelines"
       @toggle-guideline="
@@ -255,25 +269,25 @@ const toggleGeneric = (list, index) => {
     />
 
     <Guidelines
-      title="Food & Dining"
+      :title="t('tips.foodDining')"
       :icon="Hamburger"
       :guidelines="foodGuidelines"
       @toggle-guideline="(index) => toggleGeneric(foodGuidelines, index)"
     />
     <Guidelines
-      title="Shopping"
+      :title="t('tips.shopping')"
       :icon="ShoppingBag"
       :guidelines="shoppingGuidelines"
       @toggle-guideline="(index) => toggleGeneric(shoppingGuidelines, index)"
     />
     <Guidelines
-      title="Activities"
+      :title="t('tips.activities')"
       :icon="Heart"
       :guidelines="activitiesGuidelines"
       @toggle-guideline="(index) => toggleGeneric(activitiesGuidelines, index)"
     />
 
-    <Explore title="Did you know?" :icon="Info" :daily-tips="knowledgesTips" />
+    <Explore :title="t('tips.didYouKnow')" :icon="Info" :daily-tips="knowledgesTips" />
   </div>
 </template>
 

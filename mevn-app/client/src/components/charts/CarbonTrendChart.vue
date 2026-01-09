@@ -11,6 +11,7 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
+import { getLanguage, t as translate } from "../../utils/translations.js";
 
 ChartJS.register(
   CategoryScale,
@@ -26,12 +27,21 @@ export default {
   name: "CarbonTrendChart",
   components: { Line, TrendingUp },
   data() {
+    const lang = getLanguage();
     return {
+      language: lang,
       chartData: {
-        labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
+        labels: [
+          translate("dashboard.months.jan", lang),
+          translate("dashboard.months.feb", lang),
+          translate("dashboard.months.mar", lang),
+          translate("dashboard.months.apr", lang),
+          translate("dashboard.months.may", lang),
+          translate("dashboard.months.jun", lang),
+        ],
         datasets: [
           {
-            label: "CO₂ Emissions (kg)",
+            label: translate("dashboard.co2Emissions", lang),
             data: [120, 105, 95, 90, 75, 60],
             borderColor: "#10b981",
             backgroundColor: "rgba(16, 185, 129, 0.1)",
@@ -70,6 +80,34 @@ export default {
       },
     };
   },
+  computed: {
+    t() {
+      return (key) => translate(key, this.language);
+    },
+  },
+  mounted() {
+    window.addEventListener('languageChanged', this.handleLanguageChange);
+  },
+  beforeUnmount() {
+    window.removeEventListener('languageChanged', this.handleLanguageChange);
+  },
+  methods: {
+    handleLanguageChange(event) {
+      this.language = event.detail.language;
+      this.updateChartData();
+    },
+    updateChartData() {
+      this.chartData.labels = [
+        this.t('dashboard.months.jan'),
+        this.t('dashboard.months.feb'),
+        this.t('dashboard.months.mar'),
+        this.t('dashboard.months.apr'),
+        this.t('dashboard.months.may'),
+        this.t('dashboard.months.jun'),
+      ];
+      this.chartData.datasets[0].label = this.t('dashboard.co2Emissions');
+    },
+  },
 };
 </script>
 
@@ -78,7 +116,7 @@ export default {
     <div class="card-body">
       <div class="flex items-center gap-2 mb-4">
         <TrendingUp class="w-5 h-5 text-success" />
-        <h3 class="text-lg font-bold text-gray-800">Carbon Footprint Trend</h3>
+        <h3 class="text-lg font-bold text-gray-800">{{ t('dashboard.carbonFootprintTrend') }}</h3>
       </div>
       <div class="h-64">
         <Line :data="chartData" :options="chartOptions" class="w-full" />

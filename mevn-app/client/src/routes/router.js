@@ -53,23 +53,23 @@ const routes = [
     component: () => import("../components/Admin.vue"),
   },
   {
-    path: "/login",
-    name: "Login",
+    path: '/login',
+    name: 'Login',
     component: () => import("../components/Login.vue"),
   },
   {
-    path: "/forgot-password",
-    name: "ForgotPassword",
-    component: () => import("../components/ForgotPassword.vue"),
-  },
-  {
-    path: "/reset-password",
-    name: "ResetPassword",
+    path: '/reset-password',
+    name: 'ResetPassword',
     component: () => import("../components/ResetPassword.vue"),
   },
   {
-    path: "/profile",
-    name: "Profile",
+    path: '/forgot-password',
+    name: 'ForgotPassword',
+    component: () => import("../components/ForgotPassword.vue"),
+  },
+  {
+    path: '/profile',
+    name: 'Profile',
     component: () => import("../components/Profile.vue"),
   },
 ];
@@ -79,42 +79,36 @@ const router = createRouter({
   routes,
 });
 
-// Public routes that don't require authentication
-const publicRoutes = ["Login", "ForgotPassword", "ResetPassword"];
-const publicPaths = ["/login", "/forgot-password", "/reset-password"];
+const publicRoutes = ['Login', 'ResetPassword', 'ForgotPassword'];
+const publicPaths = ['/login', '/reset-password', '/forgot-password'];
 
-// Navigation guard to protect routes
-/*router.beforeEach((to, from, next) => {
+router.beforeEach((to, from, next) => {
   const token = localStorage.getItem('token');
+  const isAuthenticated = !!token;
+  
   const isPublicRoute = publicRoutes.includes(to.name) || publicPaths.includes(to.path);
   
-  // Allow access to public routes
-  if (isPublicRoute) {
-    // If already logged in and trying to access login page, redirect to dashboard
-    if (to.name === 'Login' && token) {
-      try {
-        const user = JSON.parse(localStorage.getItem('user') || '{}');
-        if (user.role === 'GeneralAdmin' || user.role === 'ForumAdmin') {
-          next({ name: 'Admin' });
-        } else {
-          next({ name: 'Dashboard' });
-        }
-      } catch (e) {
-        next(); // If parsing fails, allow access
-      }
-      return;
-    }
-    next();
-    return;
+ 
+  if (to.path === '/reset-password') {
+    return next();
   }
   
-  // If trying to access a protected route without token, redirect to login
-  if (!token) {
-    next({ name: 'Login' });
-    return;
+  if (isPublicRoute && isAuthenticated) {
+    const userData = localStorage.getItem('user');
+    if (userData) {
+      const user = JSON.parse(userData);
+      if (user.role === 'Admin') {
+        return next('/admin');
+      }
+    }
+    return next('/dashboard');
+  }
+  
+  if (!isPublicRoute && !isAuthenticated) {
+    return next('/login');
   }
   
   next();
-});*/
+});
 
 export default router;

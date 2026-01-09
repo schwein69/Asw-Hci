@@ -1,4 +1,23 @@
 <script setup>
+import { getLanguage, t as translate } from "../../utils/translations.js";
+import { ref, computed, onMounted, onUnmounted } from "vue";
+
+const language = ref(getLanguage());
+
+const t = computed(() => (key) => translate(key, language.value));
+
+const handleLanguageChange = (event) => {
+  language.value = event.detail.language;
+};
+
+onMounted(() => {
+  window.addEventListener('languageChanged', handleLanguageChange);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('languageChanged', handleLanguageChange);
+});
+
 defineProps({
   title: {
     type: String,
@@ -28,7 +47,7 @@ defineProps({
         class="flex flex-col items-center justify-center py-10"
       >
         <span class="loading loading-spinner loading-lg text-teal-600"></span>
-        <p class="text-gray-400 text-sm mt-2">Generating tips...</p>
+        <p class="text-gray-400 text-sm mt-2">{{ t('tips.generatingTips') }}</p>
       </div>
 
       <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -39,7 +58,7 @@ defineProps({
         >
           <component :is="tip.icon" :class="`w-5 h-5 shrink-0`" />
 
-          <span class="text-sm text-gray-700 font-medium">{{ tip.text }}</span>
+          <span class="text-sm text-gray-700 font-medium">{{ tip.textKey ? t(tip.textKey) : tip.text }}</span>
         </div>
       </div>
     </div>

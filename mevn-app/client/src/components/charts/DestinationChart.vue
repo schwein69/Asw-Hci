@@ -10,6 +10,7 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
+import { getLanguage, t as translate } from "../../utils/translations.js";
 
 ChartJS.register(
   CategoryScale,
@@ -24,12 +25,14 @@ export default {
   name: "DestinationChart",
   components: { Bar, TreePine },
   data() {
+    const lang = getLanguage();
     return {
+      language: lang,
       chartData: {
         labels: ["Amsterdam", "Barcelona", "Copenhagen", "Dublin"],
         datasets: [
           {
-            label: "CO₂ Saved (kg)",
+            label: translate("dashboard.co2Saved", lang),
             data: [45, 38, 52, 28],
             backgroundColor: ["#10b981", "#10b981", "#10b981", "#10b981"],
             borderColor: "#059669",
@@ -65,6 +68,26 @@ export default {
       },
     };
   },
+  computed: {
+    t() {
+      return (key) => translate(key, this.language);
+    },
+  },
+  mounted() {
+    window.addEventListener('languageChanged', this.handleLanguageChange);
+  },
+  beforeUnmount() {
+    window.removeEventListener('languageChanged', this.handleLanguageChange);
+  },
+  methods: {
+    handleLanguageChange(event) {
+      this.language = event.detail.language;
+      this.updateChartData();
+    },
+    updateChartData() {
+      this.chartData.datasets[0].label = this.t('dashboard.co2Saved');
+    },
+  },
 };
 </script>
 
@@ -74,7 +97,7 @@ export default {
       <div class="flex items-center gap-2 mb-4">
         <TreePine class="w-5 h-5 text-success" />
         <h3 class="text-lg font-bold text-gray-800">
-          CO₂ Saved by Destination
+          {{ t('dashboard.co2SavedByDestination') }}
         </h3>
       </div>
       <div class="h-64">

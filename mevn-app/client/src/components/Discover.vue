@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, onUnmounted } from "vue";
+import { ref, onMounted, onUnmounted, computed } from "vue";
 import {
   Plus,
   MapPin,
@@ -11,21 +11,38 @@ import {
   FerrisWheel,
   Mountain,
 } from "lucide-vue-next";
+import { getLanguage, t as translate } from "../utils/translations.js";
+
+const language = ref(getLanguage());
+
+const t = computed(() => (key) => translate(key, language.value));
+
+const handleLanguageChange = (event) => {
+  language.value = event.detail.language;
+};
+
+onMounted(() => {
+  window.addEventListener('languageChanged', handleLanguageChange);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('languageChanged', handleLanguageChange);
+});
 
 const places = ref([]);
 const loading = ref(false);
 const page = ref(1);
-const activeFilter = ref("All");
+const activeFilter = ref("all");
 const observer = ref(null);
 const bottomSentinel = ref(null);
 
-const categories = [
-  { name: "All", icon: null },
-  { name: "Restaurants", icon: Utensils },
-  { name: "Hotels", icon: Bed },
-  { name: "Attractions", icon: FerrisWheel },
-  { name: "Activities", icon: Mountain },
-];
+const categories = computed(() => [
+  { name: t.value('discover.all'), icon: null, key: 'all' },
+  { name: t.value('discover.restaurants'), icon: Utensils, key: 'restaurants' },
+  { name: t.value('discover.hotels'), icon: Bed, key: 'hotels' },
+  { name: t.value('discover.attractions'), icon: FerrisWheel, key: 'attractions' },
+  { name: t.value('discover.activities'), icon: Mountain, key: 'activities' },
+]);
 
 //Fake Data Generator
 const generateMockData = (count) => {
@@ -112,17 +129,17 @@ onUnmounted(() => {
     >
       <div>
         <h2 class="text-2xl md:text-3xl font-bold text-gray-800">
-          Discover Eco-Friendly Places
+          {{ t('discover.title') }}
         </h2>
         <p class="text-emerald-600 mt-0.5 text-sm md:text-base">
-          Share and explore sustainable destinations
+          {{ t('discover.subtitle') }}
         </p>
       </div>
       <button
         class="btn btn-sm md:btn md:rounded-full bg-emerald-500 hover:bg-emerald-600 border-none text-white normal-case gap-2 shadow-sm md:shadow-lg px-3 py-1"
       >
         <Plus class="w-4 h-4 md:w-5 md:h-5" />
-        <span class="text-xs md:text-sm">Add Recommendation</span>
+        <span class="text-xs md:text-sm">{{ t('discover.addRecommendation') }}</span>
       </button>
     </div>
 
@@ -229,7 +246,7 @@ onUnmounted(() => {
         class="flex flex-col items-center gap-2 text-emerald-600"
       >
         <span class="loading loading-dots loading-lg"></span>
-        <span class="text-sm font-medium">Discovering more places...</span>
+        <span class="text-sm font-medium">{{ t('discover.discoveringMore') }}</span>
       </div>
     </div>
   </div>
