@@ -40,7 +40,7 @@ const iconMap = {
 const dailyTips = ref([]);
 onMounted(async () => {
   try {
-    const response = await axios.get("http://localhost:3000/api/tips");
+    const response = await axios.get("http://localhost:3000/api/tips/daily");
     const tipsData = response.data;
     dailyTips.value = tipsData;
     for (const tip of dailyTips.value) {

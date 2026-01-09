@@ -12,3 +12,16 @@ export const getDailyTips = async (req, res) => {
     });
   }
 };
+
+export const getKnowledgeTips = async (req, res) => {
+  try {
+    const tips = await getKnowledgeTips();
+    res.status(200).json(tips);
+  } catch (error) {
+    console.error("Route Error:", error);
+    res.status(500).json({
+      message: "Failed to fetch tips",
+      error: error.message,
+    });
+  }
+};

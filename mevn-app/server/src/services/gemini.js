@@ -41,21 +41,30 @@ export async function generateTravelItineraryEstimation(payload) {
 
   const { mode, distance_km, fuel_type } = payload;
 
-  let vehicleContext = "";
-  if (fuel_type) {
-    vehicleContext = ` using a ${fuel_type} vehicle`;
+  let contextDetails = "";
+
+  if (mode === "Airplane") {
+    contextDetails =
+      "Assume a standard Economy Class commercial airline ticket booked 2 weeks in advance. Include taxes and fees.";
+  } else if (mode === "Train") {
+    contextDetails = "Assume a standard second-class train ticket.";
+  } else if (mode === "Car") {
+    contextDetails = `Assume a vehicle powered by ${fuel_type}.`;
   }
 
   const prompt = `
-    Estimate the average travel cost (in Euros) and CO2 emissions (in kg) for a ${mode} trip covering ${distance_km} km${vehicleContext}.
+    Act as a travel analyst. Estimate the average travel cost (in Euros) and CO2 emissions (in kg) for a ${mode} trip covering ${distance_km} km.
+    
+    Specific Constraints:
+    - ${contextDetails}
+    - Provide a realistic market price for this specific distance.
     
     Return a JSON object with exactly these keys:
     {
-      "cost": "String (e.g. '25.50')",
+      "cost": "String (e.g. '125.50')",
       "co2": "String (e.g. '4.2')"
     }
   `;
-
   try {
     const result = await model.generateContent(prompt);
     const response = await result.response;

@@ -23,7 +23,15 @@ defineProps({
         <h2 class="text-lg font-semibold">{{ title }}</h2>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div
+        v-if="dailyTips.length === 0"
+        class="flex flex-col items-center justify-center py-10"
+      >
+        <span class="loading loading-spinner loading-lg text-teal-600"></span>
+        <p class="text-gray-400 text-sm mt-2">Generating tips...</p>
+      </div>
+
+      <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div
           v-for="(tip, index) in dailyTips"
           :key="index"
