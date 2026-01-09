@@ -43,7 +43,8 @@ export default {
       return this.route && this.route.name === "Profile";
     },
     isAdmin() {
-      return this.user?.role === "Admin";
+      return this.user?.role === "AdminGeneral" || 
+             this.user?.role === "AdminForum";
     },
     shouldShowNavbar() {
       if (this.isAuthPage) return false;
