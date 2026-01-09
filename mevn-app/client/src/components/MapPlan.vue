@@ -14,6 +14,9 @@ import {
   Euro,
   Leaf,
   Shuffle,
+  X,
+  CheckCircle2,
+  Loader2, // Assicurati che sia importato
 } from "lucide-vue-next";
 import mapboxgl from "mapbox-gl";
 import MapboxMap from "./maps/maps.vue";
@@ -30,6 +33,12 @@ const mapZoom = ref(9);
 
 const fromSearchBox = ref(null);
 const toSearchBox = ref(null);
+
+// Comparison Modal State
+const comparisonModalOpen = ref(false);
+const targetSegmentIndex = ref(null);
+const pendingComparisonData = ref(null);
+const isLoadingComparison = ref(false); // NUOVO: Stato di caricamento
 
 const iconMap = {
   Airplane: Plane,
@@ -82,7 +91,6 @@ onUnmounted(() => {
   if (animationFrameId) cancelAnimationFrame(animationFrameId);
 });
 
-// Resize map when tab changes to fix blank canvas
 watch(activeTab, () => {
   setTimeout(() => {
     if (mapboxMapRef.value?.map) mapboxMapRef.value.map.resize();
@@ -179,6 +187,7 @@ function handleRetrieveTo(e) {
   }
 }
 
+// Questa API rimane invariata come richiesto
 async function geminiEstimation(mode, distanceKm, fuelType) {
   try {
     const payload = { mode, distance_km: distanceKm };
@@ -191,7 +200,7 @@ async function geminiEstimation(mode, distanceKm, fuelType) {
     return response.data;
   } catch (err) {
     console.error("Error calling Gemini estimation API:", err);
-    return { cost: "0.00", co2: "0.0" };
+    return { cost: "0.00", co2: "0.0", time: "N/A" };
   }
 }
 
@@ -252,6 +261,7 @@ async function addSegment() {
   );
   const distanceKm = parseFloat(rawDistance.toFixed(2));
 
+  // Chiamata all'API esistente per la prima stima
   const geminiData = await geminiEstimation(
     newSegment.value.type,
     distanceKm,
@@ -279,6 +289,7 @@ async function addSegment() {
     markers: [...tempMarkers],
     cost: geminiData.cost,
     co2: geminiData.co2,
+    time: geminiData.time,
     distance: distanceKm,
     activeRoute: "fastest",
     alternatives: null,
@@ -308,31 +319,56 @@ async function addSegment() {
   newSegment.value.transportNumber = "";
 }
 
-async function toggleAlternativeRoute(index) {
+async function openComparisonModal(index) {
   const segment = savedSegments.value[index];
+  targetSegmentIndex.value = index;
 
-  if (!segment.alternatives) {
-    const baseCo2 = parseFloat(segment.co2);
-    const baseCost = parseFloat(segment.cost);
+  comparisonModalOpen.value = true;
+  isLoadingComparison.value = true;
+  pendingComparisonData.value = null;
 
-    segment.alternatives = {
-      fastest: { cost: segment.cost, co2: segment.co2 },
-      eco: {
-        cost: (baseCost * 1.1).toFixed(2),
-        co2: (baseCo2 * 0.85).toFixed(1),
-      },
-    };
+  try {
+    const response = await axios.post(
+      "http://localhost:3000/api/plan/compare",
+      { distance_km: segment.distance }
+    );
+
+    const allOptions = response.data;
+    const alternatives = allOptions.filter((opt) => opt.mode !== segment.type);
+
+    pendingComparisonData.value = alternatives;
+  } catch (err) {
+    console.error("Failed to fetch comparison data", err);
+    alert("Could not load alternatives.");
+    comparisonModalOpen.value = false;
+  } finally {
+    isLoadingComparison.value = false;
   }
+}
 
-  if (segment.activeRoute === "fastest") {
-    segment.activeRoute = "eco";
-    segment.cost = segment.alternatives.eco.cost;
-    segment.co2 = segment.alternatives.eco.co2;
-  } else {
-    segment.activeRoute = "fastest";
-    segment.cost = segment.alternatives.fastest.cost;
-    segment.co2 = segment.alternatives.fastest.co2;
-  }
+async function confirmRouteSelection(selectionData) {
+  if (targetSegmentIndex.value === null) return;
+
+  const segment = savedSegments.value[targetSegmentIndex.value];
+
+  segment.type = selectionData.mode;
+  segment.cost = selectionData.cost;
+  segment.co2 = selectionData.co2;
+  segment.time = selectionData.time;
+
+  segment.activeRoute = "fastest";
+  segment.alternatives = null;
+
+  await visualizeRoute(
+    segment.fromCoords,
+    segment.toCoords,
+    segment.type,
+    segment.id
+  );
+
+  comparisonModalOpen.value = false;
+  targetSegmentIndex.value = null;
+  pendingComparisonData.value = null;
 }
 
 function removeSegment(index) {
@@ -399,6 +435,7 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
       let profile = "driving";
       if (type === "Walking") profile = "walking";
       if (type === "Cycling") profile = "cycling";
+      if (type === "Train") profile = "driving";
 
       const res = await fetch(
         `https://api.mapbox.com/directions/v5/mapbox/${profile}/${startCoords[0]},${startCoords[1]};${endCoords[0]},${endCoords[1]}?steps=true&geometries=geojson&access_token=${accessToken}`
@@ -415,17 +452,27 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
   const routeId = `route-${segmentId}`;
   const pointId = `point-${segmentId}`;
 
+  if (map.getLayer(routeId)) map.removeLayer(routeId);
+  if (map.getSource(routeId)) map.removeSource(routeId);
+  if (map.getLayer(pointId)) map.removeLayer(pointId);
+  if (map.getSource(pointId)) map.removeSource(pointId);
+
   map.addSource(routeId, {
     type: "geojson",
     data: { type: "Feature", geometry: routeGeoJSON },
   });
+
+  let lineColor = "#10b981";
+  if (type === "Airplane") lineColor = "#3b82f6";
+  if (type === "Train") lineColor = "#f97316";
+
   map.addLayer({
     id: routeId,
     type: "line",
     source: routeId,
     layout: { "line-join": "round", "line-cap": "round" },
     paint: {
-      "line-color": type === "Airplane" ? "#3b82f6" : "#10b981",
+      "line-color": lineColor,
       "line-width": 4,
       "line-dasharray": type === "Airplane" ? [2, 2] : [1],
       "line-opacity": 0.8,
@@ -450,7 +497,7 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
       "circle-radius": 6,
       "circle-color": "#ffffff",
       "circle-stroke-width": 3,
-      "circle-stroke-color": type === "Airplane" ? "#3b82f6" : "#10b981",
+      "circle-stroke-color": lineColor,
     },
   });
 
@@ -798,6 +845,13 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
                         <span class="font-bold text-green-700 ml-1"
                           >• {{ seg.distance }} km</span
                         >
+
+                        <span
+                          v-if="seg.time"
+                          class="mt-1 text-gray-400 flex items-center"
+                        >
+                          <Clock class="w-3 h-3 mr-1" /> {{ seg.time }}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -808,44 +862,26 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
                     <Trash2 class="w-4 h-4" />
                   </button>
                 </div>
-                <div
-                  v-if="seg.type === 'Airplane' || seg.type === 'Train'"
-                  class="mt-2 ml-12 text-xs text-gray-600 grid grid-cols-2 gap-x-2 bg-gray-50 p-1.5 rounded"
-                >
-                  <div v-if="seg.transportNumber">
-                    <b>#:</b> {{ seg.transportNumber }}
-                  </div>
-                  <div v-if="seg.gate"><b>Gate:</b> {{ seg.gate }}</div>
-                </div>
+
                 <div class="flex items-center justify-between mt-2 ml-12">
                   <div class="flex gap-2">
                     <div
                       class="flex items-center text-xs font-medium bg-gray-100 px-2 py-1 rounded"
                     >
-                      <Euro class="w-3 h-3 mr-1 text-gray-500" /> {{ seg.cost }}
+                      <Euro class="w-3 h-3 mr-1 text-gray-500" />
+                      {{ seg.cost }}
                     </div>
                     <div
-                      class="flex items-center text-xs font-medium bg-green-100 px-2 py-1 rounded"
-                      :class="
-                        seg.activeRoute === 'eco'
-                          ? 'text-green-800 ring-1 ring-green-500'
-                          : 'text-green-700'
-                      "
+                      class="flex items-center text-xs font-medium bg-green-100 px-2 py-1 rounded text-green-700"
                     >
                       <Leaf class="w-3 h-3 mr-1" /> {{ seg.co2 }} kg
                     </div>
                   </div>
                   <button
-                    @click="toggleAlternativeRoute(idx)"
-                    class="btn btn-xs rounded-full gap-1 border-none shadow-sm"
-                    :class="
-                      seg.activeRoute === 'eco'
-                        ? 'bg-green-600 text-white'
-                        : 'bg-white text-gray-500 border border-gray-200'
-                    "
+                    @click="openComparisonModal(idx)"
+                    class="btn btn-xs rounded-full gap-1 border border-gray-200 bg-white text-gray-500 shadow-sm"
                   >
-                    <Shuffle class="w-3 h-3" />
-                    {{ seg.activeRoute === "eco" ? "Eco" : "Alt" }}
+                    <Shuffle class="w-3 h-3" /> Compare
                   </button>
                 </div>
               </div>
@@ -859,6 +895,85 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
             >
               <Save class="w-4 h-4" /> Save Full Trip
             </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div
+      v-if="comparisonModalOpen"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+    >
+      <div
+        class="card bg-white w-full max-w-lg shadow-2xl overflow-hidden rounded-2xl"
+      >
+        <div
+          class="flex justify-between items-center p-4 border-b border-gray-100"
+        >
+          <h3 class="font-bold text-lg text-gray-800">Alternative Modes</h3>
+          <button
+            @click="comparisonModalOpen = false"
+            class="btn btn-ghost btn-circle btn-sm"
+          >
+            <X class="w-5 h-5" />
+          </button>
+        </div>
+
+        <div class="card-body p-4 bg-gray-50 min-h-[150px]">
+          <div
+            v-if="isLoadingComparison"
+            class="flex flex-col items-center justify-center h-full py-8 text-gray-400"
+          >
+            <Loader2 class="w-8 h-8 animate-spin mb-2 text-green-600" />
+            <span class="text-sm">Calculating alternatives...</span>
+          </div>
+
+          <div v-else>
+            <div
+              v-if="
+                !pendingComparisonData || pendingComparisonData.length === 0
+              "
+              class="text-center text-gray-400 text-sm py-4"
+            >
+              No alternatives found.
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+              <div
+                v-for="option in pendingComparisonData"
+                :key="option.mode"
+                class="flex flex-col bg-white p-3 rounded-xl border-2 border-transparent hover:border-green-400 cursor-pointer transition-all shadow-sm group"
+                @click="confirmRouteSelection(option)"
+              >
+                <div class="flex items-center justify-between mb-2">
+                  <div
+                    class="flex items-center gap-2 text-xs font-bold text-gray-500 uppercase group-hover:text-green-600"
+                  >
+                    <component :is="iconMap[option.mode]" class="w-4 h-4" />
+                    {{ option.mode }}
+                  </div>
+                  <div
+                    class="text-[10px] font-bold bg-gray-100 px-1.5 py-0.5 rounded text-gray-500"
+                  >
+                    <Clock class="w-3 h-3 inline mr-0.5" /> {{ option.time }}
+                  </div>
+                </div>
+
+                <div class="text-2xl font-bold text-gray-800">
+                  €{{ option.cost }}
+                </div>
+                <div class="text-sm font-medium text-gray-500 mt-1">
+                  {{ option.co2 }} kg CO2
+                </div>
+                <div class="mt-3">
+                  <button
+                    class="btn btn-sm btn-outline group-hover:btn-success group-hover:text-white w-full rounded-lg"
+                  >
+                    Switch to {{ option.mode }}
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
