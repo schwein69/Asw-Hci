@@ -36,13 +36,21 @@ export default {
       const authRoutes = ["Login", "ForgotPassword", "ResetPassword"];
       return this.route && authRoutes.includes(this.route.name);
     },
+    isAdminPage() {
+      return this.route && this.route.name === "Admin";
+    },
+    isProfilePage() {
+      return this.route && this.route.name === "Profile";
+    },
     isAdmin() {
-      return (
-        this.user?.role === "GeneralAdmin" || this.user?.role === "ForumAdmin"
-      );
+      return this.user?.role === "Admin";
     },
     shouldShowNavbar() {
-      return !this.isAuthPage && !this.isAdmin;
+      if (this.isAuthPage) return false;
+      if (this.isAdminPage) return false;
+      if (this.isProfilePage) return false;
+      if (this.isAdmin) return false;
+      return true;
     },
     shouldShowHeader() {
       return !this.isAuthPage;

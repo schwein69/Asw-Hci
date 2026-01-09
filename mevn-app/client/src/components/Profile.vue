@@ -31,6 +31,10 @@ const notifications = ref(localStorage.getItem('notifications') !== 'false');
 
 const t = computed(() => (key) => translate(key, language.value));
 
+const isAdmin = computed(() => {
+  return user.value?.role === 'Admin';
+});
+
 const profileImage = ref(null);
 const profileImagePreview = ref(null);
 const selectedFileName = ref('');
@@ -60,6 +64,7 @@ onMounted(() => {
   const userData = localStorage.getItem('user');
   if (userData) {
     user.value = JSON.parse(userData);
+    console.log('User role in Profile:', user.value?.role);
     if (user.value.profileImage) {
       profileImagePreview.value = user.value.profileImage;
     }
@@ -414,9 +419,11 @@ const handleDeleteAccount = async () => {
 <template>
   <div class="min-h-screen p-4 md:p-8">
     <div class="max-w-4xl mx-auto">
-      <h1 class="text-2xl font-semibold text-gray-900 dark:text-white mb-6">
-        {{ t('profile.title') }}
-      </h1>
+      <div class="mb-6">
+        <h1 class="text-2xl font-semibold text-gray-900 dark:text-white">
+          {{ t('profile.title') }}
+        </h1>
+      </div>
 
       <div v-if="user">
         <div class="bg-white dark:bg-gray-800 rounded-3xl shadow-sm p-6 md:p-8 transition-colors duration-300 space-y-6">
