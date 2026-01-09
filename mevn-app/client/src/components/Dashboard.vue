@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from "vue";
+import { ref, computed, onMounted, onUnmounted } from "vue";
 import {
   Leaf,
   Zap,
@@ -13,24 +13,45 @@ import {
 import CarbonTrendChart from "./charts/CarbonTrendChart.vue";
 import TransportModesChart from "./charts/TransportModesChart.vue";
 import DestinationChart from "./charts/DestinationChart.vue";
+import { getLanguage, t as translate } from "../utils/translations.js";
 
-const stats = ref([
+// --- Translation Logic ---
+const language = ref(getLanguage());
+
+const handleLanguageChange = (event) => {
+  language.value = event.detail.language;
+};
+
+onMounted(() => {
+  window.addEventListener("languageChanged", handleLanguageChange);
+});
+
+onUnmounted(() => {
+  window.removeEventListener("languageChanged", handleLanguageChange);
+});
+
+// Helper to translate inside script
+const t = (key) => translate(key, language.value);
+
+// --- Stats Data (Merged) ---
+// We use a computed property here so it updates when 'language' changes
+const stats = computed(() => [
   {
-    label: "Total CO₂ Saved",
-    value: "245 kg",
-    subtitle: "↑ 18% vs last month",
+    label: t("dashboard.totalCo2Saved"),
+    value: "245 kg", // Kept Base value, used Snippet 2 key
+    subtitle: t("dashboard.vsLastMonth"), // "↑ 18% vs last month" equivalent
     icon: Leaf,
   },
   {
-    label: "Green Distance",
+    label: t("dashboard.greenMiles"), // "Green Distance"
     value: "3,842 km",
-    subtitle: "✓ 950 km this month",
+    subtitle: t("dashboard.thisMonth"),
     icon: TrendingUp,
   },
   {
-    label: "Eco Score",
+    label: t("dashboard.ecoScore"),
     value: "892",
-    subtitle: "🏆 Top 5% Traveler",
+    subtitle: t("dashboard.topGlobally"),
     icon: Gauge,
   },
   {
@@ -42,14 +63,33 @@ const stats = ref([
   },
 ]);
 
-const environmentalImpact = ref({
-  trees: "11 mature trees",
-  treesDesc: "Carbon absorption equivalent",
-  energy: "580 kWh",
-  energyDesc: "Avg. home energy saved",
-  distance: "1,440 km",
-  distanceDesc: "Car travel avoided",
-});
+// --- Environmental Impact Data ---
+const environmentalImpactRaw = {
+  treesValue: 11,
+  treesKey: "dashboard.trees",
+  treesDescKey: "dashboard.treesDesc",
+  energyValue: 580,
+  energyKey: "dashboard.energy",
+  energyDescKey: "dashboard.energyDesc",
+  distanceValue: 1440,
+  distanceKey: "dashboard.miles", // or distance
+  distanceDescKey: "dashboard.milesDesc", // or distance desc
+};
+
+const environmentalImpact = computed(() => ({
+  trees: `${environmentalImpactRaw.treesValue} ${t(
+    environmentalImpactRaw.treesKey
+  )}`,
+  treesDesc: t(environmentalImpactRaw.treesDescKey),
+  energy: `${environmentalImpactRaw.energyValue} ${t(
+    environmentalImpactRaw.energyKey
+  )}`,
+  energyDesc: t(environmentalImpactRaw.energyDescKey),
+  distance: `${environmentalImpactRaw.distanceValue} ${t(
+    environmentalImpactRaw.distanceKey
+  )}`,
+  distanceDesc: t(environmentalImpactRaw.distanceDescKey),
+}));
 </script>
 
 <template>
@@ -70,6 +110,14 @@ const environmentalImpact = ref({
         <div class="stat-desc text-xs md:text-sm text-gray-500">
           {{ stat.subtitle }}
         </div>
+
+        <div v-if="stat.isProgressBar" class="mt-2">
+          <progress
+            class="progress progress-success w-full"
+            value="54"
+            max="100"
+          ></progress>
+        </div>
       </div>
     </div>
 
@@ -86,7 +134,9 @@ const environmentalImpact = ref({
       <div class="card-body">
         <div class="flex items-center gap-2 mb-6">
           <Leaf class="w-6 h-6" />
-          <h3 class="text-xl font-bold">Your Real World Impact</h3>
+          <h3 class="text-xl font-bold">
+            {{ t("dashboard.environmentalImpact") }}
+          </h3>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div

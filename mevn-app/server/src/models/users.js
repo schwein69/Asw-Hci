@@ -6,13 +6,16 @@ const UserSchema = new mongoose.Schema({
   password: { type: String, required: true },
   role: {
     type: String,
-    enum: ["Standard", "ForumAdmin", "GeneralAdmin"],
+    enum: ["Standard", "Admin"],
     default: "Standard",
   },
   ecoLevel: { type: Number, default: 1 },
   ecoPoints: { type: Number, default: 0 },
   travelCards: [{ type: mongoose.Schema.Types.ObjectId, ref: "TravelCard" }],
   feedbacks: [{ type: mongoose.Schema.Types.ObjectId, ref: "Feedback" }],
+  resetToken: { type: String },
+  resetTokenExpiry: { type: Date },
+  profileImage: { type: String },
   createdAt: { type: Date, default: Date.now },
 });
 

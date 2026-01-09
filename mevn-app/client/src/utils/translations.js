@@ -1,0 +1,1004 @@
+const translations = {
+  en: {
+    profile: {
+      title: "Profile Settings",
+      profileImage: "Profile Image",
+      accountInformation: "Account Information",
+      email: "Email",
+      changePassword: "Change Password",
+      currentPassword: "Current Password",
+      newPassword: "New Password",
+      confirmPassword: "Confirm New Password",
+      updatePassword: "Update Password",
+      cancel: "Cancel",
+      change: "Change",
+      languagePreferences: "Language Preferences",
+      notifications: "Notifications",
+      notificationsEnabled: "Notifications are enabled",
+      notificationsDisabled: "Notifications are disabled",
+      deleteAccount: "Delete Account",
+      deleteAccountWarning: "Once you delete your account, there is no going back. Please be certain.",
+      deleteImage: "Delete Image",
+      chooseFile: "Choose File",
+      noFileChosen: "No file chosen",
+      saveImage: "Save Image",
+      selectImage: "Select Image",
+      loading: "Loading profile...",
+      passwordRequired: "Password is required",
+      currentPasswordRequired: "Current password is required",
+      newPasswordRequired: "New password is required",
+      confirmPasswordRequired: "Please confirm your password",
+      passwordTooShort: "Password must be at least 6 characters",
+      passwordsDontMatch: "Passwords do not match",
+      passwordSame: "New password must be different from current password",
+      deletePasswordRequired: "Password is required to confirm account deletion",
+      confirmDeletion: "Confirm Account Deletion",
+      deletePasswordPlaceholder: "Your password",
+      deleteWarning: "Enter your password to permanently delete your account. This action cannot be undone.",
+      delete: "Delete",
+      profileImageUpdated: "Profile image updated successfully!",
+      profileImageDeleted: "Profile image deleted successfully!",
+      passwordChanged: "Password changed successfully!",
+      accountDeleted: "Your account has been deleted successfully",
+      selectImageFirst: "Please select an image first",
+      imageTooLarge: "Image size must be less than 5MB",
+      errorProcessingImage: "Error processing image. Please try again.",
+      errorUploadingImage: "Failed to upload image. Please try again.",
+      errorDeletingImage: "Failed to delete image. Please try again.",
+      errorChangingPassword: "Failed to change password. Please try again.",
+      errorDeletingAccount: "Failed to delete account. Please try again.",
+      mustBeLoggedIn: "You must be logged in",
+      unexpectedResponse: "Unexpected response from server",
+      invalidPassword: "Invalid password",
+      currentPasswordIncorrect: "Current password is incorrect",
+      userNotFound: "User not found"
+    },
+    nav: {
+      dashboard: "Dashboard",
+      plan: "Plan",
+      world: "World",
+      pastTrips: "Past Trips",
+      live: "Live",
+      discover: "Discover",
+      rewards: "Rewards",
+      tips: "Tips",
+      feedback: "Feedback",
+      admin: "Admin",
+      profile: "Profile",
+      logout: "Logout",
+      viewProfile: "View Profile"
+    },
+    app: {
+      travelGreen: "Travel Green • Live Clean",
+      profile: "Profile"
+    },
+    dashboard: {
+      totalCo2Saved: "Total CO₂ Saved",
+      greenMiles: "Green Miles",
+      ecoScore: "Eco Score",
+      monthlyGoal: "Monthly Goal",
+      vsLastMonth: "↑ 15% vs last month",
+      thisMonth: "✓ 1,200 this month",
+      topGlobally: "🏆 Top 10% globally",
+      progressBar: "Progress bar visualization",
+      environmentalImpact: "Your Environmental Impact",
+      trees: "trees",
+      treesValue: "7 trees",
+      treesDesc: "Equivalent to planting",
+      energy: "kWh",
+      energyValue: "340 kWh",
+      energyDesc: "Energy saved equals",
+      miles: "miles",
+      milesValue: "458 miles",
+      milesDesc: "Car miles avoided",
+      carbonFootprintTrend: "Carbon Footprint Trend",
+      co2Emissions: "CO₂ Emissions (kg)",
+      transportModes: "Transport Modes",
+      ecoFriendlyChoices: "Your eco-friendly choices",
+      co2SavedByDestination: "CO₂ Saved by Destination",
+      co2Saved: "CO₂ Saved (kg)",
+      months: {
+        jan: "Jan",
+        feb: "Feb",
+        mar: "Mar",
+        apr: "Apr",
+        may: "May",
+        jun: "Jun",
+        jul: "Jul",
+        aug: "Aug",
+        sep: "Sep",
+        oct: "Oct",
+        nov: "Nov",
+        dec: "Dec"
+      },
+      transportTypes: {
+        train: "Train",
+        bus: "Bus",
+        bike: "Bike",
+        walk: "Walk",
+        car: "Car"
+      }
+    },
+    world: {
+      tripSummary: "Trip Summary",
+      totalDestinations: "Total Destinations",
+      carbonFootprint: "Carbon Footprint",
+      totalCost: "Total Cost",
+      from: "From",
+      to: "To",
+      departure: "Departure",
+      arrival: "Arrival",
+      duration: "Duration",
+      cost: "Cost",
+      platform: "Platform",
+      seat: "Seat",
+      gate: "Gate",
+      terminal: "Terminal",
+      class: "Class",
+      completed: "Complete Trip",
+      upcoming: "Upcoming",
+      delete: "Delete",
+      expand: "2D View",
+      collapse: "Switch to 3D",
+      journeySegments: "Journey Segments",
+      interactiveRouteMap: "Interactive Route Map",
+      visualizeJourney: "Visualize your journey on an interactive world map",
+      reset: "Reset",
+      useControlsToNavigate: "Use controls to navigate",
+      view: "view",
+      destinationsOnRoute: "destinations on route",
+      markComplete: "Mark Complete",
+      markIncomplete: "Mark Incomplete",
+      deleteSegment: "Delete Segment",
+      active: "active",
+      transportTypes: {
+        train: "Train",
+        airplane: "Airplane",
+        car: "Car"
+      }
+    },
+    pastTrips: {
+      title: "Past Trips History",
+      subtitle: "completed trips • View detailed itineraries and transport methods",
+      segments: "segments",
+      emissions: "Emissions",
+      cost: "Cost",
+      duration: "Duration",
+      status: "Status",
+      completed: "Completed",
+      route: "Route",
+      provider: "Provider",
+      code: "Code",
+      departure: "Departure",
+      arrival: "Arrival",
+      time: "Time",
+      co2: "CO₂",
+      deleteTrip: "Delete Trip"
+    },
+    live: {
+      title: "Live Trip Tracking",
+      currentLocation: "Current Location",
+      nextStop: "Next Stop",
+      estimatedArrival: "Estimated Arrival",
+      onTime: "On Time",
+      delayed: "Delayed",
+      upcomingTravelReminders: "Upcoming Travel Reminders",
+      dontMissDeparture: "Don't miss your departure - 24-hour advance notifications",
+      departureIn: "Departure in",
+      hours: "hours",
+      route: "Route",
+      transport: "Transport",
+      date: "Date",
+      time: "Time",
+      dismiss: "Dismiss",
+      new: "New",
+      liveTracking: "Live Tracking",
+      notifications: "Notifications",
+      markAllRead: "Mark All Read",
+      newInteraction: "New interaction on your post",
+      weatherUpdated: "Weather conditions updated",
+      ecoLocationRecommended: "New eco-friendly location recommended",
+      touristDensityChanged: "Tourist density changed",
+      currentWeather: "Current Weather",
+      crowdDensity: "Crowd Density",
+      lowDensity: "Low Density",
+      mediumDensity: "Medium Density",
+      highDensity: "High Density",
+      trending: "Trending",
+      up: "Up",
+      down: "Down",
+      stable: "Stable",
+      weatherConditions: {
+        sunny: "Sunny",
+        partlyCloudy: "Partly Cloudy",
+        foggy: "Foggy",
+        rainy: "Rainy",
+        snowy: "Snowy",
+        showers: "Showers",
+        stormy: "Stormy",
+        unknown: "Unknown",
+        unavailable: "Unavailable",
+        loading: "Loading..."
+      },
+      noUpcomingReminders: "No upcoming travel reminders",
+      notified24Hours: "You'll be notified 24 hours before your trips",
+      liveUpdates: "Live updates on weather, crowds, and social interactions",
+      viewTripDetails: "View Trip Details",
+      weather: "Weather",
+      alert: "Alert",
+      touristAffluence: "Tourist Affluence",
+      alternativeSuggested: "Alternative Suggested"
+    },
+    discover: {
+      title: "Discover Eco-Friendly Places",
+      subtitle: "Share and explore sustainable destinations",
+      addRecommendation: "Add Recommendation",
+      all: "All",
+      restaurants: "Restaurants",
+      hotels: "Hotels",
+      attractions: "Attractions",
+      activities: "Activities",
+      discoveringMore: "Discovering more places..."
+    },
+    rewards: {
+      title: "Rewards",
+      sustainabilityHero: "Sustainability Hero",
+      level: "Level",
+      ecoPoints: "Eco Points",
+      progressToPlanetGuardian: "Progress to Planet Guardian",
+      pointsToNextLevel: "points to next level",
+      achievementsUnlocked: "Achievements Unlocked",
+      totalEcoPoints: "Total Eco Points",
+      globalRank: "Global Rank",
+      achievements: "Achievements",
+      currentStreak: "Current Streak",
+      dayStreak: "day streak",
+      globalLeaderboard: "Global Leaderboard",
+      topEcoTravelers: "Top eco-travelers this month",
+      keepMakingChoices: "Keep making eco-friendly choices to maintain your streak!",
+      thisWeek: "This week",
+      daysActive: "days active",
+      days: "Days",
+      you: "You",
+      pts: "pts",
+      progress: "Progress",
+      locked: "Locked",
+      unlocked: "Unlocked"
+    },
+    tips: {
+      title: "Sustainable Travel Guide",
+      subtitle: "Small changes make a big difference for our planet",
+      quickDailyTips: "Quick Daily Tips",
+      detailedGuidelines: "Detailed Guidelines",
+      transportation: "Transportation",
+      accommodation: "Accommodation",
+      foodDining: "Food & Dining",
+      shopping: "Shopping",
+      activities: "Activities",
+      didYouKnow: "Did you know?",
+      highImpact: "High Impact",
+      mediumImpact: "Medium Impact",
+      lowImpact: "Low Impact",
+      easy: "Easy",
+      medium: "Medium",
+      hard: "Hard",
+      generatingTips: "Generating tips...",
+      guidelines: {
+        transport: {
+          chooseTrain: {
+            title: "Choose Train Over Plane",
+            description: "Trains emit up to 90% less CO₂ than flights for the same journey. For trips under 500km, trains are often faster when you include airport time!"
+          },
+          directFlights: {
+            title: "Direct Flights When Flying",
+            description: "Takeoffs and landings use the most fuel. Direct flights reduce carbon emissions significantly compared to layovers."
+          },
+          offsetCarbon: {
+            title: "Offset Your Carbon",
+            description: "Calculate your travel footprint and donate to verified reforestation or renewable energy projects."
+          }
+        },
+        accommodation: {
+          ecoCertified: {
+            title: "Choose Eco-Certified Stays",
+            description: "Look for hotels with Green Key, LEED, or EarthCheck certifications. These properties actively reduce water, waste, and energy consumption."
+          },
+          reuseTowels: {
+            title: "Reuse Towels & Linens",
+            description: "Hang up your towels to signal you'll reuse them. This saves huge amounts of water and electricity used for daily laundry."
+          },
+          conserveEnergy: {
+            title: "Conserve Room Energy",
+            description: "Always turn off lights, AC, and TV when leaving your room. Close curtains on hot days to keep the room cool naturally."
+          }
+        },
+        food: {
+          eatLocal: {
+            title: "Eat Local & Seasonal",
+            description: "Imported ingredients have a high carbon footprint. Local food supports the community economy and usually tastes fresher!"
+          },
+          plantBased: {
+            title: "Plant-Based Options",
+            description: "Animal agriculture is a major greenhouse gas contributor. Try eating vegetarian or vegan for at least one meal a day."
+          },
+          avoidPlastics: {
+            title: "Avoid Single-Use Plastics",
+            description: "Refuse plastic straws and cutlery. Carry a reusable water bottle and fill up at filtered water stations."
+          }
+        },
+        shopping: {
+          supportArtisans: {
+            title: "Support Local Artisans",
+            description: "Buy souvenirs made locally rather than mass-produced imports. This puts money directly into the hands of local families."
+          },
+          ethicalSouvenirs: {
+            title: "Ethical Souvenirs",
+            description: "Never buy products made from endangered species, ivory, coral, or turtle shells. It fuels illegal poaching and ecosystem destruction."
+          }
+        },
+        activities: {
+          respectWildlife: {
+            title: "Respect Wildlife",
+            description: "Observe animals from a distance. Never feed them, as it disrupts their natural diet and can make them aggressive."
+          },
+          lowCarbonTours: {
+            title: "Low-Carbon Tours",
+            description: "Opt for human-powered activities like kayaking, hiking, or cycling tours instead of jet skis, ATVs, or helicopter rides."
+          }
+        }
+      },
+      knowledgeTips: {
+        flightCo2: "A single round-trip flight from New York to London generates about 1.5 tons of CO₂ per passenger.",
+        treeAbsorption: "One tree absorbs approximately 22 kg of CO₂ per year. You'd need 68 trees to offset that one flight!",
+        trainVsPlane: "Choosing train travel over flying can reduce your carbon footprint by up to 90% for the same route.",
+        ecoHotels: "Staying at eco-certified hotels can reduce water and energy consumption by up to 30%."
+      }
+    },
+    feedback: {
+      title: "Feedback",
+      averageUserRating: "Average User Rating",
+      totalFeedback: "Total Feedback",
+      implementationRate: "Implementation Rate",
+      submitFeedback: "Submit Feedback",
+      helpUsImprove: "Help us improve EcoVoyage with your suggestions",
+      category: "Category",
+      selectCategory: "Select category",
+      yourRating: "Your Rating",
+      subject: "Subject",
+      subjectPlaceholder: "Brief description of your feedback",
+      message: "Message",
+      messagePlaceholder: "Provide detailed feedback...",
+      submitting: "Submitting...",
+      submitFeedbackButton: "Submit Feedback",
+      communityFeedback: "Community Feedback",
+      browseAndVote: "Browse and vote on feedback from other users",
+      featureRequest: "💡 Feature Request",
+      bugReport: "🐛 Bug Report",
+      improvement: "⚡ Improvement",
+      generalFeedback: "💬 General Feedback",
+      implemented: "Implemented",
+      reviewing: "Reviewing",
+      new: "New",
+      upvote: "Upvote",
+      weeksAgo: "weeks ago",
+      daysAgo: "days ago",
+      weekAgo: "week ago",
+      dayAgo: "day ago",
+      pleaseSelectCategory: "Please select a category and a rating.",
+      thankYouSubmitted: "Thank you! Your feedback has been submitted."
+    },
+    plan: {
+      ecoTravelPlanner: "Eco Travel Planner",
+      planTrip: "Plan Trip",
+      navigateCity: "Navigate City",
+      addTripSegment: "Add Trip Segment",
+      from: "From",
+      to: "To",
+      mode: "Mode",
+      date: "Date",
+      searchStartLocation: "Search start location...",
+      searchDestination: "Search destination...",
+      flightDetails: "FLIGHT DETAILS",
+      flightNumber: "Flight #",
+      gate: "Gate",
+      trainDetails: "TRAIN DETAILS",
+      trainNumber: "Train #",
+      departs: "Departs",
+      arrives: "Arrives",
+      fuelType: "Fuel Type",
+      addSegment: "Add Segment",
+      dragDropMarkers: "Drag & Drop Markers",
+      dragPinInstruction: "Drag a pin to the map to set a location:",
+      yourItinerary: "YOUR ITINERARY",
+      noTripsAdded: "No trips added yet.",
+      noDate: "No date",
+      saveFullTrip: "Save Full Trip",
+      worldView: "World View",
+      navigationMode: "Navigation Mode",
+      saved: "Saved",
+      ecoMode: "Eco Mode",
+      alt: "Alt",
+      findEcoAlternative: "Find Eco Alternative",
+      transportTypes: {
+        airplane: "Airplane",
+        train: "Train",
+        car: "Car",
+        walking: "Walking",
+        cycling: "Cycling"
+      },
+      fuelTypes: {
+        gasoline: "Gasoline",
+        diesel: "Diesel",
+        electric: "Electric"
+      },
+      labels: {
+        number: "#:",
+        gate: "Gate:",
+        dep: "Dep:",
+        arr: "Arr:"
+      }
+    },
+    common: {
+      english: "English",
+      italiano: "Italiano",
+      save: "Save",
+      cancel: "Cancel",
+      delete: "Delete",
+      edit: "Edit",
+      close: "Close"
+    },
+    admin: {
+      adminPanel: "Admin Panel",
+      generalAdministratorAccess: "General Administrator Access",
+      totalUsers: "Total Users",
+      activeItineraries: "Active Itineraries",
+      forumPosts: "Forum Posts",
+      avgEcoScore: "Avg Eco Score",
+      forumModeration: "Forum Moderation",
+      userManagement: "User Management",
+      systemSettings: "System Settings",
+      systemSettingsTitle: "System Settings",
+      configurePlatformParameters: "Configure platform parameters",
+      platformName: "Platform Name",
+      defaultEcoScoreThreshold: "Default Eco Score Threshold",
+      weatherAlertSensitivity: "Weather Alert Sensitivity",
+      maintenanceMessage: "Maintenance Message",
+      maintenanceMessagePlaceholder: "Enter system-wide message for users...",
+      saveSettings: "Save Settings",
+      systemSettingsSaved: "System settings saved successfully!",
+      userManagementTitle: "User Management",
+      manageUserAccounts: "Manage user accounts and permissions",
+      joined: "Joined",
+      suspend: "Suspend",
+      activate: "Activate",
+      forumPostsModeration: "Forum Posts Moderation",
+      reviewAndModerate: "Review and moderate community content",
+      reports: "reports",
+      approved: "approved",
+      pending: "pending",
+      approve: "Approve",
+      reject: "Reject",
+      delete: "Delete",
+      postApproved: "Post approved",
+      postRejected: "Post rejected and removed",
+      postDeleted: "Post permanently deleted"
+    }
+  },
+  it: {
+    profile: {
+      title: "Impostazioni Profilo",
+      profileImage: "Immagine Profilo",
+      accountInformation: "Informazioni Account",
+      email: "Email",
+      changePassword: "Cambia Password",
+      currentPassword: "Password Attuale",
+      newPassword: "Nuova Password",
+      confirmPassword: "Conferma Nuova Password",
+      updatePassword: "Aggiorna Password",
+      cancel: "Annulla",
+      change: "Cambia",
+      languagePreferences: "Preferenze Lingua",
+      notifications: "Notifiche",
+      notificationsEnabled: "Le notifiche sono abilitate",
+      notificationsDisabled: "Le notifiche sono disabilitate",
+      deleteAccount: "Elimina Account",
+      deleteAccountWarning: "Una volta eliminato il tuo account, non c'è modo di tornare indietro. Sii certo.",
+      deleteImage: "Elimina Immagine",
+      chooseFile: "Scegli File",
+      noFileChosen: "Nessun file selezionato",
+      saveImage: "Salva Immagine",
+      selectImage: "Seleziona Immagine",
+      loading: "Caricamento profilo...",
+      passwordRequired: "La password è richiesta",
+      currentPasswordRequired: "La password attuale è richiesta",
+      newPasswordRequired: "La nuova password è richiesta",
+      confirmPasswordRequired: "Conferma la tua password",
+      passwordTooShort: "La password deve essere di almeno 6 caratteri",
+      passwordsDontMatch: "Le password non corrispondono",
+      passwordSame: "La nuova password deve essere diversa dalla password attuale",
+      deletePasswordRequired: "La password è richiesta per confermare l'eliminazione dell'account",
+      confirmDeletion: "Conferma Eliminazione Account",
+      deletePasswordPlaceholder: "La tua password",
+      deleteWarning: "Inserisci la tua password per eliminare definitivamente il tuo account. Questa azione non può essere annullata.",
+      delete: "Elimina",
+      profileImageUpdated: "Immagine profilo aggiornata con successo!",
+      profileImageDeleted: "Immagine profilo eliminata con successo!",
+      passwordChanged: "Password cambiata con successo!",
+      accountDeleted: "Il tuo account è stato eliminato con successo",
+      selectImageFirst: "Seleziona prima un'immagine",
+      imageTooLarge: "La dimensione dell'immagine deve essere inferiore a 5MB",
+      errorProcessingImage: "Errore nell'elaborazione dell'immagine. Riprova.",
+      errorUploadingImage: "Caricamento immagine fallito. Riprova.",
+      errorDeletingImage: "Eliminazione immagine fallita. Riprova.",
+      errorChangingPassword: "Cambio password fallito. Riprova.",
+      errorDeletingAccount: "Eliminazione account fallita. Riprova.",
+      mustBeLoggedIn: "Devi essere connesso",
+      unexpectedResponse: "Risposta inaspettata dal server",
+      invalidPassword: "Password non valida",
+      currentPasswordIncorrect: "Password attuale non corretta",
+      userNotFound: "Utente non trovato"
+    },
+    nav: {
+      dashboard: "Dashboard",
+      plan: "Piano",
+      world: "Mondo",
+      pastTrips: "Viaggi Precedenti",
+      live: "Live",
+      discover: "Scopri",
+      rewards: "Ricompense",
+      tips: "Consigli",
+      feedback: "Feedback",
+      admin: "Amministratore",
+      profile: "Profilo",
+      logout: "Esci",
+      viewProfile: "Visualizza Profilo"
+    },
+    app: {
+      travelGreen: "Viaggia Verde • Vivi Pulito",
+      profile: "Profilo"
+    },
+    dashboard: {
+      totalCo2Saved: "CO₂ Totale Risparmiato",
+      greenMiles: "Miglia Verdi",
+      ecoScore: "Punteggio Eco",
+      monthlyGoal: "Obiettivo Mensile",
+      vsLastMonth: "↑ 15% vs mese scorso",
+      thisMonth: "✓ 1.200 questo mese",
+      topGlobally: "🏆 Top 10% globalmente",
+      progressBar: "Visualizzazione barra di progresso",
+      environmentalImpact: "Il Tuo Impatto Ambientale",
+      trees: "alberi",
+      treesValue: "7 alberi",
+      treesDesc: "Equivalente a piantare",
+      energy: "kWh",
+      energyValue: "340 kWh",
+      energyDesc: "Energia risparmiata equivale a",
+      miles: "miglia",
+      milesValue: "458 miglia",
+      milesDesc: "Miglia in auto evitate",
+      carbonFootprintTrend: "Tendenza Impronta di Carbonio",
+      co2Emissions: "Emissioni CO₂ (kg)",
+      transportModes: "Modalità di Trasporto",
+      ecoFriendlyChoices: "Le tue scelte eco-friendly",
+      co2SavedByDestination: "CO₂ Risparmiato per Destinazione",
+      co2Saved: "CO₂ Risparmiato (kg)",
+      months: {
+        jan: "Gen",
+        feb: "Feb",
+        mar: "Mar",
+        apr: "Apr",
+        may: "Mag",
+        jun: "Giu",
+        jul: "Lug",
+        aug: "Ago",
+        sep: "Set",
+        oct: "Ott",
+        nov: "Nov",
+        dec: "Dic"
+      },
+      transportTypes: {
+        train: "Treno",
+        bus: "Autobus",
+        bike: "Bicicletta",
+        walk: "A piedi",
+        car: "Auto"
+      }
+    },
+    world: {
+      tripSummary: "Riepilogo Viaggio",
+      totalDestinations: "Destinazioni Totali",
+      carbonFootprint: "Impronta di Carbonio",
+      totalCost: "Costo Totale",
+      from: "Da",
+      to: "A",
+      departure: "Partenza",
+      arrival: "Arrivo",
+      duration: "Durata",
+      cost: "Costo",
+      platform: "Binario",
+      seat: "Posto",
+      gate: "Gate",
+      terminal: "Terminale",
+      class: "Classe",
+      completed: "Completa Viaggio",
+      upcoming: "In arrivo",
+      delete: "Elimina",
+      expand: "Vista 2D",
+      collapse: "Passa a 3D",
+      journeySegments: "Segmenti del Viaggio",
+      interactiveRouteMap: "Mappa Interattiva del Percorso",
+      visualizeJourney: "Visualizza il tuo viaggio su una mappa mondiale interattiva",
+      reset: "Reimposta",
+      useControlsToNavigate: "Usa i controlli per navigare",
+      view: "vista",
+      destinationsOnRoute: "destinazioni sul percorso",
+      markComplete: "Segna come Completato",
+      markIncomplete: "Segna come Non Completato",
+      deleteSegment: "Elimina Segmento",
+      active: "attivo",
+      transportTypes: {
+        train: "Treno",
+        airplane: "Aereo",
+        car: "Auto"
+      }
+    },
+    pastTrips: {
+      title: "Storia Viaggi Precedenti",
+      subtitle: "viaggi completati • Visualizza itinerari dettagliati e metodi di trasporto",
+      segments: "segmenti",
+      emissions: "Emissioni",
+      cost: "Costo",
+      duration: "Durata",
+      status: "Stato",
+      completed: "Completato",
+      route: "Percorso",
+      provider: "Fornitore",
+      code: "Codice",
+      departure: "Partenza",
+      arrival: "Arrivo",
+      time: "Tempo",
+      co2: "CO₂",
+      deleteTrip: "Elimina Viaggio"
+    },
+    live: {
+      title: "Tracciamento Viaggio Live",
+      currentLocation: "Posizione Attuale",
+      nextStop: "Prossima Fermata",
+      estimatedArrival: "Arrivo Stimato",
+      onTime: "In Orario",
+      delayed: "In Ritardo",
+      upcomingTravelReminders: "Promemoria Viaggio Imminente",
+      dontMissDeparture: "Non perdere la partenza - notifiche con 24 ore di anticipo",
+      departureIn: "Partenza tra",
+      hours: "ore",
+      route: "Percorso",
+      transport: "Trasporto",
+      date: "Data",
+      time: "Ora",
+      dismiss: "Chiudi",
+      new: "Nuovo",
+      liveTracking: "Tracciamento Live",
+      notifications: "Notifiche",
+      markAllRead: "Segna Tutto come Letto",
+      newInteraction: "Nuova interazione sul tuo post",
+      weatherUpdated: "Condizioni meteorologiche aggiornate",
+      ecoLocationRecommended: "Nuova location eco-friendly consigliata",
+      touristDensityChanged: "Densità turistica cambiata",
+      currentWeather: "Meteo Attuale",
+      crowdDensity: "Densità Folla",
+      lowDensity: "Bassa Densità",
+      mediumDensity: "Media Densità",
+      highDensity: "Alta Densità",
+      trending: "Tendenza",
+      up: "Su",
+      down: "Giù",
+      stable: "Stabile",
+      weatherConditions: {
+        sunny: "Soleggiato",
+        partlyCloudy: "Parzialmente Nuvoloso",
+        foggy: "Nebbia",
+        rainy: "Pioggia",
+        snowy: "Neve",
+        showers: "Rovesci",
+        stormy: "Tempesta",
+        unknown: "Sconosciuto",
+        unavailable: "Non Disponibile",
+        loading: "Caricamento..."
+      },
+      noUpcomingReminders: "Nessun promemoria viaggio imminente",
+      notified24Hours: "Riceverai una notifica 24 ore prima dei tuoi viaggi",
+      liveUpdates: "Aggiornamenti live su meteo, folle e interazioni sociali",
+      viewTripDetails: "Visualizza Dettagli Viaggio",
+      weather: "Meteo",
+      alert: "Allerta",
+      touristAffluence: "Affluenza Turistica",
+      alternativeSuggested: "Alternativa Suggerita"
+    },
+    discover: {
+      title: "Scopri Luoghi Eco-Friendly",
+      subtitle: "Condividi ed esplora destinazioni sostenibili",
+      addRecommendation: "Aggiungi Raccomandazione",
+      all: "Tutti",
+      restaurants: "Ristoranti",
+      hotels: "Hotel",
+      attractions: "Attrazioni",
+      activities: "Attività",
+      discoveringMore: "Scoprendo altri luoghi..."
+    },
+    rewards: {
+      title: "Ricompense",
+      sustainabilityHero: "Eroe della Sostenibilità",
+      level: "Livello",
+      ecoPoints: "Punti Eco",
+      progressToPlanetGuardian: "Progresso verso Guardiano del Pianeta",
+      pointsToNextLevel: "punti al prossimo livello",
+      achievementsUnlocked: "Risultati Sbloccati",
+      totalEcoPoints: "Punti Eco Totali",
+      globalRank: "Classifica Globale",
+      achievements: "Risultati",
+      currentStreak: "Serie Attuale",
+      dayStreak: "giorni di fila",
+      globalLeaderboard: "Classifica Globale",
+      topEcoTravelers: "Top viaggiatori eco questo mese",
+      keepMakingChoices: "Continua a fare scelte eco-friendly per mantenere la tua serie!",
+      thisWeek: "Questa settimana",
+      daysActive: "giorni attivi",
+      days: "Giorni",
+      you: "Tu",
+      pts: "punti",
+      progress: "Progresso",
+      locked: "Bloccato",
+      unlocked: "Sbloccato"
+    },
+    tips: {
+      title: "Guida al Viaggio Sostenibile",
+      subtitle: "Piccoli cambiamenti fanno una grande differenza per il nostro pianeta",
+      quickDailyTips: "Consigli Giornalieri Rapidi",
+      detailedGuidelines: "Linee Guida Dettagliate",
+      transportation: "Trasporti",
+      accommodation: "Alloggio",
+      foodDining: "Cibo e Ristorazione",
+      shopping: "Shopping",
+      activities: "Attività",
+      didYouKnow: "Lo sapevi?",
+      highImpact: "Alto Impatto",
+      mediumImpact: "Impatto Medio",
+      lowImpact: "Basso Impatto",
+      easy: "Facile",
+      medium: "Medio",
+      hard: "Difficile",
+      generatingTips: "Generazione consigli...",
+      guidelines: {
+        transport: {
+          chooseTrain: {
+            title: "Scegli il Treno invece dell'Aereo",
+            description: "I treni emettono fino al 90% in meno di CO₂ rispetto ai voli per lo stesso viaggio. Per viaggi sotto i 500km, i treni sono spesso più veloci se si include il tempo in aeroporto!"
+          },
+          directFlights: {
+            title: "Voli Diretti quando Voli",
+            description: "Decolli e atterraggi consumano più carburante. I voli diretti riducono significativamente le emissioni di carbonio rispetto agli scali."
+          },
+          offsetCarbon: {
+            title: "Compensa la Tua Carbonio",
+            description: "Calcola la tua impronta di viaggio e dona a progetti verificati di riforestazione o energia rinnovabile."
+          }
+        },
+        accommodation: {
+          ecoCertified: {
+            title: "Scegli Alloggi Eco-Certificati",
+            description: "Cerca hotel con certificazioni Green Key, LEED o EarthCheck. Queste strutture riducono attivamente acqua, rifiuti e consumo energetico."
+          },
+          reuseTowels: {
+            title: "Riutilizza Asciugamani e Biancheria",
+            description: "Appendi i tuoi asciugamani per segnalare che li riutilizzerai. Questo risparmia enormi quantità di acqua ed elettricità utilizzate per il bucato quotidiano."
+          },
+          conserveEnergy: {
+            title: "Risparmia Energia in Camera",
+            description: "Spegni sempre luci, aria condizionata e TV quando lasci la camera. Chiudi le tende nelle giornate calde per mantenere la camera fresca naturalmente."
+          }
+        },
+        food: {
+          eatLocal: {
+            title: "Mangia Locale e di Stagione",
+            description: "Gli ingredienti importati hanno un'alta impronta di carbonio. Il cibo locale supporta l'economia della comunità e di solito ha un sapore più fresco!"
+          },
+          plantBased: {
+            title: "Opzioni a Base Vegetale",
+            description: "L'agricoltura animale è un importante contributore ai gas serra. Prova a mangiare vegetariano o vegano per almeno un pasto al giorno."
+          },
+          avoidPlastics: {
+            title: "Evita la Plastica Monouso",
+            description: "Rifiuta cannucce e posate di plastica. Porta una bottiglia d'acqua riutilizzabile e riempila alle stazioni di acqua filtrata."
+          }
+        },
+        shopping: {
+          supportArtisans: {
+            title: "Supporta gli Artigiani Locali",
+            description: "Compra souvenir fatti localmente piuttosto che importazioni prodotte in serie. Questo mette denaro direttamente nelle mani delle famiglie locali."
+          },
+          ethicalSouvenirs: {
+            title: "Souvenir Etici",
+            description: "Non comprare mai prodotti fatti da specie in via di estinzione, avorio, corallo o gusci di tartaruga. Alimenta il bracconaggio illegale e la distruzione dell'ecosistema."
+          }
+        },
+        activities: {
+          respectWildlife: {
+            title: "Rispetta la Fauna Selvatica",
+            description: "Osserva gli animali da una distanza. Non dar loro da mangiare mai, poiché interrompe la loro dieta naturale e può renderli aggressivi."
+          },
+          lowCarbonTours: {
+            title: "Tour a Basso Contenuto di Carbonio",
+            description: "Scegli attività a propulsione umana come kayak, escursioni o tour in bicicletta invece di moto d'acqua, ATV o giri in elicottero."
+          }
+        }
+      },
+      knowledgeTips: {
+        flightCo2: "Un singolo volo di andata e ritorno da New York a Londra genera circa 1,5 tonnellate di CO₂ per passeggero.",
+        treeAbsorption: "Un albero assorbe circa 22 kg di CO₂ all'anno. Servirebbero 68 alberi per compensare quel singolo volo!",
+        trainVsPlane: "Scegliere il treno invece dell'aereo può ridurre la tua impronta di carbonio fino al 90% per lo stesso percorso.",
+        ecoHotels: "Soggiornare in hotel eco-certificati può ridurre il consumo di acqua ed energia fino al 30%."
+      }
+    },
+    feedback: {
+      title: "Feedback",
+      averageUserRating: "Valutazione Media Utente",
+      totalFeedback: "Feedback Totali",
+      implementationRate: "Tasso di Implementazione",
+      submitFeedback: "Invia Feedback",
+      helpUsImprove: "Aiutaci a migliorare EcoVoyage con i tuoi suggerimenti",
+      category: "Categoria",
+      selectCategory: "Seleziona categoria",
+      yourRating: "La Tua Valutazione",
+      subject: "Oggetto",
+      subjectPlaceholder: "Breve descrizione del tuo feedback",
+      message: "Messaggio",
+      messagePlaceholder: "Fornisci feedback dettagliato...",
+      submitting: "Invio in corso...",
+      submitFeedbackButton: "Invia Feedback",
+      communityFeedback: "Feedback della Comunità",
+      browseAndVote: "Sfoglia e vota sui feedback di altri utenti",
+      featureRequest: "💡 Richiesta Funzionalità",
+      bugReport: "🐛 Segnalazione Bug",
+      improvement: "⚡ Miglioramento",
+      generalFeedback: "💬 Feedback Generale",
+      implemented: "Implementato",
+      reviewing: "In Revisione",
+      new: "Nuovo",
+      upvote: "Vota",
+      weeksAgo: "settimane fa",
+      daysAgo: "giorni fa",
+      weekAgo: "settimana fa",
+      dayAgo: "giorno fa",
+      pleaseSelectCategory: "Seleziona una categoria e una valutazione.",
+      thankYouSubmitted: "Grazie! Il tuo feedback è stato inviato."
+    },
+    plan: {
+      ecoTravelPlanner: "Pianificatore Viaggi Eco",
+      planTrip: "Pianifica Viaggio",
+      navigateCity: "Naviga Città",
+      addTripSegment: "Aggiungi Segmento Viaggio",
+      from: "Da",
+      to: "A",
+      mode: "Modalità",
+      date: "Data",
+      searchStartLocation: "Cerca punto di partenza...",
+      searchDestination: "Cerca destinazione...",
+      flightDetails: "DETTAGLI VOLO",
+      flightNumber: "Volo #",
+      gate: "Gate",
+      trainDetails: "DETTAGLI TRENO",
+      trainNumber: "Treno #",
+      departs: "Partenza",
+      arrives: "Arrivo",
+      fuelType: "Tipo di Carburante",
+      addSegment: "Aggiungi Segmento",
+      dragDropMarkers: "Trascina e Rilascia Marcatori",
+      dragPinInstruction: "Trascina un pin sulla mappa per impostare una posizione:",
+      yourItinerary: "IL TUO ITINERARIO",
+      noTripsAdded: "Nessun viaggio aggiunto ancora.",
+      noDate: "Nessuna data",
+      saveFullTrip: "Salva Viaggio Completo",
+      worldView: "Vista Mondo",
+      navigationMode: "Modalità Navigazione",
+      saved: "Salvato",
+      ecoMode: "Modalità Eco",
+      alt: "Alt",
+      findEcoAlternative: "Trova Alternativa Eco",
+      transportTypes: {
+        airplane: "Aereo",
+        train: "Treno",
+        car: "Auto",
+        walking: "A piedi",
+        cycling: "Bicicletta"
+      },
+      fuelTypes: {
+        gasoline: "Benzina",
+        diesel: "Diesel",
+        electric: "Elettrico"
+      },
+      labels: {
+        number: "#:",
+        gate: "Gate:",
+        dep: "Part:",
+        arr: "Arr:"
+      }
+    },
+    common: {
+      english: "English",
+      italiano: "Italiano",
+      save: "Salva",
+      cancel: "Annulla",
+      delete: "Elimina",
+      edit: "Modifica",
+      close: "Chiudi"
+    },
+    admin: {
+      adminPanel: "Pannello Amministratore",
+      generalAdministratorAccess: "Accesso Amministratore Generale",
+      totalUsers: "Utenti Totali",
+      activeItineraries: "Itinerari Attivi",
+      forumPosts: "Post Forum",
+      avgEcoScore: "Punteggio Eco Medio",
+      forumModeration: "Moderazione Forum",
+      userManagement: "Gestione Utenti",
+      systemSettings: "Impostazioni Sistema",
+      systemSettingsTitle: "Impostazioni Sistema",
+      configurePlatformParameters: "Configura parametri piattaforma",
+      platformName: "Nome Piattaforma",
+      defaultEcoScoreThreshold: "Soglia Punteggio Eco Predefinita",
+      weatherAlertSensitivity: "Sensibilità Allerta Meteo",
+      maintenanceMessage: "Messaggio Manutenzione",
+      maintenanceMessagePlaceholder: "Inserisci messaggio per tutti gli utenti...",
+      saveSettings: "Salva Impostazioni",
+      systemSettingsSaved: "Impostazioni sistema salvate con successo!",
+      userManagementTitle: "Gestione Utenti",
+      manageUserAccounts: "Gestisci account utenti e permessi",
+      joined: "Iscritto",
+      suspend: "Sospendi",
+      activate: "Attiva",
+      forumPostsModeration: "Moderazione Post Forum",
+      reviewAndModerate: "Rivedi e modera contenuti della comunità",
+      reports: "segnalazioni",
+      approved: "approvato",
+      pending: "in attesa",
+      approve: "Approva",
+      reject: "Rifiuta",
+      delete: "Elimina",
+      postApproved: "Post approvato",
+      postRejected: "Post rifiutato e rimosso",
+      postDeleted: "Post eliminato permanentemente"
+    }
+  }
+};
+
+export const getLanguage = () => {
+  return localStorage.getItem('language') || 'en';
+};
+
+export const setLanguage = (lang) => {
+  localStorage.setItem('language', lang);
+  window.dispatchEvent(new CustomEvent('languageChanged', { detail: { language: lang } }));
+};
+
+export const t = (key, lang = null) => {
+  const currentLang = lang || getLanguage();
+  const keys = key.split('.');
+  let value = translations[currentLang];
+  
+  for (const k of keys) {
+    if (value && value[k]) {
+      value = value[k];
+    } else {
+      return key;
+    }
+  }
+  
+  return value || key;
+};
+
+export default {
+  getLanguage,
+  setLanguage,
+  t,
+  translations
+};

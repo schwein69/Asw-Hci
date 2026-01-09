@@ -9,6 +9,7 @@ import {
   Bug,
   Zap,
 } from "lucide-vue-next";
+import { getLanguage, t as translate } from "../utils/translations.js";
 
 export default {
   name: "Feedback",
@@ -24,6 +25,7 @@ export default {
   },
   data() {
     return {
+      language: getLanguage(),
       // --- Stats Data ---
       averageRating: 4.5,
       totalFeedback: 4,
@@ -36,10 +38,10 @@ export default {
       message: "",
 
       categories: [
-        "💡 Feature Request",
-        "🐛 Bug Report",
-        "⚡ Improvement",
-        "💬 General Feedback",
+        { key: "feedback.featureRequest", emoji: "💡" },
+        { key: "feedback.bugReport", emoji: "🐛" },
+        { key: "feedback.improvement", emoji: "⚡" },
+        { key: "feedback.generalFeedback", emoji: "💬" },
       ],
       isSubmitting: false,
 
@@ -131,6 +133,112 @@ export default {
           return "bg-gray-100 text-gray-700 border-gray-200";
       }
     },
+    translateStatus(status) {
+      const statusMap = {
+        'Implemented': this.t('feedback.implemented'),
+        'Reviewing': this.t('feedback.reviewing'),
+        'New': this.t('feedback.new')
+      };
+      return statusMap[status] || status;
+    },
+    translateCategory(category) {
+      const categoryMap = {
+        'Feature Request': this.t('feedback.featureRequest'),
+        'Bug Report': this.t('feedback.bugReport'),
+        'Improvement': this.t('feedback.improvement'),
+        'General Feedback': this.t('feedback.generalFeedback')
+      };
+      return categoryMap[category] || category;
+    },
+    translateTime(timeStr) {
+      if (timeStr.includes('week')) {
+        const num = timeStr.match(/\d+/)?.[0] || '1';
+        return num === '1' ? this.t('feedback.weekAgo') : `${num} ${this.t('feedback.weeksAgo')}`;
+      }
+      if (timeStr.includes('day')) {
+        const num = timeStr.match(/\d+/)?.[0] || '1';
+        return num === '1' ? this.t('feedback.dayAgo') : `${num} ${this.t('feedback.daysAgo')}`;
+      }
+      return timeStr;
+    },
+  },
+  computed: {
+    t() {
+      return (key) => translate(key, this.language);
+    },
+  },
+  mounted() {
+    window.addEventListener('languageChanged', this.handleLanguageChange);
+  },
+  beforeUnmount() {
+    window.removeEventListener('languageChanged', this.handleLanguageChange);
+  },
+  methods: {
+    handleLanguageChange(event) {
+      this.language = event.detail.language;
+    },
+    submitFeedback() {
+      if (!this.userRating || !this.selectedCategory) {
+        alert(this.t('feedback.pleaseSelectCategory'));
+        return;
+      }
+      this.isSubmitting = true;
+      setTimeout(() => {
+        alert(this.t('feedback.thankYouSubmitted'));
+        this.isSubmitting = false;
+        this.userRating = 0;
+        this.selectedCategory = "";
+        this.subject = "";
+        this.message = "";
+      }, 1000);
+    },
+    handleUpvote(id) {
+      const item = this.communityFeedback.find((i) => i.id === id);
+      if (item) {
+        item.upvotes++;
+      }
+    },
+    // REVERTED: Status colors stay the same in dark mode because cards are white
+    getStatusColor(status) {
+      switch (status) {
+        case "Implemented":
+          return "bg-emerald-100 text-emerald-700 border-emerald-200";
+        case "Reviewing":
+          return "bg-amber-100 text-amber-700 border-amber-200";
+        case "New":
+          return "bg-blue-100 text-blue-700 border-blue-200";
+        default:
+          return "bg-gray-100 text-gray-700 border-gray-200";
+      }
+    },
+    translateStatus(status) {
+      const statusMap = {
+        'Implemented': this.t('feedback.implemented'),
+        'Reviewing': this.t('feedback.reviewing'),
+        'New': this.t('feedback.new')
+      };
+      return statusMap[status] || status;
+    },
+    translateCategory(category) {
+      const categoryMap = {
+        'Feature Request': this.t('feedback.featureRequest'),
+        'Bug Report': this.t('feedback.bugReport'),
+        'Improvement': this.t('feedback.improvement'),
+        'General Feedback': this.t('feedback.generalFeedback')
+      };
+      return categoryMap[category] || category;
+    },
+    translateTime(timeStr) {
+      if (timeStr.includes('week')) {
+        const num = timeStr.match(/\d+/)?.[0] || '1';
+        return num === '1' ? this.t('feedback.weekAgo') : `${num} ${this.t('feedback.weeksAgo')}`;
+      }
+      if (timeStr.includes('day')) {
+        const num = timeStr.match(/\d+/)?.[0] || '1';
+        return num === '1' ? this.t('feedback.dayAgo') : `${num} ${this.t('feedback.daysAgo')}`;
+      }
+      return timeStr;
+    },
   },
 };
 </script>
@@ -141,7 +249,7 @@ export default {
   >
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
       <div class="bg-white p-4 rounded-xl border border-green-200 shadow-sm">
-        <p class="text-gray-500 text-sm mb-1">Average User Rating</p>
+        <p class="text-gray-500 text-sm mb-1">{{ t('feedback.averageUserRating') }}</p>
         <div class="flex items-center gap-2">
           <Star class="w-5 h-5 text-yellow-500 fill-current" />
           <span class="text-2xl font-bold text-gray-800"
@@ -151,7 +259,7 @@ export default {
       </div>
 
       <div class="bg-white p-4 rounded-xl border border-green-200 shadow-sm">
-        <p class="text-gray-500 text-sm mb-1">Total Feedback</p>
+        <p class="text-gray-500 text-sm mb-1">{{ t('feedback.totalFeedback') }}</p>
         <div class="flex items-center gap-2">
           <span class="text-2xl font-bold text-gray-800">{{
             totalFeedback
@@ -160,7 +268,7 @@ export default {
       </div>
 
       <div class="bg-white p-4 rounded-xl border border-green-200 shadow-sm">
-        <p class="text-gray-500 text-sm mb-1">Implementation Rate</p>
+        <p class="text-gray-500 text-sm mb-1">{{ t('feedback.implementationRate') }}</p>
         <div class="flex items-center gap-2">
           <TrendingUp class="w-5 h-5 text-success" />
           <span class="text-2xl font-bold text-gray-800">{{
@@ -175,16 +283,16 @@ export default {
         <div class="text-emerald-600">
           <MessageSquare class="w-5 h-5" />
         </div>
-        <h3 class="text-lg font-bold text-gray-800">Submit Feedback</h3>
+        <h3 class="text-lg font-bold text-gray-800">{{ t('feedback.submitFeedback') }}</h3>
       </div>
       <p class="text-sm text-gray-500 mb-6">
-        Help us improve EcoVoyage with your suggestions
+        {{ t('feedback.helpUsImprove') }}
       </p>
 
       <form @submit.prevent="submitFeedback" class="space-y-4">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div class="space-y-1">
-            <label class="text-xs font-bold text-gray-700 ml-1">Category</label>
+            <label class="text-xs font-bold text-gray-700 ml-1">{{ t('feedback.category') }}</label>
             <div class="relative">
               <select
                 v-model="selectedCategory"
@@ -193,14 +301,14 @@ export default {
                   selectedCategory === '' ? 'text-gray-900' : 'text-gray-900'
                 "
               >
-                <option value="" disabled selected>Select category</option>
+                <option value="" disabled selected>{{ t('feedback.selectCategory') }}</option>
                 <option
                   v-for="cat in categories"
-                  :key="cat"
-                  :value="cat"
+                  :key="cat.key"
+                  :value="cat.key"
                   class="text-gray-900"
                 >
-                  {{ cat }}
+                  {{ cat.emoji }} {{ t(cat.key) }}
                 </option>
               </select>
               <div
@@ -217,7 +325,7 @@ export default {
 
           <div class="space-y-1">
             <label class="text-xs font-bold text-gray-700 ml-1"
-              >Your Rating</label
+              >{{ t('feedback.yourRating') }}</label
             >
             <div class="flex gap-2 pt-2">
               <button
@@ -241,21 +349,21 @@ export default {
         </div>
 
         <div class="space-y-1">
-          <label class="text-xs font-bold text-gray-700 ml-1">Subject</label>
+          <label class="text-xs font-bold text-gray-700 ml-1">{{ t('feedback.subject') }}</label>
           <input
             v-model="subject"
             type="text"
-            placeholder="Brief description of your feedback"
+            :placeholder="t('feedback.subjectPlaceholder')"
             class="w-full p-3 bg-gray-50 rounded-xl border border-transparent focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all text-gray-900"
           />
         </div>
 
         <div class="space-y-1">
-          <label class="text-xs font-bold text-gray-700 ml-1">Message</label>
+          <label class="text-xs font-bold text-gray-700 ml-1">{{ t('feedback.message') }}</label>
           <textarea
             v-model="message"
             rows="4"
-            placeholder="Provide detailed feedback..."
+            :placeholder="t('feedback.messagePlaceholder')"
             class="w-full p-3 bg-gray-50 rounded-xl border border-transparent focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all resize-none text-gray-900"
           ></textarea>
         </div>
@@ -267,16 +375,16 @@ export default {
           :class="{ 'opacity-70 cursor-not-allowed': isSubmitting }"
         >
           <Send class="w-4 h-4" />
-          {{ isSubmitting ? "Submitting..." : "Submit Feedback" }}
+          {{ isSubmitting ? t('feedback.submitting') : t('feedback.submitFeedbackButton') }}
         </button>
       </form>
     </div>
 
     <div class="bg-white p-6 rounded-2xl border border-green-200 shadow-sm">
       <div class="mb-6">
-        <h3 class="text-lg font-bold text-gray-800">Community Feedback</h3>
+        <h3 class="text-lg font-bold text-gray-800">{{ t('feedback.communityFeedback') }}</h3>
         <p class="text-sm text-gray-500">
-          Browse and vote on feedback from other users
+          {{ t('feedback.browseAndVote') }}
         </p>
       </div>
 
@@ -305,13 +413,13 @@ export default {
                   class="px-2 py-0.5 rounded-full text-xs font-bold border"
                   :class="getStatusColor(item.status)"
                 >
-                  {{ item.status }}
+                  {{ translateStatus(item.status) }}
                 </span>
               </div>
               <div class="flex items-center gap-2 text-xs text-gray-500">
                 <span>{{ item.user }}</span>
                 <span>•</span>
-                <span>{{ item.time }}</span>
+                <span>{{ translateTime(item.time) }}</span>
                 <div class="flex items-center gap-0.5 ml-2">
                   <Star
                     v-for="i in 5"
@@ -340,12 +448,12 @@ export default {
               class="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-emerald-200 text-emerald-700 hover:bg-emerald-50 transition-colors text-sm font-medium"
             >
               <ThumbsUp class="w-4 h-4" />
-              Upvote ({{ item.upvotes }})
+              {{ t('feedback.upvote') }} ({{ item.upvotes }})
             </button>
             <span
               class="text-xs font-semibold text-emerald-700 border border-emerald-200 px-3 py-1 rounded-full bg-white shadow-sm"
             >
-              {{ item.category }}
+              {{ translateCategory(item.category) }}
             </span>
           </div>
         </div>

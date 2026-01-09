@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, onUnmounted } from "vue";
 import { History, Loader2 } from "lucide-vue-next";
 import { Bar } from "vue-chartjs";
 import {
@@ -11,6 +11,7 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
+import { getLanguage, t as translate } from "../../utils/translations.js";
 
 ChartJS.register(
   CategoryScale,
@@ -24,6 +25,10 @@ ChartJS.register(
 // --- STATE ---
 const isLoading = ref(true);
 const processedTrips = ref([]);
+const language = ref(getLanguage());
+
+// --- TRANSLATION HELPER ---
+const t = (key) => translate(key, language.value);
 
 const rawTrips = [
   {
@@ -71,7 +76,13 @@ const calculateAverageEmission = async (from, to) => {
   });
 };
 
+const handleLanguageChange = (event) => {
+  language.value = event.detail.language;
+};
+
 onMounted(async () => {
+  window.addEventListener("languageChanged", handleLanguageChange);
+
   const tripsToProcess = rawTrips.slice(0, 5);
   const results = [];
 
@@ -104,11 +115,16 @@ onMounted(async () => {
   isLoading.value = false;
 });
 
+onUnmounted(() => {
+  window.removeEventListener("languageChanged", handleLanguageChange);
+});
+
+// --- CHART CONFIGURATION ---
 const chartData = computed(() => ({
   labels: processedTrips.value.map((t) => t.name),
   datasets: [
     {
-      label: "My Trip",
+      label: t("dashboard.myTrip"), // Translatable label
       data: processedTrips.value.map((t) => t.myTotal),
       backgroundColor: "#10b981", // Green
       borderRadius: 4,
@@ -116,7 +132,7 @@ const chartData = computed(() => ({
       categoryPercentage: 0.8,
     },
     {
-      label: "Average Trip",
+      label: t("dashboard.averageTrip"), // Translatable label
       data: processedTrips.value.map((t) => t.avgTotal),
       backgroundColor: "#d1d5db", // Gray
       borderRadius: 4,
@@ -126,7 +142,8 @@ const chartData = computed(() => ({
   ],
 }));
 
-const chartOptions = {
+// Changed from const to computed so axis titles update when language changes
+const chartOptions = computed(() => ({
   responsive: true,
   maintainAspectRatio: false,
   plugins: {
@@ -140,7 +157,8 @@ const chartOptions = {
         afterBody: (tooltipItems) => {
           const index = tooltipItems[0].dataIndex;
           const trip = processedTrips.value[index];
-          return `Route: ${trip.routeSummary}`;
+          // Example translation for Route prefix
+          return `${t("dashboard.route")}: ${trip.routeSummary}`;
         },
         label: (context) => ` ${context.dataset.label}: ${context.raw} kg CO₂`,
       },
@@ -149,7 +167,7 @@ const chartOptions = {
   scales: {
     y: {
       beginAtZero: true,
-      title: { display: true, text: "Total CO₂ (kg)" },
+      title: { display: true, text: t("dashboard.totalCo2") }, // Translatable axis title
       grid: { color: "#f3f4f6" },
       border: { display: false },
     },
@@ -158,7 +176,7 @@ const chartOptions = {
       ticks: { font: { size: 11 } },
     },
   },
-};
+}));
 </script>
 
 <template>
@@ -172,9 +190,11 @@ const chartOptions = {
             <History class="w-5 h-5 text-green-600" />
           </div>
           <div>
-            <h3 class="text-lg font-bold text-gray-800">Trip Efficiency</h3>
+            <h3 class="text-lg font-bold text-gray-800">
+              {{ t("dashboard.tripEfficiency") }}
+            </h3>
             <p class="text-xs text-gray-500">
-              Total footprint per trip vs. average traveler
+              {{ t("dashboard.tripEfficiencyDesc") }}
             </p>
           </div>
         </div>
@@ -183,7 +203,8 @@ const chartOptions = {
           v-if="isLoading"
           class="flex items-center gap-2 text-xs text-gray-400"
         >
-          <Loader2 class="w-3 h-3 animate-spin" /> Calculating...
+          <Loader2 class="w-3 h-3 animate-spin" />
+          {{ t("dashboard.calculating") }}
         </div>
       </div>
     </div>
@@ -193,7 +214,7 @@ const chartOptions = {
         v-if="isLoading"
         class="h-64 flex justify-center items-center text-gray-400 text-sm"
       >
-        Aggregating trip data...
+        {{ t("dashboard.aggregatingData") }}
       </div>
 
       <div
@@ -208,8 +229,7 @@ const chartOptions = {
     <div
       class="p-3 text-[10px] text-gray-400 text-center border-t border-gray-50"
     >
-      * Compares your total trip emissions against the standard average for the
-      same route.
+      {{ t("dashboard.tripComparisonDisclaimer") }}
     </div>
   </div>
 </template>
