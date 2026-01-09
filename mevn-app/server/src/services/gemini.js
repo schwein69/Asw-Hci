@@ -21,13 +21,11 @@ export async function generateDailyTips() {
     const response = await result.response;
     const text = response.text();
 
-    // Clean up if the AI wraps it in markdown code blocks
     const cleanedText = text.replace(/```json|```/g, "").trim();
 
     return JSON.parse(cleanedText);
   } catch (error) {
     console.error("Gemini API Error:", error);
-    // Fallback data if API fails
     return [];
   }
 }
@@ -50,6 +48,8 @@ export async function generateTravelItineraryEstimation(payload) {
     contextDetails = "Assume a standard second-class train ticket.";
   } else if (mode === "Car") {
     contextDetails = `Assume a vehicle powered by ${fuel_type}.`;
+  } else if (mode === "Bus") {
+    contextDetails = "Assume a standard intercity bus ticket.";
   }
 
   const prompt = `
@@ -87,7 +87,7 @@ export async function compareTravelModes(payload) {
   });
   const { distance_km } = payload;
   const prompt = `
-    Act as a travel analyst. Compare the average travel cost (in Euros), CO2 emissions (in kg) and time to travel for Car, Train, and Airplane over a distance of ${distance_km} km.
+    Act as a travel analyst. Compare the average travel cost (in Euros), CO2 emissions (in kg) and time to travel for Car, Train, Bus, Airplane over a distance of ${distance_km} km.
     Calculate time also for bycicle and walking.
 
     Return a JSON object with exactly these keys, for bicycle and walking return cost as "0.00" and co2 as "0.0":
@@ -97,7 +97,8 @@ export async function compareTravelModes(payload) {
       "Train": {"cost": "String", "co2": "String", "time": "String"},
       "Airplane": {"cost": "String", "co2": "String", "time": "String"},
       "Bicycle": {"cost": "String", "co2": "String", "time": "String"},
-      "Walking": {"cost": "String", "co2": "String", "time": "String"}
+      "Walking": {"cost": "String", "co2": "String", "time": "String"},
+      "Bus": {"cost": "String", "co2": "String", "time": "String"}
     }
   `;
   try {

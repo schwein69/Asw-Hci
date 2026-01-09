@@ -7,6 +7,7 @@ import {
   Car,
   Footprints,
   Bike,
+  Bus,
   Save,
   Trash2,
   Clock,
@@ -52,6 +53,7 @@ const iconMap = {
   Airplane: Plane,
   Train: Train,
   Car: Car,
+  Bus: Bus,
   Walking: Footprints,
   Cycling: Bike,
   Hotel: Hotel,
@@ -89,7 +91,7 @@ let resizeObserver = null;
 const searchOptions = computed(() => {
   const base = {
     language: "en",
-    limit: 5,
+    limit: 6,
     proximity: userLocation.value
       ? userLocation.value.join(",")
       : mapCenter.value.join(","),
@@ -112,6 +114,8 @@ const searchOptions = computed(() => {
     return { ...base, poi_category: ["airport"] };
   if (newSegment.value.type === "Train")
     return { ...base, poi_category: ["train_station"] };
+  if (newSegment.value.type === "Bus")
+    return { ...base, poi_category: ["bus_station"] };
   return { ...base, types: ["place", "locality", "poi", "address"] };
 });
 
@@ -544,7 +548,7 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
       let profile = "driving";
       if (type === "Walking") profile = "walking";
       if (type === "Cycling") profile = "cycling";
-      if (type === "Train") profile = "driving";
+      if (type === "Train" || type === "Bus") profile = "driving";
       const res = await fetch(
         `https://api.mapbox.com/directions/v5/mapbox/${profile}/${startCoords[0]},${startCoords[1]};${endCoords[0]},${endCoords[1]}?steps=true&geometries=geojson&access_token=${accessToken}`
       );
@@ -562,6 +566,7 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
   let lineColor = "#10b981";
   if (type === "Airplane") lineColor = "#3b82f6";
   if (type === "Train") lineColor = "#f97316";
+  if (type === "Bus") lineColor = "#8b5cf6"; // Purple for Bus
   map.addLayer({
     id: routeId,
     type: "line",
@@ -793,6 +798,7 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
                 >
                   <option>Airplane</option>
                   <option>Train</option>
+                  <option>Bus</option>
                   <option>Car</option>
                   <option>Walking</option>
                   <option>Cycling</option>
@@ -834,12 +840,20 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
               />
             </div>
             <div
-              v-if="!isEcoMode && newSegment.type === 'Train'"
-              class="grid grid-cols-2 gap-2 p-2 bg-orange-50 rounded-lg border border-orange-100"
+              v-if="
+                !isEcoMode &&
+                (newSegment.type === 'Train' || newSegment.type === 'Bus')
+              "
+              class="grid grid-cols-2 gap-2 p-2 rounded-lg"
+              :class="
+                newSegment.type === 'Train'
+                  ? 'bg-orange-50 border border-orange-100'
+                  : 'bg-purple-50 border border-purple-100'
+              "
             >
               <input
                 v-model="newSegment.transportNumber"
-                placeholder="Train #"
+                :placeholder="newSegment.type === 'Train' ? 'Train #' : 'Bus #'"
                 class="input input-sm input-bordered w-full col-span-2 rounded-md"
               />
               <input
@@ -879,7 +893,7 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
                   :key="marker.id"
                   draggable="true"
                   @dragstart="onDragStart($event, marker)"
-                  class="cursor-grab active:cursor-grabbing hover:scale-110 transition-transform p-1 border rounded bg-gray-50 flex-shrink-0"
+                  class="cursor-grab active:cursor-grabbing hover:scale-110 transition-transform p-1 border rounded bg-gray-50 shrink-0"
                 >
                   <svg
                     width="28"
