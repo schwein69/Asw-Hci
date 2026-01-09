@@ -1,6 +1,6 @@
 import nodemailer from "nodemailer";
 
-// Sets up Gmail connection using credentials from environment variables
+
 const createTransporter = () => {
   if (process.env.EMAIL_SERVICE === "gmail") {
     return nodemailer.createTransport({
@@ -15,10 +15,10 @@ const createTransporter = () => {
   return null;
 };
 
-// Sends an email or logs it to console if email is not configured
+
 export const sendEmail = async ({ to, subject, html, text }) => {
   try {
-    // Development mode: log email instead of sending
+  
     if (!process.env.EMAIL_USER) {
       console.log("--- Test Email ---");
       console.log("To:", to);
@@ -53,7 +53,7 @@ export const sendEmail = async ({ to, subject, html, text }) => {
   }
 };
 
-// Sends password reset email with reset link to user
+
 export const sendPasswordResetEmail = async (email, resetToken) => {
   const resetLink = `${process.env.FRONTEND_URL || "http://localhost:5173"}/reset-password?token=${resetToken}`;
   
