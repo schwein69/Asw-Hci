@@ -15,6 +15,7 @@ const UserSchema = new mongoose.Schema({
   feedbacks: [{ type: mongoose.Schema.Types.ObjectId, ref: "Feedback" }],
   resetToken: { type: String },
   resetTokenExpiry: { type: Date },
+  profileImage: { type: String },
   createdAt: { type: Date, default: Date.now },
 });
 
