@@ -335,10 +335,10 @@ onUnmounted(() => {
       <div>
         <h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2">
           <Clock class="w-6 h-6 text-green-600" />
-          {{ t("dashboard.myActiveTrips") }}
+          {{ t("world.title") }}
         </h2>
         <p class="text-gray-500 text-sm">
-          {{ t("dashboard.manageJourneysDesc") }}
+          {{ t("world.description") }}
         </p>
       </div>
     </div>
@@ -682,14 +682,14 @@ onUnmounted(() => {
               class="text-xs text-orange-500 font-medium flex items-center gap-1 animate-pulse"
             >
               <AlertCircle class="w-3 h-3" />
-              {{ t("dashboard.finishSegments") }}
+              {{ t("world.finishSegments") }}
             </div>
             <div
               v-else
               class="text-xs text-green-600 font-medium flex items-center gap-1"
             >
               <CheckCircle2 class="w-3 h-3" />
-              {{ t("dashboard.allSegmentsDone") }}
+              {{ t("world.allSegmentsDone") }}
             </div>
           </div>
 
@@ -698,7 +698,7 @@ onUnmounted(() => {
               @click="modifyTrip(trip.id)"
               class="btn btn-outline btn-success gap-2 rounded-xl font-bold hover:scale-105 transition-transform"
             >
-              <Edit class="w-4 h-4" /> {{ t("dashboard.modify") }}
+              <Edit class="w-4 h-4" /> {{ t("world.modifyTrip") }}
             </button>
 
             <button
@@ -772,7 +772,7 @@ onUnmounted(() => {
             {{ t("world.view") }} {{ t("world.active") }}</span
           >
         </div>
-        <span>{{ trips.length }} {{ t("dashboard.activeTripsMapped") }}</span>
+        <span>{{ trips.length }} </span>
       </div>
     </div>
   </div>
