@@ -1,5 +1,5 @@
 <script>
-import { Calendar, MapPin, TrendingUp, Trash2 } from "lucide-vue-next";
+import { Calendar, MapPin, TrendingUp, Trash2, ChevronDown, ChevronUp } from "lucide-vue-next";
 import { getLanguage, t as translate } from "../utils/translations.js";
 
 export default {
@@ -9,6 +9,8 @@ export default {
     MapPin,
     TrendingUp,
     Trash2,
+    ChevronDown,
+    ChevronUp,
   },
   data() {
     return {
@@ -24,6 +26,7 @@ export default {
           cost: "€1850",
           duration: "2 days",
           status: "Completed",
+          isExpanded: false,
           transportMethods: [
             {
               id: 1,
@@ -65,6 +68,7 @@ export default {
           cost: "€2450",
           duration: "3 days",
           status: "Completed",
+          isExpanded: false,
           transportMethods: [],
         },
         {
@@ -77,6 +81,7 @@ export default {
           cost: "€1650",
           duration: "2 days",
           status: "Completed",
+          isExpanded: false,
           transportMethods: [],
         },
       ],
@@ -99,6 +104,9 @@ export default {
     },
     handleLanguageChange(event) {
       this.language = event.detail.language;
+    },
+    toggleExpand(trip) {
+      trip.isExpanded = !trip.isExpanded;
     },
   },
 };
@@ -140,13 +148,23 @@ export default {
                 {{ trip.date }} to {{ trip.endDate }}
               </p>
             </div>
-            <button @click="deleteTrip(trip.id)" class="btn btn-ghost btn-sm">
-              <Trash2 class="w-4 h-4 text-error" />
-            </button>
+            <div class="flex items-center gap-2">
+              <button 
+                @click="toggleExpand(trip)" 
+                class="btn btn-ghost btn-sm p-1"
+                :title="trip.isExpanded ? 'Hide details' : 'Show details'"
+              >
+                <ChevronDown v-if="!trip.isExpanded" class="w-5 h-5 text-gray-600" />
+                <ChevronUp v-else class="w-5 h-5 text-gray-600" />
+              </button>
+              <button @click="deleteTrip(trip.id)" class="btn btn-ghost btn-sm">
+                <Trash2 class="w-4 h-4 text-error" />
+              </button>
+            </div>
           </div>
 
-          <!-- Stats Grid -->
-          <div class="grid grid-cols-2 md:grid-cols-4 gap-3 my-4">
+          <!-- Main Stats (Always Visible) -->
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
             <div
               class="bg-green-50 rounded-lg p-3 text-center border border-green-200"
             >
@@ -179,92 +197,96 @@ export default {
             </div>
           </div>
 
-          <!-- Transport Methods -->
-          <div v-if="trip.transportMethods.length > 0" class="mt-4">
-            <h4
-              class="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2"
-            >
-              <TrendingUp class="w-4 h-4" />
-              {{ t('pastTrips.route') }}
-            </h4>
-            <div class="space-y-3">
-              <div
-                v-for="(method, idx) in trip.transportMethods"
-                :key="method.id"
-                class="border border-green-100 rounded-lg p-3 bg-green-50"
+          <!-- Expanded Details -->
+          <div v-if="trip.isExpanded" class="mt-4 pt-4 border-t border-gray-200">
+
+            <!-- Transport Methods -->
+            <div v-if="trip.transportMethods.length > 0" class="mt-4">
+              <h4
+                class="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2"
               >
-                <!-- Route Header -->
-                <div class="flex items-center justify-between mb-2">
-                  <div class="flex items-center gap-2">
-                    <span class="badge badge-sm badge-success">{{
-                      idx + 1
-                    }}</span>
-                    <span class="text-sm font-semibold text-gray-800">{{
-                      method.route
-                    }}</span>
-                    <span class="badge badge-sm badge-outline">{{
-                      method.type
-                    }}</span>
-                  </div>
-                </div>
-
-                <!-- Provider Info -->
-                <div class="text-xs text-gray-600 mb-3">
-                  <div class="font-medium">{{ method.provider }}</div>
-                  <div>{{ method.code }}</div>
-                </div>
-
-                <!-- Schedule Grid -->
-                <div class="grid grid-cols-3 gap-2 text-xs mb-3">
-                  <div>
-                    <div class="text-gray-500">{{ t('pastTrips.departure') }}</div>
-                    <div class="font-semibold text-gray-800">
-                      {{ method.departure }}
-                    </div>
-                    <div class="text-gray-500">{{ method.departureType }}</div>
-                  </div>
-                  <div class="text-center">
-                    <div class="text-gray-500">{{ t('pastTrips.time') }}</div>
-                    <div class="font-semibold text-gray-800">
-                      {{ method.time }}
-                    </div>
-                  </div>
-                  <div>
-                    <div class="text-gray-500">{{ t('pastTrips.arrival') }}</div>
-                    <div class="font-semibold text-gray-800">
-                      {{ method.arrival }}
-                    </div>
-                    <div class="text-gray-500">{{ method.arrivalType }}</div>
-                  </div>
-                </div>
-
-                <!-- Metrics -->
+                <TrendingUp class="w-4 h-4" />
+                {{ t('pastTrips.route') }}
+              </h4>
+              <div class="space-y-3">
                 <div
-                  class="flex items-center justify-between text-xs border-t border-green-200 pt-2"
+                  v-for="(method, idx) in trip.transportMethods"
+                  :key="method.id"
+                  class="border border-green-100 rounded-lg p-3 bg-green-50"
                 >
-                  <div>
-                    <span class="text-gray-600">CO₂: </span>
-                    <span class="font-semibold text-gray-800">{{
-                      method.co2
-                    }}</span>
+                  <!-- Route Header -->
+                  <div class="flex items-center justify-between mb-2">
+                    <div class="flex items-center gap-2">
+                      <span class="badge badge-sm badge-success">{{
+                        idx + 1
+                      }}</span>
+                      <span class="text-sm font-semibold text-gray-800">{{
+                        method.route
+                      }}</span>
+                      <span class="badge badge-sm badge-outline">{{
+                        method.type
+                      }}</span>
+                    </div>
                   </div>
-                  <div>
-                    <span class="text-gray-600">Cost: </span>
-                    <span class="font-semibold text-gray-800">{{
-                      method.cost
-                    }}</span>
+
+                  <!-- Provider Info -->
+                  <div class="text-xs text-gray-600 mb-3">
+                    <div class="font-medium">{{ method.provider }}</div>
+                    <div>{{ method.code }}</div>
+                  </div>
+
+                  <!-- Schedule Grid -->
+                  <div class="grid grid-cols-3 gap-2 text-xs mb-3">
+                    <div>
+                      <div class="text-gray-500">{{ t('pastTrips.departure') }}</div>
+                      <div class="font-semibold text-gray-800">
+                        {{ method.departure }}
+                      </div>
+                      <div class="text-gray-500">{{ method.departureType }}</div>
+                    </div>
+                    <div class="text-center">
+                      <div class="text-gray-500">{{ t('pastTrips.time') }}</div>
+                      <div class="font-semibold text-gray-800">
+                        {{ method.time }}
+                      </div>
+                    </div>
+                    <div>
+                      <div class="text-gray-500">{{ t('pastTrips.arrival') }}</div>
+                      <div class="font-semibold text-gray-800">
+                        {{ method.arrival }}
+                      </div>
+                      <div class="text-gray-500">{{ method.arrivalType }}</div>
+                    </div>
+                  </div>
+
+                  <!-- Metrics -->
+                  <div
+                    class="flex items-center justify-between text-xs border-t border-green-200 pt-2"
+                  >
+                    <div>
+                      <span class="text-gray-600">CO₂: </span>
+                      <span class="font-semibold text-gray-800">{{
+                        method.co2
+                      }}</span>
+                    </div>
+                    <div>
+                      <span class="text-gray-600">Cost: </span>
+                      <span class="font-semibold text-gray-800">{{
+                        method.cost
+                      }}</span>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
 
-            <!-- Load to Map Button -->
-            <button
-              class="btn btn-outline btn-sm w-full mt-4 text-success border-success hover:bg-success hover:text-white"
-            >
-              <MapPin class="w-4 h-4" />
-              Load to Map
-            </button>
+              <!-- Load to Map Button -->
+              <button
+                class="btn btn-outline btn-sm w-full mt-4 text-success border-success hover:bg-success hover:text-white"
+              >
+                <MapPin class="w-4 h-4" />
+                Load to Map
+              </button>
+            </div>
           </div>
         </div>
       </div>
