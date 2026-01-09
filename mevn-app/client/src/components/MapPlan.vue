@@ -139,13 +139,13 @@ onMounted(() => {
     });
     resizeObserver.observe(mapContainerRef.value);
   }
-  window.addEventListener('languageChanged', handleLanguageChange);
+  window.addEventListener("languageChanged", handleLanguageChange);
 });
 
 onUnmounted(() => {
   if (animationFrameId) cancelAnimationFrame(animationFrameId);
   if (resizeObserver) resizeObserver.disconnect();
-  window.removeEventListener('languageChanged', handleLanguageChange);
+  window.removeEventListener("languageChanged", handleLanguageChange);
 });
 
 watch(activeTab, () => {
@@ -641,7 +641,7 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
     >
       <div class="flex gap-2 items-center">
         <h2 class="text-2xl font-bold text-gray-800 tracking-tight p-2">
-          {{ t('plan.ecoTravelPlanner') }}
+          {{ t("plan.ecoTravelPlanner") }}
         </h2>
       </div>
       <div class="tabs tabs-boxed rounded-xl p-1">
@@ -651,7 +651,7 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
             'tab-active bg-white text-green-700': activeTab === 'world',
           }"
           @click="activeTab = 'world'"
-          >{{ t('plan.planTrip') }}</a
+          >{{ t("plan.planTrip") }}</a
         >
         <a
           class="tab rounded-lg"
@@ -659,7 +659,7 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
             'tab-active bg-white text-green-700': activeTab === 'city',
           }"
           @click="activeTab = 'city'"
-          >{{ t('plan.navigateCity') }}</a
+          >{{ t("plan.navigateCity") }}</a
         >
       </div>
     </div>
@@ -679,7 +679,8 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
         <div class="card-body p-5">
           <div class="flex justify-between items-center mb-2">
             <h3 class="font-bold text-gray-700 flex items-center gap-2">
-              <Plus class="w-5 h-5 text-green-600" /> {{ t('plan.addTripSegment') }}
+              <Plus class="w-5 h-5 text-green-600" />
+              {{ t("plan.addTripSegment") }}
             </h3>
             <div
               class="flex items-center gap-2 cursor-pointer bg-gray-100 p-1 rounded-full"
@@ -706,9 +707,9 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
             class="bg-gray-50 p-4 rounded-xl space-y-3 border border-gray-100 relative"
           >
             <div class="space-y-1" v-if="!isEcoMode">
-              <label class="text-xs font-bold text-gray-500 uppercase"
-                >{{ t('plan.from') }}</label
-              >
+              <label class="text-xs font-bold text-gray-500 uppercase">{{
+                t("plan.from")
+              }}</label>
               <div
                 class="rounded-lg overflow-hidden border border-gray-200 bg-white"
               >
@@ -723,7 +724,7 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
             </div>
             <div class="space-y-1">
               <label class="text-xs font-bold text-gray-500 uppercase">{{
-                isEcoMode ? "Find Place" : "{{ t('plan.to') }}"
+                isEcoMode ? "Find Place" : t("plan.to")
               }}</label>
               <div
                 class="rounded-lg overflow-hidden border border-gray-200 bg-white"
@@ -800,24 +801,37 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
             </div>
             <div v-if="!isEcoMode" class="grid grid-cols-2 gap-2">
               <div>
-                <label class="text-xs font-bold text-gray-500 uppercase"
-                  >{{ t('plan.mode') }}</label
-                >
+                <label class="text-xs font-bold text-gray-500 uppercase">{{
+                  t("plan.mode")
+                }}</label>
                 <select
                   v-model="newSegment.type"
                   class="select select-sm select-bordered bg-white w-full rounded-lg mt-1"
                 >
-                <option value="Airplane">{{ t('plan.transportTypes.airplane') }}</option>
-                <option value="Train">{{ t('plan.transportTypes.train') }}</option>
-                <option value="Car">{{ t('plan.transportTypes.car') }}</option>
-                <option value="Bus">{{ t('plan.transportTypes.bus') }}</option>
-                <option value="Walking">{{ t('plan.transportTypes.walking') }}</option>
-                <option value="Cycling">{{ t('plan.transportTypes.cycling') }}</option>
+                  <option value="Airplane">
+                    {{ t("plan.transportTypes.airplane") }}
+                  </option>
+                  <option value="Train">
+                    {{ t("plan.transportTypes.train") }}
+                  </option>
+                  <option value="Car">
+                    {{ t("plan.transportTypes.car") }}
+                  </option>
+                  <option value="Bus">
+                    {{ t("plan.transportTypes.bus") }}
+                  </option>
+                  <option value="Walking">
+                    {{ t("plan.transportTypes.walking") }}
+                  </option>
+                  <option value="Cycling">
+                    {{ t("plan.transportTypes.cycling") }}
+                  </option>
                 </select>
               </div>
               <div>
-                <label class="text-xs font-bold text-gray-500 uppercase"
-                  >{{ t('plan.date') }}</label
+                <label class="text-xs font-bold text-gray-500 uppercase">{{
+                  t("plan.date")
+                }}</label
                 ><input
                   v-model="newSegment.date"
                   type="date"
@@ -831,7 +845,7 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
             >
               <input
                 v-model="newSegment.transportNumber"
-                :placeholder=" t('plan.flightDetails') "
+                :placeholder="t('plan.flightDetails')"
                 class="input input-sm input-bordered w-full rounded-md"
               />
               <input
@@ -937,131 +951,29 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
         </div>
       </div>
 
-            <div class="divider my-2 text-xs text-gray-400">YOUR ITINERARY</div>
-            <div class="space-y-2 flex-1 overflow-y-auto custom-scrollbar h-48">
-              <div
-                v-if="savedSegments.length === 0"
-                class="text-center py-8 text-gray-400 text-sm italic"
-              >
-                No trips added yet.
-              </div>
-              <div
-                v-for="(seg, idx) in savedSegments"
-                :key="seg.id"
-                class="flex flex-col p-3 border border-gray-100 rounded-xl hover:bg-green-50 bg-white shadow-sm"
-              >
-                <div class="flex items-center justify-between">
-                  <div class="flex items-center gap-3">
-                    <div class="text-green-600 bg-green-100 p-2 rounded-full">
-                      <component
-                        :is="iconMap[seg.type]"
-                        class="w-4 h-4"
-                        v-if="iconMap[seg.type]"
-                      />
-                      <Footprints v-else class="w-4 h-4" />
-                    </div>
-                    <div class="text-sm">
-                      <div class="font-bold text-gray-800">
-                        {{ seg.from }} <span class="text-gray-400 mx-1">➜</span>
-                        {{ seg.to }}
-                      </div>
-                      <div class="text-xs text-gray-500">
-                        {{ seg.date || "No date" }}
-                        <span v-if="seg.type === 'Car' && seg.fuelType"
-                          >({{ seg.fuelType }})</span
-                        >
-                        <span class="font-bold text-green-700 ml-1"
-                          >• {{ seg.distance }} km</span
-                        >
-                      </div>
-                    </div>
-                  </div>
-                  <button
-                    @click="removeSegment(idx)"
-                    class="btn btn-ghost btn-xs text-gray-400 hover:text-red-500"
-                  >
-                    <Trash2 class="w-4 h-4" />
-                  </button>
-                </div>
-
-                <div
-                  v-if="seg.type === 'Airplane' || seg.type === 'Train'"
-                  class="mt-2 ml-12 text-xs text-gray-600 grid grid-cols-2 gap-x-2 bg-gray-50 p-1.5 rounded"
-                >
-                  <div v-if="seg.transportNumber">
-                    <b>#:</b> {{ seg.transportNumber }}
-                  </div>
-                  <div v-if="seg.gate"><b>Gate:</b> {{ seg.gate }}</div>
-                  <div v-if="seg.departureTime">
-                    <b>Dep:</b> {{ seg.departureTime }}
-                  </div>
-                  <div v-if="seg.arrivalTime">
-                    <b>Arr:</b> {{ seg.arrivalTime }}
-                  </div>
-                </div>
-
-                <div class="flex items-center justify-between mt-2 ml-12">
-                  <div class="flex gap-2">
-                    <div
-                      class="flex items-center text-xs font-medium bg-gray-100 px-2 py-1 rounded"
-                    >
-                      <Euro class="w-3 h-3 mr-1 text-gray-500" />
-                      {{ seg.cost || "0.00" }}
-                    </div>
-                    <div
-                      class="flex items-center text-xs font-medium bg-green-100 px-2 py-1 rounded"
-                      :class="
-                        seg.activeRoute === 'eco'
-                          ? 'text-green-800 ring-1 ring-green-500'
-                          : 'text-green-700'
-                      "
-                    >
-                      <Leaf class="w-3 h-3 mr-1" />
-                      {{ seg.co2 || "0.0" }} kg
-                    </div>
-                  </div>
-
-                  <button
-                    @click="toggleAlternativeRoute(idx)"
-                    class="btn btn-xs rounded-full gap-1 border-none shadow-sm"
-                    :class="
-                      seg.activeRoute === 'eco'
-                        ? 'bg-green-600 text-white hover:bg-green-700'
-                        : 'bg-white text-gray-500 hover:bg-gray-100 border border-gray-200'
-                    "
-                    title="Find Eco Alternative"
-                  >
-                    <Shuffle class="w-3 h-3" />
-                    {{ seg.activeRoute === "eco" ? "Eco Mode" : "Alt" }}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="p-4 border-t bg-gray-50/80 backdrop-blur">
-            <button
-              @click="saveTripToDB"
-              class="btn btn-success w-full text-white gap-2 rounded-xl shadow-md"
-            >
-              <Save class="w-4 h-4" /> Save Full Trip
-            </button>
-          </div>
-        </div>
-      </div>
-
       <div
-        :class="activeTab === 'world' ? 'lg:col-span-8' : 'lg:col-span-12'"
-        class="h-full transition-all duration-500 ease-in-out"
+        ref="mapContainerRef"
+        class="relative rounded-3xl overflow-hidden shadow-xl border border-green-100"
+        :class="
+          activeTab === 'world'
+            ? 'lg:col-start-2 lg:row-start-1 lg:row-span-2 h-[50vh] lg:h-full'
+            : 'lg:col-start-1 lg:row-start-1 lg:col-span-1 h-[65vh] lg:h-full'
+        "
       >
         <div
-          class="card bg-white border border-green-100 shadow-xl overflow-hidden h-full relative rounded-3xl"
+          class="absolute inset-0"
           :class="{ 'hide-directions': activeTab === 'world' }"
           @dragover.prevent
           @drop="onMapDrop"
         >
-          <MapboxMap ref="mapboxMapRef" :center="mapCenter" :zoom="mapZoom" />
+          <MapboxMap
+            ref="mapboxMapRef"
+            :center="mapCenter"
+            :zoom="mapZoom"
+            class="w-full h-full"
+          />
           <div
-            class="absolute top-4 left-1/2 -translate-x-1/2 z-10 pointer-events-none"
+            class="absolute top-4 left-1/2 -translate-x-1/2 pointer-events-none"
           >
             <div
               class="badge badge-lg gap-2 shadow-lg backdrop-blur-md border-white/20"
@@ -1078,18 +990,206 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
           </div>
           <div
             v-if="activeTab === 'city'"
-            class="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex gap-2"
+            class="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-2"
           >
             <button
-              class="btn btn-sm glass text-gray-800 gap-2 rounded-full shadow-lg hover:text-green-700"
+              class="btn btn-sm glass text-gray-800 gap-2 rounded-full shadow-lg"
             >
               <Clock class="w-4 h-4" /> Recent
             </button>
             <button
-              class="btn btn-sm glass text-gray-800 gap-2 rounded-full shadow-lg hover:text-green-700"
+              class="btn btn-sm glass text-gray-800 gap-2 rounded-full shadow-lg"
             >
               <Bookmark class="w-4 h-4" /> Saved
             </button>
+          </div>
+        </div>
+      </div>
+
+      <div
+        v-if="activeTab === 'world'"
+        class="lg:col-start-1 lg:row-start-2 card bg-white border border-green-100 shadow-lg flex flex-col min-h-0 rounded-2xl"
+      >
+        <div class="card-body p-4 lg:p-5 overflow-y-auto custom-scrollbar">
+          <div class="divider my-0 text-xs text-gray-400 mb-4">
+            YOUR ITINERARY
+          </div>
+          <div class="space-y-3">
+            <div
+              v-if="savedSegments.length === 0"
+              class="text-center py-8 text-gray-400 text-sm italic"
+            >
+              No trips added yet.
+            </div>
+            <div
+              v-for="(seg, idx) in savedSegments"
+              :key="seg.id"
+              class="flex flex-col p-3 border border-gray-100 rounded-xl hover:bg-green-50 bg-white shadow-sm"
+            >
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <div class="text-green-600 bg-green-100 p-2 rounded-full">
+                    <component
+                      :is="iconMap[seg.type]"
+                      class="w-4 h-4"
+                      v-if="iconMap[seg.type]"
+                    />
+                  </div>
+                  <div class="text-sm">
+                    <div
+                      v-if="seg.type !== 'Hotel' && seg.type !== 'Restaurant'"
+                      class="font-bold text-gray-800"
+                    >
+                      {{ seg.from }} <span class="text-gray-400 mx-1">➜</span>
+                      {{ seg.to }}
+                    </div>
+                    <div v-else class="font-bold text-gray-800">
+                      {{ seg.to }}
+                    </div>
+                    <div class="text-xs text-gray-500">
+                      {{ seg.date }}
+                      <span
+                        v-if="seg.distance"
+                        class="font-bold text-green-700 ml-1"
+                        >• {{ seg.distance }} km</span
+                      >
+                      <span
+                        v-if="seg.time"
+                        class="mt-1 text-gray-400 flex items-center"
+                      >
+                        <Clock class="w-3 h-3 mr-1" /> {{ seg.time }}
+                      </span>
+                      <span v-if="seg.ecoScore" class="flex gap-0.5 mt-1"
+                        ><Leaf
+                          v-for="n in 5"
+                          :key="n"
+                          class="w-3 h-3"
+                          :class="
+                            n <= seg.ecoScore
+                              ? 'text-green-500 fill-green-500'
+                              : 'text-gray-200'
+                          "
+                      /></span>
+                    </div>
+                  </div>
+                </div>
+                <button
+                  @click="removeSegment(idx)"
+                  class="btn btn-ghost btn-xs text-gray-400 hover:text-red-500"
+                >
+                  <Trash2 class="w-4 h-4" />
+                </button>
+              </div>
+
+              <div
+                v-if="seg.type !== 'Hotel' && seg.type !== 'Restaurant'"
+                class="flex items-center justify-between mt-2 ml-12"
+              >
+                <div class="flex gap-2">
+                  <div
+                    class="flex items-center text-xs font-medium bg-gray-100 px-2 py-1 rounded"
+                  >
+                    <Euro class="w-3 h-3 mr-1 text-gray-500" /> {{ seg.cost }}
+                  </div>
+                  <div
+                    class="flex items-center text-xs font-medium bg-green-100 px-2 py-1 rounded text-green-700"
+                  >
+                    <Leaf class="w-3 h-3 mr-1" /> {{ seg.co2 }} kg
+                  </div>
+                </div>
+                <button
+                  @click="openComparisonModal(idx)"
+                  class="btn btn-xs rounded-full gap-1 border border-gray-200 bg-white text-gray-500 shadow-sm"
+                >
+                  <Shuffle class="w-3 h-3" /> Compare
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="p-4 border-t bg-gray-50/80 backdrop-blur">
+          <button
+            @click="saveTripToDB"
+            class="btn btn-success w-full text-white gap-2 rounded-xl shadow-md"
+          >
+            <Save class="w-4 h-4" /> Save Full Trip
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div
+      v-if="comparisonModalOpen"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+    >
+      <div
+        class="card bg-white w-full max-w-lg shadow-2xl overflow-hidden rounded-2xl"
+      >
+        <div
+          class="flex justify-between items-center p-4 border-b border-gray-100"
+        >
+          <h3 class="font-bold text-lg text-gray-800">Alternative Modes</h3>
+          <button
+            @click="comparisonModalOpen = false"
+            class="btn btn-ghost btn-circle btn-sm"
+          >
+            <X class="w-5 h-5" />
+          </button>
+        </div>
+        <div class="card-body p-4 bg-gray-50 min-h-[150px]">
+          <div
+            v-if="isLoadingComparison"
+            class="flex flex-col items-center justify-center h-full py-8 text-gray-400"
+          >
+            <Loader2 class="w-8 h-8 animate-spin mb-2 text-green-600" /><span
+              class="text-sm"
+              >Calculating alternatives...</span
+            >
+          </div>
+          <div v-else>
+            <div
+              v-if="
+                !pendingComparisonData || pendingComparisonData.length === 0
+              "
+              class="text-center text-gray-400 text-sm py-4"
+            >
+              No alternatives found.
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+              <div
+                v-for="option in pendingComparisonData"
+                :key="option.mode"
+                class="flex flex-col bg-white p-3 rounded-xl border-2 border-transparent hover:border-green-400 cursor-pointer transition-all shadow-sm group"
+                @click="confirmRouteSelection(option)"
+              >
+                <div class="flex items-center justify-between mb-2">
+                  <div
+                    class="flex items-center gap-2 text-xs font-bold text-gray-500 uppercase group-hover:text-green-600"
+                  >
+                    <component :is="iconMap[option.mode]" class="w-4 h-4" />
+                    {{ option.mode }}
+                  </div>
+                  <div
+                    class="text-[10px] font-bold bg-gray-100 px-1.5 py-0.5 rounded text-gray-500"
+                  >
+                    <Clock class="w-3 h-3 inline mr-0.5" /> {{ option.time }}
+                  </div>
+                </div>
+                <div class="text-2xl font-bold text-gray-800">
+                  €{{ option.cost }}
+                </div>
+                <div class="text-sm font-medium text-gray-500 mt-1">
+                  {{ option.co2 }} kg CO2
+                </div>
+                <div class="mt-3">
+                  <button
+                    class="btn btn-sm btn-outline group-hover:btn-success group-hover:text-white w-full rounded-lg"
+                  >
+                    Switch to {{ option.mode }}
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

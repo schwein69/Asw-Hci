@@ -61,22 +61,6 @@ const newPlace = reactive({
   hasImage: false,
 });
 
-// --- STATE MANAGEMENT ---
-const isAddModalOpen = ref(false);
-const isDetailOpen = ref(false);
-const selectedPlace = ref(null);
-const isSubmitting = ref(false);
-
-const newPlace = reactive({
-  title: "",
-  location: "",
-  category: "Restaurants",
-  price: "",
-  description: "",
-  tags: "",
-  hasImage: false,
-});
-
 const categories = computed(() => [
   { name: t.value("discover.all"), icon: null, key: "all" },
   { name: t.value("discover.restaurants"), icon: Utensils, key: "restaurants" },
