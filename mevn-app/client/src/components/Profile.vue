@@ -12,7 +12,7 @@ const showDeleteConfirm = ref(false);
 const isDeletingAccount = ref(false);
 const deletePassword = ref('');
 const deletePasswordError = ref('');
-const showImageUpload = ref(false);
+const fileInputRef = ref(null);
 
 const passwordForm = ref({
   currentPassword: '',
@@ -137,6 +137,9 @@ const handleImageUpload = async (event) => {
   if (file) {
     if (file.size > 5 * 1024 * 1024) {
       showToast(t.value('profile.imageTooLarge'), 'error');
+      if (fileInputRef.value) {
+        fileInputRef.value.value = '';
+      }
       return;
     }
     
@@ -146,19 +149,19 @@ const handleImageUpload = async (event) => {
       const resizedImage = await resizeImage(file);
       profileImage.value = file;
       profileImagePreview.value = resizedImage;
-      console.log('Image loaded and resized');
+      await saveProfileImage();
     } catch (error) {
       console.error('Error processing image:', error);
       showToast(t.value('profile.errorProcessingImage'), 'error');
+      if (fileInputRef.value) {
+        fileInputRef.value.value = '';
+      }
     }
   }
 };
 
 const triggerFileInput = () => {
-  const fileInput = document.getElementById('profile-image-input');
-  if (fileInput) {
-    fileInput.click();
-  }
+  fileInputRef.value?.click();
 };
 
 const saveProfileImage = async () => {
@@ -193,10 +196,12 @@ const saveProfileImage = async () => {
       user.value.profileImage = response.data.profileImage;
       const userData = { ...user.value };
       localStorage.setItem('user', JSON.stringify(userData));
-      showImageUpload.value = false;
       profileImage.value = null;
       selectedFileName.value = '';
       profileImagePreview.value = response.data.profileImage;
+      if (fileInputRef.value) {
+        fileInputRef.value.value = '';
+      }
       window.dispatchEvent(new Event('profileImageUpdated'));
       showToast(t.value('profile.profileImageUpdated'), 'success');
     } else {
@@ -230,9 +235,11 @@ const deleteProfileImage = async () => {
     const userData = { ...user.value };
     localStorage.setItem('user', JSON.stringify(userData));
     profileImagePreview.value = null;
-    showImageUpload.value = false;
     profileImage.value = null;
     selectedFileName.value = '';
+    if (fileInputRef.value) {
+      fileInputRef.value.value = '';
+    }
     window.dispatchEvent(new Event('profileImageUpdated'));
     showToast(t.value('profile.profileImageDeleted'), 'success');
   } catch (error) {
@@ -420,11 +427,18 @@ const handleDeleteAccount = async () => {
                 <User v-else class="text-white w-14 h-14" />
               </div>
               <button
-                @click="showImageUpload = !showImageUpload"
+                @click="triggerFileInput"
                 class="absolute bottom-0 right-0 w-9 h-9 rounded-full bg-success text-white flex items-center justify-center shadow-lg hover:opacity-90 active:scale-95 transition-all ring-4 ring-white dark:ring-gray-800"
               >
                 <Upload class="w-4 h-4" />
               </button>
+              <input
+                ref="fileInputRef"
+                type="file"
+                accept="image/*"
+                @change="handleImageUpload"
+                class="hidden"
+              />
             </div>
             <div class="text-center">
               <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-1">
@@ -441,45 +455,6 @@ const handleDeleteAccount = async () => {
                 <Trash2 class="w-3.5 h-3.5" />
                 {{ t('profile.deleteImage') }}
               </button>
-            </div>
-
-            <div v-if="showImageUpload" class="w-full max-w-md mt-4 p-4 bg-green-50 dark:bg-gray-700 rounded-2xl border border-green-100 dark:border-gray-600">
-              <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
-                {{ t('profile.selectImage') }}
-              </label>
-              <input
-                id="profile-image-input"
-                type="file"
-                accept="image/*"
-                @change="handleImageUpload"
-                class="hidden"
-              />
-              <div class="flex items-center gap-2 mb-3">
-                <button
-                  @click="triggerFileInput"
-                  class="btn btn-sm btn-success text-white rounded-full no-animation hover:opacity-90 active:scale-95 transition-all text-xs"
-                >
-                  {{ t('profile.chooseFile') }}
-                </button>
-                <span class="text-xs text-gray-600 dark:text-gray-400">
-                  {{ selectedFileName || t('profile.noFileChosen') }}
-                </span>
-              </div>
-              <div class="flex gap-2">
-                <button
-                  @click="saveProfileImage"
-                  :disabled="!profileImage"
-                  class="btn btn-sm btn-success text-white rounded-full no-animation hover:opacity-90 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-xs h-8"
-                >
-                  {{ t('profile.saveImage') }}
-                </button>
-                <button
-                  @click="showImageUpload = false; profileImage = null; selectedFileName = ''"
-                  class="btn btn-sm btn-ghost rounded-full no-animation active:scale-95 text-xs h-8"
-                >
-                  {{ t('profile.cancel') }}
-                </button>
-              </div>
             </div>
           </div>
           <div>
