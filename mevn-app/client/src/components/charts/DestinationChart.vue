@@ -1,5 +1,6 @@
-<script>
-import { TreePine } from "lucide-vue-next";
+<script setup>
+import { ref, computed, onMounted } from "vue";
+import { History, Loader2 } from "lucide-vue-next";
 import { Bar } from "vue-chartjs";
 import {
   Chart as ChartJS,
@@ -20,70 +21,208 @@ ChartJS.register(
   Legend
 );
 
-export default {
-  name: "DestinationChart",
-  components: { Bar, TreePine },
-  data() {
-    return {
-      chartData: {
-        labels: ["Amsterdam", "Barcelona", "Copenhagen", "Dublin"],
-        datasets: [
-          {
-            label: "CO₂ Saved (kg)",
-            data: [45, 38, 52, 28],
-            backgroundColor: ["#10b981", "#10b981", "#10b981", "#10b981"],
-            borderColor: "#059669",
-            borderWidth: 1,
-            borderRadius: 6,
-          },
-        ],
-      },
-      chartOptions: {
-        responsive: true,
-        maintainAspectRatio: true,
-        indexAxis: "x",
-        plugins: {
-          legend: {
-            display: true,
-            labels: {
-              color: "#4b5563",
-              font: { size: 12 },
-            },
-          },
+// --- STATE ---
+const isLoading = ref(true);
+const processedTrips = ref([]);
+
+const rawTrips = [
+  {
+    id: 101,
+    name: "Italian Summer",
+    segments: [
+      { from: "Rome", to: "Naples", myMode: "Train", myCo2: 4 },
+      { from: "Naples", to: "Catania", myMode: "Airplane", myCo2: 65 },
+    ],
+  },
+  {
+    id: 102,
+    name: "Nordic Tour",
+    segments: [
+      { from: "Copenhagen", to: "Stockholm", myMode: "Train", myCo2: 12 },
+      { from: "Stockholm", to: "Helsinki", myMode: "Ferry", myCo2: 30 },
+    ],
+  },
+  {
+    id: 103,
+    name: "London Biz",
+    segments: [{ from: "Paris", to: "London", myMode: "Train", myCo2: 6 }],
+  },
+  {
+    id: 104,
+    name: "Iberian Roadtrip",
+    segments: [
+      { from: "Barcelona", to: "Madrid", myMode: "EV Car", myCo2: 15 },
+      { from: "Madrid", to: "Lisbon", myMode: "EV Car", myCo2: 22 },
+    ],
+  },
+  {
+    id: 105,
+    name: "German Wknd",
+    segments: [{ from: "Berlin", to: "Munich", myMode: "Bus", myCo2: 14 }],
+  },
+];
+
+const calculateAverageEmission = async (from, to) => {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      const randomCo2 = Math.floor(Math.random() * (90 - 40 + 1) + 40);
+      resolve(randomCo2);
+    }, 200);
+  });
+};
+
+onMounted(async () => {
+  const tripsToProcess = rawTrips.slice(0, 5);
+  const results = [];
+
+  for (const trip of tripsToProcess) {
+    let totalMyCo2 = 0;
+    let totalAvgCo2 = 0;
+    let routeDesc = [];
+
+    for (const segment of trip.segments) {
+      totalMyCo2 += segment.myCo2;
+
+      const avgSegmentCo2 = await calculateAverageEmission(
+        segment.from,
+        segment.to
+      );
+      totalAvgCo2 += avgSegmentCo2;
+
+      routeDesc.push(`${segment.from}→${segment.to}`);
+    }
+
+    results.push({
+      name: trip.name,
+      routeSummary: routeDesc.join(", "),
+      myTotal: totalMyCo2,
+      avgTotal: totalAvgCo2,
+    });
+  }
+
+  processedTrips.value = results;
+  isLoading.value = false;
+});
+
+const chartData = computed(() => ({
+  labels: processedTrips.value.map((t) => t.name),
+  datasets: [
+    {
+      label: "My Trip",
+      data: processedTrips.value.map((t) => t.myTotal),
+      backgroundColor: "#10b981", // Green
+      borderRadius: 4,
+      barPercentage: 0.6,
+      categoryPercentage: 0.8,
+    },
+    {
+      label: "Average Trip",
+      data: processedTrips.value.map((t) => t.avgTotal),
+      backgroundColor: "#d1d5db", // Gray
+      borderRadius: 4,
+      barPercentage: 0.6,
+      categoryPercentage: 0.8,
+    },
+  ],
+}));
+
+const chartOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: {
+      position: "top",
+      align: "end",
+      labels: { usePointStyle: true, boxWidth: 8, font: { size: 11 } },
+    },
+    tooltip: {
+      callbacks: {
+        afterBody: (tooltipItems) => {
+          const index = tooltipItems[0].dataIndex;
+          const trip = processedTrips.value[index];
+          return `Route: ${trip.routeSummary}`;
         },
-        scales: {
-          y: {
-            beginAtZero: true,
-            ticks: { color: "#9ca3af" },
-            grid: { color: "rgba(0,0,0,0.05)" },
-          },
-          x: {
-            ticks: { color: "#9ca3af" },
-            grid: { display: false },
-          },
-        },
+        label: (context) => ` ${context.dataset.label}: ${context.raw} kg CO₂`,
       },
-    };
+    },
+  },
+  scales: {
+    y: {
+      beginAtZero: true,
+      title: { display: true, text: "Total CO₂ (kg)" },
+      grid: { color: "#f3f4f6" },
+      border: { display: false },
+    },
+    x: {
+      grid: { display: false },
+      ticks: { font: { size: 11 } },
+    },
   },
 };
 </script>
 
 <template>
-  <div class="card bg-white border border-green-100 shadow-sm">
-    <div class="card-body">
-      <div class="flex items-center gap-2 mb-4">
-        <TreePine class="w-5 h-5 text-success" />
-        <h3 class="text-lg font-bold text-gray-800">
-          CO₂ Saved by Destination
-        </h3>
+  <div
+    class="card bg-white border border-green-100 shadow-sm h-full flex flex-col"
+  >
+    <div class="card-body p-5 flex-none">
+      <div class="flex items-start justify-between mb-2">
+        <div class="flex items-center gap-2">
+          <div class="p-2 bg-green-50 rounded-lg">
+            <History class="w-5 h-5 text-green-600" />
+          </div>
+          <div>
+            <h3 class="text-lg font-bold text-gray-800">Trip Efficiency</h3>
+            <p class="text-xs text-gray-500">
+              Total footprint per trip vs. average traveler
+            </p>
+          </div>
+        </div>
+
+        <div
+          v-if="isLoading"
+          class="flex items-center gap-2 text-xs text-gray-400"
+        >
+          <Loader2 class="w-3 h-3 animate-spin" /> Calculating...
+        </div>
       </div>
-      <div class="h-64">
-        <Bar :data="chartData" :options="chartOptions" class="w-full" />
+    </div>
+
+    <div class="grow overflow-x-auto pb-4 px-5 custom-scrollbar">
+      <div
+        v-if="isLoading"
+        class="h-64 flex justify-center items-center text-gray-400 text-sm"
+      >
+        Aggregating trip data...
       </div>
+
+      <div
+        v-else
+        class="h-64"
+        :style="{ minWidth: `${Math.max(400, processedTrips.length * 100)}px` }"
+      >
+        <Bar :data="chartData" :options="chartOptions" />
+      </div>
+    </div>
+
+    <div
+      class="p-3 text-[10px] text-gray-400 text-center border-t border-gray-50"
+    >
+      * Compares your total trip emissions against the standard average for the
+      same route.
     </div>
   </div>
 </template>
 
 <style scoped>
-/* Component-specific styles */
+.custom-scrollbar::-webkit-scrollbar {
+  height: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #e5e7eb;
+  border-radius: 99px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #d1d5db;
+}
 </style>
