@@ -251,6 +251,21 @@ function toggleComplete(id) {
   if (seg) seg.completed = !seg.completed;
 }
 
+const translateTransportType = (type) => {
+  const typeMap = {
+    'Train': t.value('world.transportTypes.train'),
+    'Airplane': t.value('world.transportTypes.airplane'),
+    'Car': t.value('world.transportTypes.car')
+  };
+  return typeMap[type] || type;
+};
+
+const translatePlatform = (platform) => {
+  if (!platform) return '';
+  const platformWord = language.value === 'it' ? 'Binario' : 'Platform';
+  return platform.replace(/Platform/gi, platformWord);
+};
+
 function completeTrip() {
   if (confirm("Are you sure you want to complete and archive this trip?")) {
     journeySegments.value = [];
@@ -326,7 +341,7 @@ function completeTrip() {
     <div
       class="space-y-3 border border-green-500 rounded-2xl p-4 bg-green-50/30"
     >
-      <h3 class="text-lg font-bold text-green-800">Journey Segments</h3>
+      <h3 class="text-lg font-bold text-green-800">{{ t('world.journeySegments') }}</h3>
 
       <div
         class="max-h-[600px] overflow-y-auto pr-2 space-y-4 custom-scrollbar p-1"
@@ -389,7 +404,7 @@ function completeTrip() {
                     ? 'text-green-600 bg-green-100'
                     : 'text-gray-300 hover:text-green-600 hover:bg-green-50'
                 "
-                :title="segment.completed ? 'Mark Incomplete' : 'Mark Complete'"
+                :title="segment.completed ? t('world.markIncomplete') : t('world.markComplete')"
               >
                 <Check class="w-5 h-5" />
               </button>
@@ -397,7 +412,7 @@ function completeTrip() {
               <button
                 @click="removeSegment(segment.id)"
                 class="btn btn-sm btn-ghost btn-circle text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors"
-                title="Delete Segment"
+                :title="t('world.deleteSegment')"
               >
                 <Trash2 class="w-4 h-4" />
               </button>
@@ -449,7 +464,7 @@ function completeTrip() {
                     : 'bg-green-50 text-green-700'
                 "
               >
-                {{ segment.type.toUpperCase() }}
+                {{ translateTransportType(segment.type).toUpperCase() }}
               </div>
             </div>
 
@@ -527,7 +542,7 @@ function completeTrip() {
                     segment.completed ? 'text-gray-400' : 'text-green-600'
                   "
                 >
-                  {{ segment.depPlatform }}
+                  {{ translatePlatform(segment.depPlatform) }}
                 </div>
               </div>
               <div
@@ -555,7 +570,7 @@ function completeTrip() {
                     segment.completed ? 'text-gray-400' : 'text-green-600'
                   "
                 >
-                  {{ segment.arrPlatform }}
+                  {{ translatePlatform(segment.arrPlatform) }}
                 </div>
               </div>
             </div>
@@ -565,7 +580,7 @@ function completeTrip() {
             >
               <div class="text-center">
                 <div class="text-[10px] text-gray-400 font-bold uppercase">
-                  Duration
+                  {{ t('world.duration') }}
                 </div>
                 <div class="font-bold text-gray-700">
                   {{ segment.duration }}
@@ -573,7 +588,7 @@ function completeTrip() {
               </div>
               <div class="text-center">
                 <div class="text-[10px] text-gray-400 font-bold uppercase">
-                  Emissions
+                  {{ t('world.carbonFootprint') }}
                 </div>
                 <div
                   class="font-bold"
@@ -586,7 +601,7 @@ function completeTrip() {
               </div>
               <div class="text-center">
                 <div class="text-[10px] text-gray-400 font-bold uppercase">
-                  Cost
+                  {{ t('world.cost') }}
                 </div>
                 <div class="font-bold text-gray-800">€{{ segment.cost }}</div>
               </div>
@@ -604,10 +619,10 @@ function completeTrip() {
       >
         <div>
           <h3 class="text-lg font-bold text-green-800 flex items-center gap-2">
-            <MapPin class="w-5 h-5" /> Interactive Route Map
+            <MapPin class="w-5 h-5" /> {{ t('world.interactiveRouteMap') }}
           </h3>
           <p class="text-gray-500 text-xs">
-            Visualize your journey on an interactive world map
+            {{ t('world.visualizeJourney') }}
           </p>
         </div>
         <button
@@ -632,7 +647,7 @@ function completeTrip() {
           <button
             class="btn btn-xs bg-white/90 backdrop-blur text-gray-600 shadow-md border-none pointer-events-auto"
           >
-            Reset
+            {{ t('world.reset') }}
           </button>
         </div>
       </div>
@@ -642,15 +657,13 @@ function completeTrip() {
       >
         <div class="flex gap-4">
           <span class="flex items-center gap-1"
-            ><MousePointerClick class="w-3 h-3" /> Use controls to
-            navigate</span
+            ><MousePointerClick class="w-3 h-3" /> {{ t('world.useControlsToNavigate') }}</span
           >
           <span class="flex items-center gap-1"
-            ><Maximize2 class="w-3 h-3" /> {{ is3D ? "3D" : "2D" }} view
-            active</span
+            ><Maximize2 class="w-3 h-3" /> {{ is3D ? "3D" : "2D" }} {{ t('world.view') }} {{ t('world.active') }}</span
           >
         </div>
-        <span>{{ tripSummary.totalDestinations }} destinations on route</span>
+        <span>{{ tripSummary.totalDestinations }} {{ t('world.destinationsOnRoute') }}</span>
       </div>
     </div>
   </div>
