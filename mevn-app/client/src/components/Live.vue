@@ -20,6 +20,7 @@ import {
   Snowflake, // Added for snow
   CloudLightning, // Added for storm
 } from "lucide-vue-next";
+import { getLanguage, t as translate } from "../utils/translations.js";
 
 export default {
   name: "Live",
@@ -46,6 +47,7 @@ export default {
   },
   data() {
     return {
+      language: getLanguage(),
       hasUpcomingTrip: true,
       trip: {
         title: "European Adventure",
@@ -145,7 +147,7 @@ export default {
             alert: false,
           },
           crowd: {
-            level: "Low Density",
+            levelKey: "live.lowDensity",
             value: 45,
             trend: "Up",
             trendIcon: "TrendingUp",
@@ -167,7 +169,7 @@ export default {
             alert: false,
           },
           crowd: {
-            level: "High Density",
+            levelKey: "live.highDensity",
             value: 81,
             trend: "Stable",
             trendIcon: "Minus",
@@ -189,7 +191,7 @@ export default {
             alert: false,
           },
           crowd: {
-            level: "Medium Density",
+            levelKey: "live.mediumDensity",
             value: 56,
             trend: "Up",
             trendIcon: "TrendingUp",
@@ -211,7 +213,7 @@ export default {
             alert: false,
           },
           crowd: {
-            level: "Medium Density",
+            levelKey: "live.mediumDensity",
             value: 61,
             trend: "Down",
             trendIcon: "TrendingDown",
@@ -223,10 +225,22 @@ export default {
       ],
     };
   },
+  computed: {
+    t() {
+      return (key) => translate(key, this.language);
+    },
+  },
   mounted() {
     this.fetchRealWeather();
+    window.addEventListener('languageChanged', this.handleLanguageChange);
+  },
+  beforeUnmount() {
+    window.removeEventListener('languageChanged', this.handleLanguageChange);
   },
   methods: {
+    handleLanguageChange(event) {
+      this.language = event.detail.language;
+    },
     dismissReminder() {
       this.hasUpcomingTrip = false;
     },
@@ -254,7 +268,7 @@ export default {
           }
         } catch (error) {
           console.error(`Failed to fetch weather for ${loc.name}`, error);
-          loc.weather.condition = "Unavailable";
+          loc.weather.condition = this.t('live.weatherConditions.unavailable');
         }
       }
     },
@@ -281,10 +295,10 @@ export default {
     <div class="bg-amber-50 border border-amber-200 rounded-2xl p-6">
       <div class="flex items-center gap-2 mb-1 text-amber-900">
         <Clock class="w-5 h-5" />
-        <h3 class="font-bold text-lg">Upcoming Travel Reminders</h3>
+        <h3 class="font-bold text-lg">{{ t('live.upcomingTravelReminders') }}</h3>
       </div>
       <p class="text-amber-800/70 text-sm mb-6">
-        Don't miss your departure - 24-hour advance notifications
+        {{ t('live.dontMissDeparture') }}
       </p>
 
       <div
@@ -298,13 +312,13 @@ export default {
             </div>
             <div>
               <h4 class="font-bold text-gray-900 text-lg">{{ trip.title }}</h4>
-              <p class="text-gray-500 text-sm">{{ trip.status }}</p>
+              <p class="text-gray-500 text-sm">{{ t('live.departureIn') }} 24 {{ t('live.hours') }}</p>
             </div>
           </div>
           <span
             class="bg-amber-400 text-white text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1"
           >
-            <Bell class="w-3 h-3 fill-current" /> New
+            <Bell class="w-3 h-3 fill-current" /> {{ t('live.new') }}
           </span>
         </div>
 
@@ -316,7 +330,7 @@ export default {
               <p
                 class="text-xs font-bold text-emerald-700 flex items-center gap-1 mb-1"
               >
-                <MapPin class="w-3.5 h-3.5" /> Route
+                <MapPin class="w-3.5 h-3.5" /> {{ t('live.route') }}
               </p>
               <div class="flex items-center gap-2 font-semibold text-gray-800">
                 <span>{{ trip.from }}</span>
@@ -329,7 +343,7 @@ export default {
               <p
                 class="text-xs font-bold text-emerald-700 flex items-center gap-1 mb-1"
               >
-                <TrainFront class="w-3.5 h-3.5" /> Transport
+                <TrainFront class="w-3.5 h-3.5" /> {{ t('live.transport') }}
               </p>
               <span
                 class="inline-block bg-emerald-600 text-white text-xs font-bold px-2 py-0.5 rounded"
@@ -342,7 +356,7 @@ export default {
               <p
                 class="text-xs font-bold text-emerald-700 flex items-center gap-1 mb-1"
               >
-                <Calendar class="w-3.5 h-3.5" /> Date
+                <Calendar class="w-3.5 h-3.5" /> {{ t('live.date') }}
               </p>
               <span class="font-semibold text-gray-800">{{ trip.date }}</span>
             </div>
@@ -351,7 +365,7 @@ export default {
               <p
                 class="text-xs font-bold text-emerald-700 flex items-center gap-1 mb-1"
               >
-                <Clock class="w-3.5 h-3.5" /> Departure Time
+                <Clock class="w-3.5 h-3.5" /> {{ t('live.time') }}
               </p>
               <span class="font-semibold text-gray-800">{{ trip.time }}</span>
             </div>
@@ -362,13 +376,13 @@ export default {
           <button
             class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-lg transition-colors flex justify-center items-center gap-2"
           >
-            <Info class="w-4 h-4" /> View Trip Details
+            <Info class="w-4 h-4" /> {{ t('live.viewTripDetails') }}
           </button>
           <button
             @click="dismissReminder"
             class="px-6 border border-gray-300 hover:bg-gray-50 text-gray-600 font-bold py-2.5 rounded-lg transition-colors"
           >
-            Dismiss
+            {{ t('live.dismiss') }}
           </button>
         </div>
       </div>
@@ -382,9 +396,9 @@ export default {
         >
           <Clock class="w-6 h-6" />
         </div>
-        <p class="text-gray-600 font-medium">No upcoming travel reminders</p>
+        <p class="text-gray-600 font-medium">{{ t('live.noUpcomingReminders') }}</p>
         <p class="text-gray-400 text-sm">
-          You'll be notified 24 hours before your trips
+          {{ t('live.notified24Hours') }}
         </p>
       </div>
     </div>
@@ -395,22 +409,22 @@ export default {
           <div class="flex items-center gap-2">
             <Bell class="w-5 h-5 text-emerald-600" />
             <h3 class="font-bold text-lg text-gray-900">
-              Real-Time Notifications
+              {{ t('live.notifications') }}
             </h3>
             <span
               class="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full"
-              >10 new</span
+              >10 {{ t('live.new') }}</span
             >
           </div>
           <p class="text-sm text-gray-500 mt-1">
-            Live updates on weather, crowds, and social interactions
+            {{ t('live.liveUpdates') }}
           </p>
         </div>
         <button
           @click="markAllRead"
           class="text-xs font-medium text-gray-600 border border-gray-300 rounded px-3 py-1 hover:bg-gray-50 transition-colors"
         >
-          Mark all as read
+          {{ t('live.markAllRead') }}
         </button>
       </div>
 
@@ -477,7 +491,7 @@ export default {
           <div class="flex items-center gap-3">
             <component :is="loc.weather.icon" class="w-5 h-5 text-sky-600" />
             <div>
-              <p class="text-xs text-sky-800 font-bold">Weather</p>
+              <p class="text-xs text-sky-800 font-bold">{{ t('live.weather') }}</p>
               <p class="text-sm text-gray-700">{{ loc.weather.condition }}</p>
             </div>
           </div>
@@ -486,7 +500,7 @@ export default {
               v-if="loc.weather.alert"
               class="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded"
             >
-              <AlertTriangle class="w-3 h-3 inline mr-0.5" /> Alert
+              <AlertTriangle class="w-3 h-3 inline mr-0.5" /> {{ t('live.alert') }}
             </span>
             <span class="text-xl font-bold text-sky-600">{{
               loc.weather.temp
@@ -499,7 +513,7 @@ export default {
             <div
               class="flex items-center gap-2 text-xs font-bold text-amber-800"
             >
-              <User class="w-3.5 h-3.5" /> Tourist Affluence
+              <User class="w-3.5 h-3.5" /> {{ t('live.touristAffluence') }}
             </div>
             <div
               class="flex items-center gap-1 text-[10px] font-medium text-gray-500"
@@ -511,7 +525,7 @@ export default {
                   loc.crowd.trend === 'Up' ? 'text-red-500' : 'text-emerald-500'
                 "
               />
-              {{ loc.crowd.trend }}
+              {{ loc.crowd.trend === 'Up' ? t('live.up') : loc.crowd.trend === 'Down' ? t('live.down') : t('live.stable') }}
             </div>
           </div>
 
@@ -526,7 +540,7 @@ export default {
           </div>
 
           <div class="flex justify-between text-[10px] font-bold mt-1">
-            <span :class="loc.crowd.color">{{ loc.crowd.level }}</span>
+            <span :class="loc.crowd.color">{{ t(loc.crowd.levelKey || 'live.mediumDensity') }}</span>
             <span class="text-gray-400">{{ loc.crowd.value + 40 }}.9%</span>
           </div>
         </div>
@@ -539,7 +553,7 @@ export default {
             <CheckCircle class="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
             <div>
               <p class="text-xs font-bold text-emerald-800">
-                Alternative Suggested
+                {{ t('live.alternativeSuggested') }}
               </p>
               <p class="text-[10px] text-emerald-700 leading-tight mt-0.5">
                 {{ loc.alternative }}

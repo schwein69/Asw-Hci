@@ -181,28 +181,211 @@ const translations = {
       nextStop: "Next Stop",
       estimatedArrival: "Estimated Arrival",
       onTime: "On Time",
-      delayed: "Delayed"
+      delayed: "Delayed",
+      upcomingTravelReminders: "Upcoming Travel Reminders",
+      dontMissDeparture: "Don't miss your departure - 24-hour advance notifications",
+      departureIn: "Departure in",
+      hours: "hours",
+      route: "Route",
+      transport: "Transport",
+      date: "Date",
+      time: "Time",
+      dismiss: "Dismiss",
+      new: "New",
+      liveTracking: "Live Tracking",
+      notifications: "Notifications",
+      markAllRead: "Mark All Read",
+      newInteraction: "New interaction on your post",
+      weatherUpdated: "Weather conditions updated",
+      ecoLocationRecommended: "New eco-friendly location recommended",
+      touristDensityChanged: "Tourist density changed",
+      currentWeather: "Current Weather",
+      crowdDensity: "Crowd Density",
+      lowDensity: "Low Density",
+      mediumDensity: "Medium Density",
+      highDensity: "High Density",
+      trending: "Trending",
+      up: "Up",
+      down: "Down",
+      stable: "Stable",
+      weatherConditions: {
+        sunny: "Sunny",
+        partlyCloudy: "Partly Cloudy",
+        foggy: "Foggy",
+        rainy: "Rainy",
+        snowy: "Snowy",
+        showers: "Showers",
+        stormy: "Stormy",
+        unknown: "Unknown",
+        unavailable: "Unavailable",
+        loading: "Loading..."
+      },
+      noUpcomingReminders: "No upcoming travel reminders",
+      notified24Hours: "You'll be notified 24 hours before your trips",
+      liveUpdates: "Live updates on weather, crowds, and social interactions",
+      viewTripDetails: "View Trip Details",
+      weather: "Weather",
+      alert: "Alert",
+      touristAffluence: "Tourist Affluence",
+      alternativeSuggested: "Alternative Suggested"
     },
     discover: {
-      title: "Discover",
-      explore: "Explore",
-      search: "Search"
+      title: "Discover Eco-Friendly Places",
+      subtitle: "Share and explore sustainable destinations",
+      addRecommendation: "Add Recommendation",
+      all: "All",
+      restaurants: "Restaurants",
+      hotels: "Hotels",
+      attractions: "Attractions",
+      activities: "Activities",
+      discoveringMore: "Discovering more places..."
     },
     rewards: {
       title: "Rewards",
-      points: "Points",
+      sustainabilityHero: "Sustainability Hero",
+      level: "Level",
+      ecoPoints: "Eco Points",
+      progressToPlanetGuardian: "Progress to Planet Guardian",
+      pointsToNextLevel: "points to next level",
+      achievementsUnlocked: "Achievements Unlocked",
+      totalEcoPoints: "Total Eco Points",
+      globalRank: "Global Rank",
       achievements: "Achievements",
-      redeem: "Redeem"
+      currentStreak: "Current Streak",
+      dayStreak: "day streak",
+      globalLeaderboard: "Global Leaderboard",
+      topEcoTravelers: "Top eco-travelers this month",
+      keepMakingChoices: "Keep making eco-friendly choices to maintain your streak!",
+      thisWeek: "This week",
+      daysActive: "days active",
+      days: "Days",
+      you: "You",
+      pts: "pts",
+      progress: "Progress",
+      locked: "Locked",
+      unlocked: "Unlocked"
     },
     tips: {
-      title: "Eco Travel Tips",
-      readMore: "Read More",
-      showLess: "Show Less"
+      title: "Sustainable Travel Guide",
+      subtitle: "Small changes make a big difference for our planet",
+      quickDailyTips: "Quick Daily Tips",
+      detailedGuidelines: "Detailed Guidelines",
+      transportation: "Transportation",
+      accommodation: "Accommodation",
+      foodDining: "Food & Dining",
+      shopping: "Shopping",
+      activities: "Activities",
+      didYouKnow: "Did you know?",
+      highImpact: "High Impact",
+      mediumImpact: "Medium Impact",
+      lowImpact: "Low Impact",
+      easy: "Easy",
+      medium: "Medium",
+      hard: "Hard",
+      generatingTips: "Generating tips...",
+      guidelines: {
+        transport: {
+          chooseTrain: {
+            title: "Choose Train Over Plane",
+            description: "Trains emit up to 90% less CO₂ than flights for the same journey. For trips under 500km, trains are often faster when you include airport time!"
+          },
+          directFlights: {
+            title: "Direct Flights When Flying",
+            description: "Takeoffs and landings use the most fuel. Direct flights reduce carbon emissions significantly compared to layovers."
+          },
+          offsetCarbon: {
+            title: "Offset Your Carbon",
+            description: "Calculate your travel footprint and donate to verified reforestation or renewable energy projects."
+          }
+        },
+        accommodation: {
+          ecoCertified: {
+            title: "Choose Eco-Certified Stays",
+            description: "Look for hotels with Green Key, LEED, or EarthCheck certifications. These properties actively reduce water, waste, and energy consumption."
+          },
+          reuseTowels: {
+            title: "Reuse Towels & Linens",
+            description: "Hang up your towels to signal you'll reuse them. This saves huge amounts of water and electricity used for daily laundry."
+          },
+          conserveEnergy: {
+            title: "Conserve Room Energy",
+            description: "Always turn off lights, AC, and TV when leaving your room. Close curtains on hot days to keep the room cool naturally."
+          }
+        },
+        food: {
+          eatLocal: {
+            title: "Eat Local & Seasonal",
+            description: "Imported ingredients have a high carbon footprint. Local food supports the community economy and usually tastes fresher!"
+          },
+          plantBased: {
+            title: "Plant-Based Options",
+            description: "Animal agriculture is a major greenhouse gas contributor. Try eating vegetarian or vegan for at least one meal a day."
+          },
+          avoidPlastics: {
+            title: "Avoid Single-Use Plastics",
+            description: "Refuse plastic straws and cutlery. Carry a reusable water bottle and fill up at filtered water stations."
+          }
+        },
+        shopping: {
+          supportArtisans: {
+            title: "Support Local Artisans",
+            description: "Buy souvenirs made locally rather than mass-produced imports. This puts money directly into the hands of local families."
+          },
+          ethicalSouvenirs: {
+            title: "Ethical Souvenirs",
+            description: "Never buy products made from endangered species, ivory, coral, or turtle shells. It fuels illegal poaching and ecosystem destruction."
+          }
+        },
+        activities: {
+          respectWildlife: {
+            title: "Respect Wildlife",
+            description: "Observe animals from a distance. Never feed them, as it disrupts their natural diet and can make them aggressive."
+          },
+          lowCarbonTours: {
+            title: "Low-Carbon Tours",
+            description: "Opt for human-powered activities like kayaking, hiking, or cycling tours instead of jet skis, ATVs, or helicopter rides."
+          }
+        }
+      },
+      knowledgeTips: {
+        flightCo2: "A single round-trip flight from New York to London generates about 1.5 tons of CO₂ per passenger.",
+        treeAbsorption: "One tree absorbs approximately 22 kg of CO₂ per year. You'd need 68 trees to offset that one flight!",
+        trainVsPlane: "Choosing train travel over flying can reduce your carbon footprint by up to 90% for the same route.",
+        ecoHotels: "Staying at eco-certified hotels can reduce water and energy consumption by up to 30%."
+      }
     },
     feedback: {
       title: "Feedback",
-      submit: "Submit",
-      yourFeedback: "Your Feedback"
+      averageUserRating: "Average User Rating",
+      totalFeedback: "Total Feedback",
+      implementationRate: "Implementation Rate",
+      submitFeedback: "Submit Feedback",
+      helpUsImprove: "Help us improve EcoVoyage with your suggestions",
+      category: "Category",
+      selectCategory: "Select category",
+      yourRating: "Your Rating",
+      subject: "Subject",
+      subjectPlaceholder: "Brief description of your feedback",
+      message: "Message",
+      messagePlaceholder: "Provide detailed feedback...",
+      submitting: "Submitting...",
+      submitFeedbackButton: "Submit Feedback",
+      communityFeedback: "Community Feedback",
+      browseAndVote: "Browse and vote on feedback from other users",
+      featureRequest: "💡 Feature Request",
+      bugReport: "🐛 Bug Report",
+      improvement: "⚡ Improvement",
+      generalFeedback: "💬 General Feedback",
+      implemented: "Implemented",
+      reviewing: "Reviewing",
+      new: "New",
+      upvote: "Upvote",
+      weeksAgo: "weeks ago",
+      daysAgo: "days ago",
+      weekAgo: "week ago",
+      dayAgo: "day ago",
+      pleaseSelectCategory: "Please select a category and a rating.",
+      thankYouSubmitted: "Thank you! Your feedback has been submitted."
     },
     plan: {
       ecoTravelPlanner: "Eco Travel Planner",
@@ -447,28 +630,211 @@ const translations = {
       nextStop: "Prossima Fermata",
       estimatedArrival: "Arrivo Stimato",
       onTime: "In Orario",
-      delayed: "In Ritardo"
+      delayed: "In Ritardo",
+      upcomingTravelReminders: "Promemoria Viaggio Imminente",
+      dontMissDeparture: "Non perdere la partenza - notifiche con 24 ore di anticipo",
+      departureIn: "Partenza tra",
+      hours: "ore",
+      route: "Percorso",
+      transport: "Trasporto",
+      date: "Data",
+      time: "Ora",
+      dismiss: "Chiudi",
+      new: "Nuovo",
+      liveTracking: "Tracciamento Live",
+      notifications: "Notifiche",
+      markAllRead: "Segna Tutto come Letto",
+      newInteraction: "Nuova interazione sul tuo post",
+      weatherUpdated: "Condizioni meteorologiche aggiornate",
+      ecoLocationRecommended: "Nuova location eco-friendly consigliata",
+      touristDensityChanged: "Densità turistica cambiata",
+      currentWeather: "Meteo Attuale",
+      crowdDensity: "Densità Folla",
+      lowDensity: "Bassa Densità",
+      mediumDensity: "Media Densità",
+      highDensity: "Alta Densità",
+      trending: "Tendenza",
+      up: "Su",
+      down: "Giù",
+      stable: "Stabile",
+      weatherConditions: {
+        sunny: "Soleggiato",
+        partlyCloudy: "Parzialmente Nuvoloso",
+        foggy: "Nebbia",
+        rainy: "Pioggia",
+        snowy: "Neve",
+        showers: "Rovesci",
+        stormy: "Tempesta",
+        unknown: "Sconosciuto",
+        unavailable: "Non Disponibile",
+        loading: "Caricamento..."
+      },
+      noUpcomingReminders: "Nessun promemoria viaggio imminente",
+      notified24Hours: "Riceverai una notifica 24 ore prima dei tuoi viaggi",
+      liveUpdates: "Aggiornamenti live su meteo, folle e interazioni sociali",
+      viewTripDetails: "Visualizza Dettagli Viaggio",
+      weather: "Meteo",
+      alert: "Allerta",
+      touristAffluence: "Affluenza Turistica",
+      alternativeSuggested: "Alternativa Suggerita"
     },
     discover: {
-      title: "Scopri",
-      explore: "Esplora",
-      search: "Cerca"
+      title: "Scopri Luoghi Eco-Friendly",
+      subtitle: "Condividi ed esplora destinazioni sostenibili",
+      addRecommendation: "Aggiungi Raccomandazione",
+      all: "Tutti",
+      restaurants: "Ristoranti",
+      hotels: "Hotel",
+      attractions: "Attrazioni",
+      activities: "Attività",
+      discoveringMore: "Scoprendo altri luoghi..."
     },
     rewards: {
       title: "Ricompense",
-      points: "Punti",
+      sustainabilityHero: "Eroe della Sostenibilità",
+      level: "Livello",
+      ecoPoints: "Punti Eco",
+      progressToPlanetGuardian: "Progresso verso Guardiano del Pianeta",
+      pointsToNextLevel: "punti al prossimo livello",
+      achievementsUnlocked: "Risultati Sbloccati",
+      totalEcoPoints: "Punti Eco Totali",
+      globalRank: "Classifica Globale",
       achievements: "Risultati",
-      redeem: "Riscatta"
+      currentStreak: "Serie Attuale",
+      dayStreak: "giorni di fila",
+      globalLeaderboard: "Classifica Globale",
+      topEcoTravelers: "Top viaggiatori eco questo mese",
+      keepMakingChoices: "Continua a fare scelte eco-friendly per mantenere la tua serie!",
+      thisWeek: "Questa settimana",
+      daysActive: "giorni attivi",
+      days: "Giorni",
+      you: "Tu",
+      pts: "punti",
+      progress: "Progresso",
+      locked: "Bloccato",
+      unlocked: "Sbloccato"
     },
     tips: {
-      title: "Consigli per Viaggi Eco",
-      readMore: "Leggi di Più",
-      showLess: "Mostra Meno"
+      title: "Guida al Viaggio Sostenibile",
+      subtitle: "Piccoli cambiamenti fanno una grande differenza per il nostro pianeta",
+      quickDailyTips: "Consigli Giornalieri Rapidi",
+      detailedGuidelines: "Linee Guida Dettagliate",
+      transportation: "Trasporti",
+      accommodation: "Alloggio",
+      foodDining: "Cibo e Ristorazione",
+      shopping: "Shopping",
+      activities: "Attività",
+      didYouKnow: "Lo sapevi?",
+      highImpact: "Alto Impatto",
+      mediumImpact: "Impatto Medio",
+      lowImpact: "Basso Impatto",
+      easy: "Facile",
+      medium: "Medio",
+      hard: "Difficile",
+      generatingTips: "Generazione consigli...",
+      guidelines: {
+        transport: {
+          chooseTrain: {
+            title: "Scegli il Treno invece dell'Aereo",
+            description: "I treni emettono fino al 90% in meno di CO₂ rispetto ai voli per lo stesso viaggio. Per viaggi sotto i 500km, i treni sono spesso più veloci se si include il tempo in aeroporto!"
+          },
+          directFlights: {
+            title: "Voli Diretti quando Voli",
+            description: "Decolli e atterraggi consumano più carburante. I voli diretti riducono significativamente le emissioni di carbonio rispetto agli scali."
+          },
+          offsetCarbon: {
+            title: "Compensa la Tua Carbonio",
+            description: "Calcola la tua impronta di viaggio e dona a progetti verificati di riforestazione o energia rinnovabile."
+          }
+        },
+        accommodation: {
+          ecoCertified: {
+            title: "Scegli Alloggi Eco-Certificati",
+            description: "Cerca hotel con certificazioni Green Key, LEED o EarthCheck. Queste strutture riducono attivamente acqua, rifiuti e consumo energetico."
+          },
+          reuseTowels: {
+            title: "Riutilizza Asciugamani e Biancheria",
+            description: "Appendi i tuoi asciugamani per segnalare che li riutilizzerai. Questo risparmia enormi quantità di acqua ed elettricità utilizzate per il bucato quotidiano."
+          },
+          conserveEnergy: {
+            title: "Risparmia Energia in Camera",
+            description: "Spegni sempre luci, aria condizionata e TV quando lasci la camera. Chiudi le tende nelle giornate calde per mantenere la camera fresca naturalmente."
+          }
+        },
+        food: {
+          eatLocal: {
+            title: "Mangia Locale e di Stagione",
+            description: "Gli ingredienti importati hanno un'alta impronta di carbonio. Il cibo locale supporta l'economia della comunità e di solito ha un sapore più fresco!"
+          },
+          plantBased: {
+            title: "Opzioni a Base Vegetale",
+            description: "L'agricoltura animale è un importante contributore ai gas serra. Prova a mangiare vegetariano o vegano per almeno un pasto al giorno."
+          },
+          avoidPlastics: {
+            title: "Evita la Plastica Monouso",
+            description: "Rifiuta cannucce e posate di plastica. Porta una bottiglia d'acqua riutilizzabile e riempila alle stazioni di acqua filtrata."
+          }
+        },
+        shopping: {
+          supportArtisans: {
+            title: "Supporta gli Artigiani Locali",
+            description: "Compra souvenir fatti localmente piuttosto che importazioni prodotte in serie. Questo mette denaro direttamente nelle mani delle famiglie locali."
+          },
+          ethicalSouvenirs: {
+            title: "Souvenir Etici",
+            description: "Non comprare mai prodotti fatti da specie in via di estinzione, avorio, corallo o gusci di tartaruga. Alimenta il bracconaggio illegale e la distruzione dell'ecosistema."
+          }
+        },
+        activities: {
+          respectWildlife: {
+            title: "Rispetta la Fauna Selvatica",
+            description: "Osserva gli animali da una distanza. Non dar loro da mangiare mai, poiché interrompe la loro dieta naturale e può renderli aggressivi."
+          },
+          lowCarbonTours: {
+            title: "Tour a Basso Contenuto di Carbonio",
+            description: "Scegli attività a propulsione umana come kayak, escursioni o tour in bicicletta invece di moto d'acqua, ATV o giri in elicottero."
+          }
+        }
+      },
+      knowledgeTips: {
+        flightCo2: "Un singolo volo di andata e ritorno da New York a Londra genera circa 1,5 tonnellate di CO₂ per passeggero.",
+        treeAbsorption: "Un albero assorbe circa 22 kg di CO₂ all'anno. Servirebbero 68 alberi per compensare quel singolo volo!",
+        trainVsPlane: "Scegliere il treno invece dell'aereo può ridurre la tua impronta di carbonio fino al 90% per lo stesso percorso.",
+        ecoHotels: "Soggiornare in hotel eco-certificati può ridurre il consumo di acqua ed energia fino al 30%."
+      }
     },
     feedback: {
       title: "Feedback",
-      submit: "Invia",
-      yourFeedback: "Il Tuo Feedback"
+      averageUserRating: "Valutazione Media Utente",
+      totalFeedback: "Feedback Totali",
+      implementationRate: "Tasso di Implementazione",
+      submitFeedback: "Invia Feedback",
+      helpUsImprove: "Aiutaci a migliorare EcoVoyage con i tuoi suggerimenti",
+      category: "Categoria",
+      selectCategory: "Seleziona categoria",
+      yourRating: "La Tua Valutazione",
+      subject: "Oggetto",
+      subjectPlaceholder: "Breve descrizione del tuo feedback",
+      message: "Messaggio",
+      messagePlaceholder: "Fornisci feedback dettagliato...",
+      submitting: "Invio in corso...",
+      submitFeedbackButton: "Invia Feedback",
+      communityFeedback: "Feedback della Comunità",
+      browseAndVote: "Sfoglia e vota sui feedback di altri utenti",
+      featureRequest: "💡 Richiesta Funzionalità",
+      bugReport: "🐛 Segnalazione Bug",
+      improvement: "⚡ Miglioramento",
+      generalFeedback: "💬 Feedback Generale",
+      implemented: "Implementato",
+      reviewing: "In Revisione",
+      new: "Nuovo",
+      upvote: "Vota",
+      weeksAgo: "settimane fa",
+      daysAgo: "giorni fa",
+      weekAgo: "settimana fa",
+      dayAgo: "giorno fa",
+      pleaseSelectCategory: "Seleziona una categoria e una valutazione.",
+      thankYouSubmitted: "Grazie! Il tuo feedback è stato inviato."
     },
     plan: {
       ecoTravelPlanner: "Pianificatore Viaggi Eco",
