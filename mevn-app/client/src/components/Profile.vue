@@ -71,7 +71,58 @@ onMounted(() => {
   }
 });
 
-const handleImageUpload = (event) => {
+const resizeImage = (file, maxWidth = 800, maxHeight = 800, quality = 0.8) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > maxWidth) {
+            height = (height * maxWidth) / width;
+            width = maxWidth;
+          }
+        } else {
+          if (height > maxHeight) {
+            width = (width * maxHeight) / height;
+            height = maxHeight;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+
+        canvas.toBlob(
+          (blob) => {
+            if (blob) {
+              const reader = new FileReader();
+              reader.onload = (e) => resolve(e.target.result);
+              reader.onerror = reject;
+              reader.readAsDataURL(blob);
+            } else {
+              reject(new Error('Failed to resize image'));
+            }
+          },
+          'image/jpeg',
+          quality
+        );
+      };
+      img.onerror = reject;
+      img.src = e.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+};
+
+const handleImageUpload = async (event) => {
   const file = event.target.files[0];
   if (file) {
     if (file.size > 5 * 1024 * 1024) {
@@ -80,17 +131,16 @@ const handleImageUpload = (event) => {
     }
     
     selectedFileName.value = file.name;
-    const reader = new FileReader();
-    reader.onload = (e) => {
+    
+    try {
+      const resizedImage = await resizeImage(file);
       profileImage.value = file;
-      profileImagePreview.value = e.target.result;
-      console.log('Image loaded, size:', file.size, 'bytes');
-    };
-    reader.onerror = (error) => {
-      console.error('Error reading file:', error);
-      showToast('Error reading image file. Please try again.', 'error');
-    };
-    reader.readAsDataURL(file);
+      profileImagePreview.value = resizedImage;
+      console.log('Image loaded and resized');
+    } catch (error) {
+      console.error('Error processing image:', error);
+      showToast('Error processing image. Please try again.', 'error');
+    }
   }
 };
 
@@ -137,6 +187,7 @@ const saveProfileImage = async () => {
       profileImage.value = null;
       selectedFileName.value = '';
       profileImagePreview.value = response.data.profileImage;
+      window.dispatchEvent(new Event('profileImageUpdated'));
       showToast('Profile image updated successfully!', 'success');
     } else {
       showToast('Unexpected response from server', 'error');
@@ -172,6 +223,7 @@ const deleteProfileImage = async () => {
     showImageUpload.value = false;
     profileImage.value = null;
     selectedFileName.value = '';
+    window.dispatchEvent(new Event('profileImageUpdated'));
     showToast('Profile image deleted successfully!', 'success');
   } catch (error) {
     console.error('Error deleting image:', error);
