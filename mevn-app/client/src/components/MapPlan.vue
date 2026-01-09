@@ -15,8 +15,7 @@ import {
   Leaf,
   Shuffle,
   X,
-  CheckCircle2,
-  Loader2, // Assicurati che sia importato
+  Loader2,
 } from "lucide-vue-next";
 import mapboxgl from "mapbox-gl";
 import MapboxMap from "./maps/maps.vue";
@@ -38,7 +37,7 @@ const toSearchBox = ref(null);
 const comparisonModalOpen = ref(false);
 const targetSegmentIndex = ref(null);
 const pendingComparisonData = ref(null);
-const isLoadingComparison = ref(false); // NUOVO: Stato di caricamento
+const isLoadingComparison = ref(false);
 
 const iconMap = {
   Airplane: Plane,
