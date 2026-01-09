@@ -1,129 +1,117 @@
-<script>
+<script setup>
+import { ref, computed, onMounted, onUnmounted } from "vue";
 import {
   Leaf,
   Zap,
   TrendingUp,
-  Fuel,
-  Target,
+  Car,
   TreePine,
   Gauge,
+  Footprints,
 } from "lucide-vue-next";
+
 import CarbonTrendChart from "./charts/CarbonTrendChart.vue";
 import TransportModesChart from "./charts/TransportModesChart.vue";
 import DestinationChart from "./charts/DestinationChart.vue";
 import { getLanguage, t as translate } from "../utils/translations.js";
 
-export default {
-  name: "Dashboard",
-  components: {
-    Leaf,
-    Zap,
-    TrendingUp,
-    Fuel,
-    Target,
-    TreePine,
-    Gauge,
-    CarbonTrendChart,
-    TransportModesChart,
-    DestinationChart,
-  },
-  data() {
-    return {
-      language: getLanguage(),
-      stats: [
-        {
-          labelKey: "dashboard.totalCo2Saved",
-          value: "183 kg",
-          subtitleKey: "dashboard.vsLastMonth",
-          icon: Leaf,
-        },
-        {
-          labelKey: "dashboard.greenMiles",
-          value: "2,847",
-          subtitleKey: "dashboard.thisMonth",
-          icon: TrendingUp,
-        },
-        {
-          labelKey: "dashboard.ecoScore",
-          value: "892",
-          subtitleKey: "dashboard.topGlobally",
-          icon: Gauge,
-        },
-        {
-          labelKey: "dashboard.monthlyGoal",
-          value: "54 / 100 kg",
-          subtitleKey: "dashboard.progressBar",
-          icon: Target,
-        },
-      ],
-      environmentalImpact: {
-        treesValue: 7,
-        treesKey: "dashboard.trees",
-        treesDescKey: "dashboard.treesDesc",
-        energyValue: 340,
-        energyKey: "dashboard.energy",
-        energyDescKey: "dashboard.energyDesc",
-        milesValue: 458,
-        milesKey: "dashboard.miles",
-        milesDescKey: "dashboard.milesDesc",
-      },
-    };
-  },
-  computed: {
-    t() {
-      return (key) => translate(key, this.language);
-    },
-    statsWithTranslations() {
-      return this.stats.map(stat => ({
-        ...stat,
-        label: this.t(stat.labelKey),
-        subtitle: this.t(stat.subtitleKey)
-      }));
-    },
-    environmentalImpactWithTranslations() {
-      return {
-        ...this.environmentalImpact,
-        trees: `${this.environmentalImpact.treesValue} ${this.t(this.environmentalImpact.treesKey)}`,
-        treesDesc: this.t(this.environmentalImpact.treesDescKey),
-        energy: `${this.environmentalImpact.energyValue} ${this.t(this.environmentalImpact.energyKey)}`,
-        energyDesc: this.t(this.environmentalImpact.energyDescKey),
-        miles: `${this.environmentalImpact.milesValue} ${this.t(this.environmentalImpact.milesKey)}`,
-        milesDesc: this.t(this.environmentalImpact.milesDescKey)
-      };
-    }
-  },
-  mounted() {
-    window.addEventListener('languageChanged', this.handleLanguageChange);
-  },
-  beforeUnmount() {
-    window.removeEventListener('languageChanged', this.handleLanguageChange);
-  },
-  methods: {
-    handleLanguageChange(event) {
-      this.language = event.detail.language;
-    },
-  },
+// --- Translation Logic ---
+const language = ref(getLanguage());
+
+const handleLanguageChange = (event) => {
+  language.value = event.detail.language;
 };
+
+onMounted(() => {
+  window.addEventListener("languageChanged", handleLanguageChange);
+});
+
+onUnmounted(() => {
+  window.removeEventListener("languageChanged", handleLanguageChange);
+});
+
+// Helper to translate inside script
+const t = (key) => translate(key, language.value);
+
+// --- Stats Data (Merged) ---
+// We use a computed property here so it updates when 'language' changes
+const stats = computed(() => [
+  {
+    label: t("dashboard.totalCo2Saved"),
+    value: "245 kg", // Kept Base value, used Snippet 2 key
+    subtitle: t("dashboard.vsLastMonth"), // "↑ 18% vs last month" equivalent
+    icon: Leaf,
+  },
+  {
+    label: t("dashboard.greenMiles"), // "Green Distance"
+    value: "3,842 km",
+    subtitle: t("dashboard.thisMonth"),
+    icon: TrendingUp,
+  },
+  {
+    label: t("dashboard.ecoScore"),
+    value: "892",
+    subtitle: t("dashboard.topGlobally"),
+    icon: Gauge,
+  },
+  {
+    label: "Zero CO₂ Trips",
+    value: "14",
+    subtitle: "Walk, Bike, or EV this month",
+    icon: Footprints,
+    isZeroCount: true,
+  },
+]);
+
+// --- Environmental Impact Data ---
+const environmentalImpactRaw = {
+  treesValue: 11,
+  treesKey: "dashboard.trees",
+  treesDescKey: "dashboard.treesDesc",
+  energyValue: 580,
+  energyKey: "dashboard.energy",
+  energyDescKey: "dashboard.energyDesc",
+  distanceValue: 1440,
+  distanceKey: "dashboard.miles", // or distance
+  distanceDescKey: "dashboard.milesDesc", // or distance desc
+};
+
+const environmentalImpact = computed(() => ({
+  trees: `${environmentalImpactRaw.treesValue} ${t(
+    environmentalImpactRaw.treesKey
+  )}`,
+  treesDesc: t(environmentalImpactRaw.treesDescKey),
+  energy: `${environmentalImpactRaw.energyValue} ${t(
+    environmentalImpactRaw.energyKey
+  )}`,
+  energyDesc: t(environmentalImpactRaw.energyDescKey),
+  distance: `${environmentalImpactRaw.distanceValue} ${t(
+    environmentalImpactRaw.distanceKey
+  )}`,
+  distanceDesc: t(environmentalImpactRaw.distanceDescKey),
+}));
 </script>
 
 <template>
-  <div class="space-y-6">
+  <div class="space-y-6 overflow-hidden">
     <div
       class="stats stats-vertical md:stats-horizontal shadow-sm border border-green-100 bg-white w-full md:grid-cols-2 lg:grid-cols-4"
     >
-      <div v-for="(stat, idx) in statsWithTranslations" :key="idx" class="stat">
+      <div v-for="(stat, idx) in stats" :key="idx" class="stat">
         <div class="stat-figure text-success">
           <component :is="stat.icon" class="w-6 h-6" />
         </div>
-        <div class="stat-title text-sm text-black">{{ stat.label }}</div>
-        <div class="stat-value text-xl md:text-2xl text-black">
+        <div class="stat-title text-sm text-gray-600 font-medium">
+          {{ stat.label }}
+        </div>
+        <div class="stat-value text-xl md:text-2xl text-gray-800">
           {{ stat.value }}
         </div>
-        <div class="stat-desc text-xs md:text-sm text-black">
+        <div class="stat-desc text-xs md:text-sm text-gray-500">
           {{ stat.subtitle }}
         </div>
-        <!-- Progress bar for Monthly Goal -->
-        <div v-if="idx === 3" class="mt-2">
+
+        <div v-if="stat.isProgressBar" class="mt-2">
           <progress
             class="progress progress-success w-full"
             value="54"
@@ -133,64 +121,74 @@ export default {
       </div>
     </div>
 
-    <!-- Charts Section -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
       <CarbonTrendChart />
       <TransportModesChart />
     </div>
 
-    <!-- CO2 Saved by Destination Bar Chart -->
     <DestinationChart />
 
-    <!-- Environmental Impact Section -->
     <div
-      class="card bg-linear-to-r from-success to-success/80 text-white shadow-lg"
+      class="card bg-linear-to-r from-green-600 to-green-500 text-white shadow-lg"
     >
       <div class="card-body">
         <div class="flex items-center gap-2 mb-6">
           <Leaf class="w-6 h-6" />
-          <h3 class="text-xl font-bold">{{ t('dashboard.environmentalImpact') }}</h3>
+          <h3 class="text-xl font-bold">
+            {{ t("dashboard.environmentalImpact") }}
+          </h3>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <!-- Trees -->
           <div
-            class="flex items-center gap-4 bg-white/20 p-4 rounded-lg backdrop-blur-sm"
+            class="flex items-center gap-4 bg-white/20 p-4 rounded-xl backdrop-blur-sm border border-white/10"
           >
-            <TreePine class="w-10 h-10 shrink-0" />
+            <div class="bg-white/20 p-3 rounded-full">
+              <TreePine class="w-8 h-8 text-white" />
+            </div>
             <div>
               <div class="text-2xl font-bold">
-                {{ environmentalImpactWithTranslations.trees }}
+                {{ environmentalImpact.trees }}
               </div>
-              <div class="text-sm opacity-90">
-                {{ environmentalImpactWithTranslations.treesDesc }}
+              <div
+                class="text-xs text-green-50 uppercase font-bold tracking-wide"
+              >
+                {{ environmentalImpact.treesDesc }}
               </div>
             </div>
           </div>
-          <!-- Energy -->
+
           <div
-            class="flex items-center gap-4 bg-white/20 p-4 rounded-lg backdrop-blur-sm"
+            class="flex items-center gap-4 bg-white/20 p-4 rounded-xl backdrop-blur-sm border border-white/10"
           >
-            <Zap class="w-10 h-10 shrink-0" />
+            <div class="bg-white/20 p-3 rounded-full">
+              <Zap class="w-8 h-8 text-white" />
+            </div>
             <div>
               <div class="text-2xl font-bold">
-                {{ environmentalImpactWithTranslations.energy }}
+                {{ environmentalImpact.energy }}
               </div>
-              <div class="text-sm opacity-90">
-                {{ environmentalImpactWithTranslations.energyDesc }}
+              <div
+                class="text-xs text-green-50 uppercase font-bold tracking-wide"
+              >
+                {{ environmentalImpact.energyDesc }}
               </div>
             </div>
           </div>
-          <!-- Car Miles -->
+
           <div
-            class="flex items-center gap-4 bg-white/20 p-4 rounded-lg backdrop-blur-sm"
+            class="flex items-center gap-4 bg-white/20 p-4 rounded-xl backdrop-blur-sm border border-white/10"
           >
-            <Fuel class="w-10 h-10 shrink-0" />
+            <div class="bg-white/20 p-3 rounded-full">
+              <Car class="w-8 h-8 text-white" />
+            </div>
             <div>
               <div class="text-2xl font-bold">
-                {{ environmentalImpactWithTranslations.miles }}
+                {{ environmentalImpact.distance }}
               </div>
-              <div class="text-sm opacity-90">
-                {{ environmentalImpactWithTranslations.milesDesc }}
+              <div
+                class="text-xs text-green-50 uppercase font-bold tracking-wide"
+              >
+                {{ environmentalImpact.distanceDesc }}
               </div>
             </div>
           </div>
@@ -201,5 +199,7 @@ export default {
 </template>
 
 <style scoped>
-/* Component-specific styles */
+.stat:hover {
+  background-color: #f9fafb;
+}
 </style>

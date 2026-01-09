@@ -35,7 +35,6 @@ const clearRoute = () => {
     directions.setOrigin("");
     directions.setDestination("");
   }
-  // Clear input fields with Dom manipulation
   const inputs = document.querySelectorAll(".mapboxgl-ctrl-geocoder input");
   inputs.forEach((input) => {
     input.value = "";
@@ -74,7 +73,8 @@ onMounted(() => {
     directions = new MapboxDirections({
       accessToken: mapboxgl.accessToken,
       unit: "metric",
-      profile: "mapbox/driving",
+      profile: "mapbox/driving-traffic",
+      alternatives: true,
       controls: { inputs: true, instructions: true, profileSwitcher: true },
     });
     map.value.addControl(directions, "top-left");

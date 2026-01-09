@@ -10,6 +10,7 @@ import {
   Title,
   Tooltip,
   Legend,
+  Filler,
 } from "chart.js";
 import { getLanguage, t as translate } from "../../utils/translations.js";
 
@@ -20,7 +21,8 @@ ChartJS.register(
   LineElement,
   Title,
   Tooltip,
-  Legend
+  Legend,
+  Filler
 );
 
 export default {
@@ -86,10 +88,10 @@ export default {
     },
   },
   mounted() {
-    window.addEventListener('languageChanged', this.handleLanguageChange);
+    window.addEventListener("languageChanged", this.handleLanguageChange);
   },
   beforeUnmount() {
-    window.removeEventListener('languageChanged', this.handleLanguageChange);
+    window.removeEventListener("languageChanged", this.handleLanguageChange);
   },
   methods: {
     handleLanguageChange(event) {
@@ -98,14 +100,14 @@ export default {
     },
     updateChartData() {
       this.chartData.labels = [
-        this.t('dashboard.months.jan'),
-        this.t('dashboard.months.feb'),
-        this.t('dashboard.months.mar'),
-        this.t('dashboard.months.apr'),
-        this.t('dashboard.months.may'),
-        this.t('dashboard.months.jun'),
+        this.t("dashboard.months.jan"),
+        this.t("dashboard.months.feb"),
+        this.t("dashboard.months.mar"),
+        this.t("dashboard.months.apr"),
+        this.t("dashboard.months.may"),
+        this.t("dashboard.months.jun"),
       ];
-      this.chartData.datasets[0].label = this.t('dashboard.co2Emissions');
+      this.chartData.datasets[0].label = this.t("dashboard.co2Emissions");
     },
   },
 };
@@ -116,7 +118,9 @@ export default {
     <div class="card-body">
       <div class="flex items-center gap-2 mb-4">
         <TrendingUp class="w-5 h-5 text-success" />
-        <h3 class="text-lg font-bold text-gray-800">{{ t('dashboard.carbonFootprintTrend') }}</h3>
+        <h3 class="text-lg font-bold text-gray-800">
+          {{ t("dashboard.carbonFootprintTrend") }}
+        </h3>
       </div>
       <div class="h-64">
         <Line :data="chartData" :options="chartOptions" class="w-full" />

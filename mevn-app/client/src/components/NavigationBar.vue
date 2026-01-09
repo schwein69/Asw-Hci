@@ -30,30 +30,39 @@ const handleLanguageChange = (event) => {
 
 // Get user info from localStorage
 onMounted(() => {
-  const userData = localStorage.getItem('user');
+  const userData = localStorage.getItem("user");
   if (userData) {
     user.value = JSON.parse(userData);
   }
   language.value = getLanguage();
-  window.addEventListener('languageChanged', handleLanguageChange);
+  window.addEventListener("languageChanged", handleLanguageChange);
 });
 
 onUnmounted(() => {
-  window.removeEventListener('languageChanged', handleLanguageChange);
+  window.removeEventListener("languageChanged", handleLanguageChange);
 });
 
 // Filter nav items based on user role
 const allNavItems = computed(() => [
-  { routeName: "Dashboard", label: t.value('nav.dashboard'), icon: Leaf },
-  { routeName: "Plan", label: t.value('nav.plan'), icon: Map },
-  { routeName: "World", label: t.value('nav.world'), icon: Globe },
-  { routeName: "PastTrips", label: t.value('nav.pastTrips'), icon: Calendar },
-  { routeName: "Live", label: t.value('nav.live'), icon: Bell },
-  { routeName: "Discover", label: t.value('nav.discover'), icon: Compass },
-  { routeName: "Rewards", label: t.value('nav.rewards'), icon: Trophy },
-  { routeName: "Tips", label: t.value('nav.tips'), icon: Lightbulb },
-  { routeName: "Feedback", label: t.value('nav.feedback'), icon: MessageCircle },
-  { routeName: "Admin", label: t.value('nav.admin'), icon: Shield, adminOnly: true },
+  { routeName: "Dashboard", label: t.value("nav.dashboard"), icon: Leaf },
+  { routeName: "Plan", label: t.value("nav.plan"), icon: Map },
+  { routeName: "World", label: t.value("nav.world"), icon: Globe },
+  { routeName: "PastTrips", label: t.value("nav.pastTrips"), icon: Calendar },
+  { routeName: "Live", label: t.value("nav.live"), icon: Bell },
+  { routeName: "Discover", label: t.value("nav.discover"), icon: Compass },
+  { routeName: "Rewards", label: t.value("nav.rewards"), icon: Trophy },
+  { routeName: "Tips", label: t.value("nav.tips"), icon: Lightbulb },
+  {
+    routeName: "Feedback",
+    label: t.value("nav.feedback"),
+    icon: MessageCircle,
+  },
+  {
+    routeName: "Admin",
+    label: t.value("nav.admin"),
+    icon: Shield,
+    adminOnly: true,
+  },
 ]);
 
 // Show Admin link only for admins
@@ -62,11 +71,14 @@ const navItems = computed(() => {
   if (userRole === "AdminGeneral" || userRole === "AdminForum") {
     return allNavItems.value;
   }
-  return allNavItems.value.filter(item => !item.adminOnly);
+  return allNavItems.value.filter((item) => !item.adminOnly);
 });
 
 const activeItem = computed(() => {
-  return navItems.value.find((item) => item.routeName === route.name) || navItems.value[0];
+  return (
+    navItems.value.find((item) => item.routeName === route.name) ||
+    navItems.value[0]
+  );
 });
 
 const leftStack = computed(() => {
