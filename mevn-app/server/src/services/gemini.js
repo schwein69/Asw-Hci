@@ -91,7 +91,7 @@ export async function compareTravelModes(payload) {
     Calculate time also for bycicle and walking.
 
     Return a JSON object with exactly these keys, for bicycle and walking return cost as "0.00" and co2 as "0.0":
-    For Airplane and train is economy class ticket.
+    For Airplane and train is economy class ticket. For time e.g. '3 hours 15 minutes'.
     {
       "Car": {"cost": "String", "co2": "String", "time": "String"}, 
       "Train": {"cost": "String", "co2": "String", "time": "String"},
