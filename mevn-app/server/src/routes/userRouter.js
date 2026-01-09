@@ -99,7 +99,7 @@ router.post("/forgot-password", async (req, res) => {
 
         // Generate reset token
         const resetToken = crypto.randomBytes(32).toString("hex");
-        const resetTokenExpiry = Date.now() + 3600000; // 1 hour from now
+        const resetTokenExpiry = new Date(Date.now() + 3600000); // 1 hour from now
 
         // Save token to user
         user.resetToken = resetToken;
@@ -135,7 +135,7 @@ router.post("/reset-password", async (req, res) => {
         // Find user with valid token
         const user = await User.findOne({
             resetToken: token,
-            resetTokenExpiry: { $gt: Date.now() }
+            resetTokenExpiry: { $gt: new Date() }
         });
 
         if (!user) {
