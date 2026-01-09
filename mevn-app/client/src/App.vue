@@ -2,6 +2,7 @@
 import { Leaf, Moon, Sun, User, LogOut } from "lucide-vue-next";
 import TheNavigation from "./components/NavigationBar.vue";
 import { useRoute, useRouter } from "vue-router";
+import { getLanguage, t as translate } from "./utils/translations.js";
 
 export default {
   name: "App",
@@ -24,9 +25,13 @@ export default {
       showProfileMenu: false,
       user: null,
       profileImageUrl: null,
+      language: getLanguage(),
     };
   },
   computed: {
+    t() {
+      return (key) => translate(key, this.language);
+    },
     isAuthPage() {
       const authRoutes = ["Login", "ForgotPassword", "ResetPassword"];
       return this.route && authRoutes.includes(this.route.name);
@@ -69,11 +74,15 @@ export default {
 
     // Listen for profile image updates
     window.addEventListener("profileImageUpdated", this.loadUser);
+
+    // Listen for language changes
+    window.addEventListener("languageChanged", this.handleLanguageChange);
   },
   beforeUnmount() {
     document.removeEventListener("click", this.handleClickOutside);
     window.removeEventListener("storage", this.handleStorageChange);
     window.removeEventListener("profileImageUpdated", this.loadUser);
+    window.removeEventListener("languageChanged", this.handleLanguageChange);
   },
   methods: {
     loadUser() {
@@ -165,6 +174,9 @@ export default {
       this.showProfileMenu = false;
       this.router.push("/login");
     },
+    handleLanguageChange(event) {
+      this.language = event.detail.language;
+    },
   },
   watch: {
     $route() {
@@ -216,7 +228,7 @@ export default {
           <p
             class="text-[9px] text-success font-light uppercase tracking-[0.2em]"
           >
-            Travel Green • Live Clean
+            {{ t('app.travelGreen') }}
           </p>
         </div>
         <div class="ml-auto flex items-center gap-2">
@@ -247,7 +259,7 @@ export default {
                 <User v-else class="w-5 h-5 text-white" />
               </div>
               <span class="hidden sm:inline">{{
-                user?.username || "Profile"
+                user?.username || t('app.profile')
               }}</span>
             </button>
 
@@ -301,14 +313,14 @@ export default {
                     class="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
                   >
                     <User class="w-5 h-5" />
-                    <span>View Profile</span>
+                    <span>{{ t('nav.viewProfile') }}</span>
                   </button>
                   <button
                     @click="logout"
                     class="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                   >
                     <LogOut class="w-5 h-5" />
-                    <span>Logout</span>
+                    <span>{{ t('nav.logout') }}</span>
                   </button>
                 </div>
               </div>

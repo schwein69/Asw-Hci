@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, onMounted, onUnmounted } from "vue";
 import {
   CheckCircle2, // Changed icon
   Train,
@@ -19,6 +19,24 @@ import {
 } from "lucide-vue-next";
 import actualMap from "./maps/actualMap.vue";
 import * as turf from "@turf/turf";
+import { getLanguage, t as translate } from "../utils/translations.js";
+
+const language = ref(getLanguage());
+
+const t = computed(() => (key) => translate(key, language.value));
+
+const handleLanguageChange = (event) => {
+  language.value = event.detail.language;
+};
+
+onMounted(() => {
+  language.value = getLanguage();
+  window.addEventListener('languageChanged', handleLanguageChange);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('languageChanged', handleLanguageChange);
+});
 
 const tripSummary = ref({
   totalDestinations: 6,
@@ -253,19 +271,17 @@ function completeTrip() {
     >
       <div>
         <h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2">
-          <Clock class="w-6 h-6 text-green-600" /> Actual Trip - Detailed
-          Itinerary
+          <Clock class="w-6 h-6 text-green-600" /> {{ t('world.tripSummary') }}
         </h2>
         <p class="text-gray-500 text-sm">
-          Complete breakdown of your journey with all transport methods and
-          timings.
+          {{ t('world.tripSummary') }}
         </p>
       </div>
       <button
         @click="completeTrip"
         class="btn btn-success text-white gap-2 rounded-xl shadow-md font-bold hover:scale-105 transition-transform"
       >
-        <CheckCircle2 class="w-5 h-5" /> Complete Trip
+        <CheckCircle2 class="w-5 h-5" /> {{ t('world.completed') }}
       </button>
     </div>
 
@@ -274,7 +290,7 @@ function completeTrip() {
         class="card bg-white border border-green-100 shadow-sm p-5 text-center rounded-2xl"
       >
         <div class="text-xs uppercase font-bold text-gray-400 tracking-wider">
-          Total Destinations
+          {{ t('world.totalDestinations') }}
         </div>
         <div class="text-4xl font-extrabold text-gray-800 mt-2">
           {{ tripSummary.totalDestinations }}
@@ -284,7 +300,7 @@ function completeTrip() {
         class="card bg-white border border-green-100 shadow-sm p-5 text-center rounded-2xl"
       >
         <div class="text-xs uppercase font-bold text-gray-400 tracking-wider">
-          Carbon Footprint
+          {{ t('world.carbonFootprint') }}
         </div>
         <div
           class="text-4xl font-extrabold text-green-600 mt-2 flex justify-center items-center gap-1"
@@ -297,7 +313,7 @@ function completeTrip() {
         class="card bg-white border border-green-100 shadow-sm p-5 text-center rounded-2xl"
       >
         <div class="text-xs uppercase font-bold text-gray-400 tracking-wider">
-          Total Cost
+          {{ t('world.totalCost') }}
         </div>
         <div
           class="text-4xl font-extrabold text-gray-800 mt-2 flex justify-center items-center"
@@ -449,7 +465,7 @@ function completeTrip() {
                 <div
                   class="text-[9px] text-gray-400 font-bold uppercase flex items-center gap-1"
                 >
-                  <Building2 class="w-3 h-3" /> Terminal
+                  <Building2 class="w-3 h-3" /> {{ t('world.terminal') }}
                 </div>
                 <div class="text-xs font-semibold text-gray-700">
                   {{ segment.terminal }}
@@ -459,7 +475,7 @@ function completeTrip() {
                 <div
                   class="text-[9px] text-gray-400 font-bold uppercase flex items-center gap-1"
                 >
-                  <DoorOpen class="w-3 h-3" /> Gate
+                  <DoorOpen class="w-3 h-3" /> {{ t('world.gate') }}
                 </div>
                 <div class="text-xs font-semibold text-gray-700">
                   {{ segment.gate }}
@@ -469,7 +485,7 @@ function completeTrip() {
                 <div
                   class="text-[9px] text-gray-400 font-bold uppercase flex items-center gap-1"
                 >
-                  <Armchair class="w-3 h-3" /> Seat
+                  <Armchair class="w-3 h-3" /> {{ t('world.seat') }}
                 </div>
                 <div class="text-xs font-semibold text-gray-700">
                   {{ segment.seat }}
@@ -477,7 +493,7 @@ function completeTrip() {
               </div>
               <div v-if="segment.class">
                 <div class="text-[9px] text-gray-400 font-bold uppercase">
-                  Class
+                  {{ t('world.class') }}
                 </div>
                 <div class="text-xs font-semibold text-gray-700">
                   {{ segment.class }}
@@ -497,7 +513,7 @@ function completeTrip() {
                 <div
                   class="text-[10px] text-gray-400 font-bold uppercase flex items-center gap-1 mb-1"
                 >
-                  <Clock class="w-3 h-3" /> Departure
+                  <Clock class="w-3 h-3" /> {{ t('world.departure') }}
                 </div>
                 <div
                   class="text-lg font-bold"
@@ -525,7 +541,7 @@ function completeTrip() {
                 <div
                   class="text-[10px] text-gray-400 font-bold uppercase flex items-center gap-1 mb-1"
                 >
-                  <MapPin class="w-3 h-3" /> Arrival
+                  <MapPin class="w-3 h-3" /> {{ t('world.arrival') }}
                 </div>
                 <div
                   class="text-lg font-bold"
@@ -599,7 +615,7 @@ function completeTrip() {
           class="btn btn-xs sm:btn-sm btn-outline btn-success gap-2 font-bold rounded-full"
         >
           <component :is="is3D ? Minimize2 : Maximize2" class="w-4 h-4" />
-          {{ is3D ? "2D View" : "Switch to 3D" }}
+          {{ is3D ? t('world.expand') : t('world.collapse') }}
         </button>
       </div>
 

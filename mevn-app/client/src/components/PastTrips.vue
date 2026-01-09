@@ -1,5 +1,6 @@
 <script>
 import { Calendar, MapPin, TrendingUp, Trash2 } from "lucide-vue-next";
+import { getLanguage, t as translate } from "../utils/translations.js";
 
 export default {
   name: "PastTrips",
@@ -11,6 +12,7 @@ export default {
   },
   data() {
     return {
+      language: getLanguage(),
       trips: [
         {
           id: 1,
@@ -80,9 +82,23 @@ export default {
       ],
     };
   },
+  computed: {
+    t() {
+      return (key) => translate(key, this.language);
+    },
+  },
+  mounted() {
+    window.addEventListener('languageChanged', this.handleLanguageChange);
+  },
+  beforeUnmount() {
+    window.removeEventListener('languageChanged', this.handleLanguageChange);
+  },
   methods: {
     deleteTrip(id) {
       this.trips = this.trips.filter((trip) => trip.id !== id);
+    },
+    handleLanguageChange(event) {
+      this.language = event.detail.language;
     },
   },
 };
@@ -94,10 +110,9 @@ export default {
     <div class="flex items-center gap-2 mb-6">
       <Calendar class="w-6 h-6 text-success" />
       <div>
-        <h2 class="text-2xl font-bold text-gray-800">Past Trips History</h2>
+        <h2 class="text-2xl font-bold text-gray-800">{{ t('pastTrips.title') }}</h2>
         <p class="text-sm text-gray-600">
-          {{ trips.length }} completed trips • View detailed itineraries and
-          transport methods
+          {{ trips.length }} {{ t('pastTrips.subtitle') }}
         </p>
       </div>
     </div>
@@ -118,7 +133,7 @@ export default {
                   {{ trip.title }}
                 </h3>
                 <span class="badge badge-sm badge-neutral">{{
-                  trip.status
+                  trip.status === 'Completed' ? t('pastTrips.completed') : trip.status
                 }}</span>
               </div>
               <p class="text-sm text-gray-600 mt-1">
@@ -138,7 +153,7 @@ export default {
               <div class="text-lg font-bold text-gray-800">
                 {{ trip.segments }}
               </div>
-              <div class="text-xs text-gray-600">Segments</div>
+              <div class="text-xs text-gray-600">{{ t('pastTrips.segments') }}</div>
             </div>
             <div
               class="bg-green-50 rounded-lg p-3 text-center border border-green-200"
@@ -146,13 +161,13 @@ export default {
               <div class="text-lg font-bold text-gray-800">
                 {{ trip.emissions }}
               </div>
-              <div class="text-xs text-gray-600">Emissions</div>
+              <div class="text-xs text-gray-600">{{ t('pastTrips.emissions') }}</div>
             </div>
             <div
               class="bg-green-50 rounded-lg p-3 text-center border border-green-200"
             >
               <div class="text-lg font-bold text-gray-800">{{ trip.cost }}</div>
-              <div class="text-xs text-gray-600">Cost</div>
+              <div class="text-xs text-gray-600">{{ t('pastTrips.cost') }}</div>
             </div>
             <div
               class="bg-green-50 rounded-lg p-3 text-center border border-green-200"
@@ -160,7 +175,7 @@ export default {
               <div class="text-lg font-bold text-gray-800">
                 {{ trip.duration }}
               </div>
-              <div class="text-xs text-gray-600">Duration</div>
+              <div class="text-xs text-gray-600">{{ t('pastTrips.duration') }}</div>
             </div>
           </div>
 
@@ -170,7 +185,7 @@ export default {
               class="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2"
             >
               <TrendingUp class="w-4 h-4" />
-              Transport Methods
+              {{ t('pastTrips.route') }}
             </h4>
             <div class="space-y-3">
               <div
@@ -202,20 +217,20 @@ export default {
                 <!-- Schedule Grid -->
                 <div class="grid grid-cols-3 gap-2 text-xs mb-3">
                   <div>
-                    <div class="text-gray-500">Departure</div>
+                    <div class="text-gray-500">{{ t('pastTrips.departure') }}</div>
                     <div class="font-semibold text-gray-800">
                       {{ method.departure }}
                     </div>
                     <div class="text-gray-500">{{ method.departureType }}</div>
                   </div>
                   <div class="text-center">
-                    <div class="text-gray-500">Time</div>
+                    <div class="text-gray-500">{{ t('pastTrips.time') }}</div>
                     <div class="font-semibold text-gray-800">
                       {{ method.time }}
                     </div>
                   </div>
                   <div>
-                    <div class="text-gray-500">Arrival</div>
+                    <div class="text-gray-500">{{ t('pastTrips.arrival') }}</div>
                     <div class="font-semibold text-gray-800">
                       {{ method.arrival }}
                     </div>

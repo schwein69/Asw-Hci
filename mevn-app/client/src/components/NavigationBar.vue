@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, onUnmounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import {
   Leaf,
@@ -14,11 +14,19 @@ import {
   Shield,
   X,
 } from "lucide-vue-next";
+import { getLanguage, t as translate } from "../utils/translations.js";
 
 const route = useRoute();
 const router = useRouter();
 const isMenuOpen = ref(false);
 const user = ref(null);
+const language = ref(getLanguage());
+
+const t = computed(() => (key) => translate(key, language.value));
+
+const handleLanguageChange = (event) => {
+  language.value = event.detail.language;
+};
 
 // Get user info from localStorage
 onMounted(() => {
@@ -26,29 +34,35 @@ onMounted(() => {
   if (userData) {
     user.value = JSON.parse(userData);
   }
+  language.value = getLanguage();
+  window.addEventListener('languageChanged', handleLanguageChange);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('languageChanged', handleLanguageChange);
 });
 
 // Filter nav items based on user role
-const allNavItems = [
-  { routeName: "Dashboard", label: "Dashboard", icon: Leaf },
-  { routeName: "Plan", label: "Plan", icon: Map },
-  { routeName: "World", label: "World", icon: Globe },
-  { routeName: "PastTrips", label: "Past Trips", icon: Calendar },
-  { routeName: "Live", label: "Live", icon: Bell },
-  { routeName: "Discover", label: "Discover", icon: Compass },
-  { routeName: "Rewards", label: "Rewards", icon: Trophy },
-  { routeName: "Tips", label: "Tips", icon: Lightbulb },
-  { routeName: "Feedback", label: "Feedback", icon: MessageCircle },
-  { routeName: "Admin", label: "Admin", icon: Shield, adminOnly: true },
-];
+const allNavItems = computed(() => [
+  { routeName: "Dashboard", label: t.value('nav.dashboard'), icon: Leaf },
+  { routeName: "Plan", label: t.value('nav.plan'), icon: Map },
+  { routeName: "World", label: t.value('nav.world'), icon: Globe },
+  { routeName: "PastTrips", label: t.value('nav.pastTrips'), icon: Calendar },
+  { routeName: "Live", label: t.value('nav.live'), icon: Bell },
+  { routeName: "Discover", label: t.value('nav.discover'), icon: Compass },
+  { routeName: "Rewards", label: t.value('nav.rewards'), icon: Trophy },
+  { routeName: "Tips", label: t.value('nav.tips'), icon: Lightbulb },
+  { routeName: "Feedback", label: t.value('nav.feedback'), icon: MessageCircle },
+  { routeName: "Admin", label: t.value('nav.admin'), icon: Shield, adminOnly: true },
+]);
 
 // Show Admin link only for admins
 const navItems = computed(() => {
   const userRole = user.value?.role;
   if (userRole === "GeneralAdmin" || userRole === "ForumAdmin") {
-    return allNavItems;
+    return allNavItems.value;
   }
-  return allNavItems.filter(item => !item.adminOnly);
+  return allNavItems.value.filter(item => !item.adminOnly);
 });
 
 const activeItem = computed(() => {

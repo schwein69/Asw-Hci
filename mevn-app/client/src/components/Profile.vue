@@ -1,8 +1,9 @@
 ﻿<script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import axios from 'axios';
 import { User, Mail, Lock, Globe, Bell, Trash2, Upload } from 'lucide-vue-next';
+import { getLanguage, setLanguage, t as translate } from '../utils/translations.js';
 
 const router = useRouter();
 const user = ref(null);
@@ -25,8 +26,10 @@ const passwordErrors = ref({
   confirmPassword: ''
 });
 
-const language = ref(localStorage.getItem('language') || 'en');
+const language = ref(getLanguage());
 const notifications = ref(localStorage.getItem('notifications') !== 'false');
+
+const t = computed(() => (key) => translate(key, language.value));
 
 const profileImage = ref(null);
 const profileImagePreview = ref(null);
@@ -49,6 +52,10 @@ const showToast = (message, type = 'success') => {
   }, 3000);
 };
 
+const handleLanguageChangeEvent = (event) => {
+  language.value = event.detail.language;
+};
+
 onMounted(() => {
   const userData = localStorage.getItem('user');
   if (userData) {
@@ -60,15 +67,18 @@ onMounted(() => {
     router.push('/login');
   }
   
-  const savedLanguage = localStorage.getItem('language');
-  if (savedLanguage) {
-    language.value = savedLanguage;
-  }
+  language.value = getLanguage();
   
   const savedNotifications = localStorage.getItem('notifications');
   if (savedNotifications !== null) {
     notifications.value = savedNotifications === 'true';
   }
+  
+  window.addEventListener('languageChanged', handleLanguageChangeEvent);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('languageChanged', handleLanguageChangeEvent);
 });
 
 const resizeImage = (file, maxWidth = 800, maxHeight = 800, quality = 0.8) => {
@@ -126,7 +136,7 @@ const handleImageUpload = async (event) => {
   const file = event.target.files[0];
   if (file) {
     if (file.size > 5 * 1024 * 1024) {
-      showToast('Image size must be less than 5MB', 'error');
+      showToast(t.value('profile.imageTooLarge'), 'error');
       return;
     }
     
@@ -139,7 +149,7 @@ const handleImageUpload = async (event) => {
       console.log('Image loaded and resized');
     } catch (error) {
       console.error('Error processing image:', error);
-      showToast('Error processing image. Please try again.', 'error');
+      showToast(t.value('profile.errorProcessingImage'), 'error');
     }
   }
 };
@@ -153,14 +163,14 @@ const triggerFileInput = () => {
 
 const saveProfileImage = async () => {
   if (!profileImage.value || !profileImagePreview.value) {
-    showToast('Please select an image first', 'error');
+    showToast(t.value('profile.selectImageFirst'), 'error');
     return;
   }
   
   try {
     const token = localStorage.getItem('token');
     if (!token) {
-      showToast('You must be logged in to update your profile image', 'error');
+      showToast(t.value('profile.mustBeLoggedIn'), 'error');
       router.push('/login');
       return;
     }
@@ -188,14 +198,14 @@ const saveProfileImage = async () => {
       selectedFileName.value = '';
       profileImagePreview.value = response.data.profileImage;
       window.dispatchEvent(new Event('profileImageUpdated'));
-      showToast('Profile image updated successfully!', 'success');
+      showToast(t.value('profile.profileImageUpdated'), 'success');
     } else {
-      showToast('Unexpected response from server', 'error');
+      showToast(t.value('profile.unexpectedResponse'), 'error');
     }
   } catch (error) {
     console.error('Error uploading image:', error);
     console.error('Error response:', error.response);
-    const errorMsg = error.response?.data?.error || error.message || 'Failed to upload image. Please try again.';
+    const errorMsg = error.response?.data?.error || error.message || t.value('profile.errorUploadingImage');
     showToast(errorMsg, 'error');
   }
 };
@@ -204,7 +214,7 @@ const deleteProfileImage = async () => {
   try {
     const token = localStorage.getItem('token');
     if (!token) {
-      showToast('You must be logged in to delete your profile image', 'error');
+      showToast(t.value('profile.mustBeLoggedIn'), 'error');
       router.push('/login');
       return;
     }
@@ -224,11 +234,11 @@ const deleteProfileImage = async () => {
     profileImage.value = null;
     selectedFileName.value = '';
     window.dispatchEvent(new Event('profileImageUpdated'));
-    showToast('Profile image deleted successfully!', 'success');
+    showToast(t.value('profile.profileImageDeleted'), 'success');
   } catch (error) {
     console.error('Error deleting image:', error);
     console.error('Error response:', error.response);
-    const errorMsg = error.response?.data?.error || error.message || 'Failed to delete image. Please try again.';
+    const errorMsg = error.response?.data?.error || error.message || t.value('profile.errorDeletingImage');
     showToast(errorMsg, 'error');
   }
 };
@@ -238,26 +248,26 @@ const validatePassword = () => {
   let isValid = true;
 
   if (!passwordForm.value.currentPassword) {
-    passwordErrors.value.currentPassword = 'Current password is required';
+    passwordErrors.value.currentPassword = t.value('profile.currentPasswordRequired');
     isValid = false;
   }
 
   if (!passwordForm.value.newPassword) {
-    passwordErrors.value.newPassword = 'New password is required';
+    passwordErrors.value.newPassword = t.value('profile.newPasswordRequired');
     isValid = false;
   } else if (passwordForm.value.newPassword.length < 6) {
-    passwordErrors.value.newPassword = 'Password must be at least 6 characters';
+    passwordErrors.value.newPassword = t.value('profile.passwordTooShort');
     isValid = false;
   } else if (passwordForm.value.currentPassword && passwordForm.value.newPassword === passwordForm.value.currentPassword) {
-    passwordErrors.value.newPassword = 'New password must be different from current password';
+    passwordErrors.value.newPassword = t.value('profile.passwordSame');
     isValid = false;
   }
 
   if (!passwordForm.value.confirmPassword) {
-    passwordErrors.value.confirmPassword = 'Please confirm your password';
+    passwordErrors.value.confirmPassword = t.value('profile.confirmPasswordRequired');
     isValid = false;
   } else if (passwordForm.value.newPassword !== passwordForm.value.confirmPassword) {
-    passwordErrors.value.confirmPassword = 'Passwords do not match';
+    passwordErrors.value.confirmPassword = t.value('profile.passwordsDontMatch');
     isValid = false;
   }
 
@@ -284,7 +294,7 @@ const handleChangePassword = async () => {
   try {
     const token = localStorage.getItem('token');
     if (!token) {
-      showToast('You must be logged in to change your password', 'error');
+      showToast(t.value('profile.mustBeLoggedIn'), 'error');
       router.push('/login');
       return;
     }
@@ -299,20 +309,20 @@ const handleChangePassword = async () => {
       }
     });
 
-    showToast('Password changed successfully!', 'success');
+    showToast(t.value('profile.passwordChanged'), 'success');
     passwordForm.value = { currentPassword: '', newPassword: '', confirmPassword: '' };
     passwordErrors.value = { currentPassword: '', newPassword: '', confirmPassword: '' };
     showChangePassword.value = false;
   } catch (error) {
     console.error('Error changing password:', error);
-    const errorMsg = error.response?.data?.error || error.message || 'Failed to change password. Please try again.';
+    const errorMsg = error.response?.data?.error || error.message || t.value('profile.errorChangingPassword');
     showToast(errorMsg, 'error');
   }
 };
 
 const handleLanguageChange = (lang) => {
+  setLanguage(lang);
   language.value = lang;
-  localStorage.setItem('language', lang);
 };
 
 const handleNotificationsToggle = () => {
@@ -323,7 +333,7 @@ const handleNotificationsToggle = () => {
 const validateDeletePassword = () => {
   deletePasswordError.value = '';
   if (!deletePassword.value) {
-    deletePasswordError.value = 'Password is required to confirm account deletion';
+    deletePasswordError.value = t.value('profile.deletePasswordRequired');
     return false;
   }
   return true;
@@ -341,7 +351,7 @@ const handleDeleteAccount = async () => {
     
     const token = localStorage.getItem('token');
     if (!token) {
-      showToast('You must be logged in to delete your account', 'error');
+      showToast(t.value('profile.mustBeLoggedIn'), 'error');
       router.push('/login');
       return;
     }
@@ -361,7 +371,7 @@ const handleDeleteAccount = async () => {
 
     console.log('Delete account response:', response.data);
 
-    showToast('Your account has been deleted successfully', 'success');
+    showToast(t.value('profile.accountDeleted'), 'success');
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     
@@ -375,15 +385,15 @@ const handleDeleteAccount = async () => {
     console.error('Error status:', error.response?.status);
     console.error('Error data:', error.response?.data);
     
-    let errorMsg = 'Failed to delete account. Please try again.';
+    let errorMsg = t.value('profile.errorDeletingAccount');
     if (error.response?.data?.error) {
       errorMsg = error.response.data.error;
     } else if (error.response?.status === 401) {
-      errorMsg = 'Authentication failed. Please log in again.';
+      errorMsg = t.value('profile.mustBeLoggedIn');
     } else if (error.response?.status === 403) {
-      errorMsg = 'Invalid password. Please try again.';
+      errorMsg = t.value('profile.invalidPassword');
     } else if (error.response?.status === 404) {
-      errorMsg = 'User not found.';
+      errorMsg = t.value('profile.userNotFound');
     } else if (error.message) {
       errorMsg = error.message;
     }
@@ -398,7 +408,7 @@ const handleDeleteAccount = async () => {
   <div class="min-h-screen p-4 md:p-8">
     <div class="max-w-4xl mx-auto">
       <h1 class="text-2xl font-semibold text-gray-900 dark:text-white mb-6">
-        Profile Settings
+        {{ t('profile.title') }}
       </h1>
 
       <div v-if="user">
@@ -429,13 +439,13 @@ const handleDeleteAccount = async () => {
                 class="text-xs text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 hover:underline flex items-center gap-1 mx-auto transition-colors"
               >
                 <Trash2 class="w-3.5 h-3.5" />
-                Delete Image
+                {{ t('profile.deleteImage') }}
               </button>
             </div>
 
             <div v-if="showImageUpload" class="w-full max-w-md mt-4 p-4 bg-green-50 dark:bg-gray-700 rounded-2xl border border-green-100 dark:border-gray-600">
               <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Select Image
+                {{ t('profile.selectImage') }}
               </label>
               <input
                 id="profile-image-input"
@@ -449,10 +459,10 @@ const handleDeleteAccount = async () => {
                   @click="triggerFileInput"
                   class="btn btn-sm btn-success text-white rounded-full no-animation hover:opacity-90 active:scale-95 transition-all text-xs"
                 >
-                  Choose File
+                  {{ t('profile.chooseFile') }}
                 </button>
                 <span class="text-xs text-gray-600 dark:text-gray-400">
-                  {{ selectedFileName || 'No file chosen' }}
+                  {{ selectedFileName || t('profile.noFileChosen') }}
                 </span>
               </div>
               <div class="flex gap-2">
@@ -461,13 +471,13 @@ const handleDeleteAccount = async () => {
                   :disabled="!profileImage"
                   class="btn btn-sm btn-success text-white rounded-full no-animation hover:opacity-90 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-xs h-8"
                 >
-                  Save Image
+                  {{ t('profile.saveImage') }}
                 </button>
                 <button
                   @click="showImageUpload = false; profileImage = null; selectedFileName = ''"
                   class="btn btn-sm btn-ghost rounded-full no-animation active:scale-95 text-xs h-8"
                 >
-                  Cancel
+                  {{ t('profile.cancel') }}
                 </button>
               </div>
             </div>
@@ -475,7 +485,7 @@ const handleDeleteAccount = async () => {
           <div>
             <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
               <Mail class="w-5 h-5 text-success" />
-              Account Information
+              {{ t('profile.accountInformation') }}
             </h3>
             <div class="space-y-3">
               <div class="flex items-center gap-3 p-4 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-gray-700 dark:to-gray-600 rounded-2xl border border-green-100 dark:border-gray-600 hover:shadow-md transition-shadow">
@@ -483,7 +493,7 @@ const handleDeleteAccount = async () => {
                   <Mail class="text-white w-5 h-5" />
                 </div>
                 <div class="flex-1">
-                  <p class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Email</p>
+                  <p class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">{{ t('profile.email') }}</p>
                   <p class="text-sm font-semibold text-gray-900 dark:text-white mt-0.5">
                     {{ user.email }}
                   </p>
@@ -496,13 +506,13 @@ const handleDeleteAccount = async () => {
             <div class="flex items-center justify-between mb-4">
               <h3 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                 <Lock class="w-5 h-5 text-success" />
-                Change Password
+                {{ t('profile.changePassword') }}
               </h3>
               <button
                 @click="toggleChangePassword"
                 class="btn btn-sm btn-success rounded-full no-animation active:scale-95 text-xs text-white"
               >
-                {{ showChangePassword ? 'Cancel' : 'Change' }}
+                {{ showChangePassword ? t('profile.cancel') : t('profile.change') }}
               </button>
             </div>
 
@@ -511,7 +521,7 @@ const handleDeleteAccount = async () => {
                 <input
                   v-model="passwordForm.currentPassword"
                   type="password"
-                  placeholder="Current Password"
+                  :placeholder="t('profile.currentPassword')"
                   class="input input-bordered w-full rounded-full bg-white text-sm focus:outline-none"
                   :class="passwordErrors.currentPassword ? 'input-error' : 'input-success'"
                 />
@@ -521,7 +531,7 @@ const handleDeleteAccount = async () => {
                 <input
                   v-model="passwordForm.newPassword"
                   type="password"
-                  placeholder="New Password"
+                  :placeholder="t('profile.newPassword')"
                   class="input input-bordered w-full rounded-full bg-white text-sm focus:outline-none"
                   :class="passwordErrors.newPassword ? 'input-error' : 'input-success'"
                 />
@@ -531,7 +541,7 @@ const handleDeleteAccount = async () => {
                 <input
                   v-model="passwordForm.confirmPassword"
                   type="password"
-                  placeholder="Confirm New Password"
+                  :placeholder="t('profile.confirmPassword')"
                   class="input input-bordered w-full rounded-full bg-white text-sm focus:outline-none"
                   :class="passwordErrors.confirmPassword ? 'input-error' : 'input-success'"
                 />
@@ -541,7 +551,7 @@ const handleDeleteAccount = async () => {
                 @click="handleChangePassword"
                 class="btn btn-success w-full text-white rounded-full no-animation hover:opacity-90 active:scale-95 transition-all shadow-md"
               >
-                Update Password
+                {{ t('profile.updatePassword') }}
               </button>
             </div>
           </div>
@@ -549,7 +559,7 @@ const handleDeleteAccount = async () => {
           <div class="border-t border-gray-200 dark:border-gray-700 pt-6">
             <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
               <Globe class="w-5 h-5 text-success" />
-              Language Preferences
+              {{ t('profile.languagePreferences') }}
             </h3>
             <div class="flex gap-3 flex-wrap">
               <button
@@ -559,7 +569,7 @@ const handleDeleteAccount = async () => {
                   language === 'en' ? 'btn-success text-white' : 'btn-outline'
                 ]"
               >
-                English
+                {{ t('common.english') }}
               </button>
               <button
                 @click="handleLanguageChange('it')"
@@ -568,7 +578,7 @@ const handleDeleteAccount = async () => {
                   language === 'it' ? 'btn-success text-white' : 'btn-outline'
                 ]"
               >
-                Italiano
+                {{ t('common.italiano') }}
               </button>
             </div>
           </div>
@@ -578,7 +588,7 @@ const handleDeleteAccount = async () => {
               <div class="flex items-center gap-2">
                 <Bell class="w-5 h-5 text-success" />
                 <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-                  Notifications
+                  {{ t('profile.notifications') }}
                 </h3>
               </div>
               <input
@@ -589,7 +599,7 @@ const handleDeleteAccount = async () => {
               />
             </div>
             <p class="text-sm text-gray-500 dark:text-gray-400 ml-7">
-              {{ notifications ? 'Notifications are enabled' : 'Notifications are disabled' }}
+              {{ notifications ? t('profile.notificationsEnabled') : t('profile.notificationsDisabled') }}
             </p>
           </div>
 
@@ -598,17 +608,17 @@ const handleDeleteAccount = async () => {
               <div>
                 <h3 class="text-lg font-semibold text-red-600 dark:text-red-400 flex items-center gap-2">
                   <Trash2 class="w-4 h-4" />
-                  Delete Account
+                  {{ t('profile.deleteAccount') }}
                 </h3>
                 <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  Once you delete your account, there is no going back. Please be certain.
+                  {{ t('profile.deleteAccountWarning') }}
                 </p>
               </div>
               <button
                 @click="showDeleteConfirm = true"
                 class="btn btn-sm btn-error rounded-full no-animation hover:opacity-90 active:scale-95 transition-all text-xs"
               >
-                Delete Account
+                {{ t('profile.deleteAccount') }}
               </button>
             </div>
           </div>
@@ -616,7 +626,7 @@ const handleDeleteAccount = async () => {
       </div>
 
       <div v-else class="bg-white dark:bg-gray-800 rounded-3xl shadow-sm p-6 md:p-8 text-center transition-colors duration-300">
-        <p class="text-gray-500 dark:text-gray-400">Loading profile...</p>
+        <p class="text-gray-500 dark:text-gray-400">{{ t('profile.loading') }}</p>
       </div>
     </div>
 
@@ -717,22 +727,22 @@ const handleDeleteAccount = async () => {
             </div>
             <div>
               <p class="text-sm font-semibold text-red-600 dark:text-red-400">
-                Confirm Account Deletion
+                {{ t('profile.confirmDeletion') }}
               </p>
               <p class="text-xs text-red-500 dark:text-red-400 mt-1">
-                Enter your password to permanently delete your account. This action cannot be undone.
+                {{ t('profile.deleteWarning') }}
               </p>
             </div>
           </div>
 
           <div>
             <label class="block text-xs font-medium text-red-600 dark:text-red-400 mb-2">
-              Password
+              {{ t('profile.currentPassword') }}
             </label>
             <input
               v-model="deletePassword"
               type="password"
-              placeholder="Your password"
+              :placeholder="t('profile.deletePasswordPlaceholder')"
               class="input input-bordered w-full rounded-full bg-white text-sm focus:outline-none"
               :class="deletePasswordError ? 'input-error' : 'input-success'"
               @input="deletePasswordError = ''"
@@ -748,14 +758,14 @@ const handleDeleteAccount = async () => {
               class="btn btn-sm btn-error rounded-full no-animation hover:opacity-90 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <span v-if="isDeletingAccount" class="loading loading-spinner loading-xs"></span>
-              <span v-else>Delete</span>
+              <span v-else>{{ t('profile.delete') }}</span>
             </button>
             <button
               @click="showDeleteConfirm = false; isDeletingAccount = false; deletePassword = ''; deletePasswordError = ''"
               :disabled="isDeletingAccount"
               class="btn btn-sm btn-ghost rounded-full no-animation active:scale-95 disabled:opacity-50"
             >
-              Cancel
+              {{ t('profile.cancel') }}
             </button>
           </div>
         </div>

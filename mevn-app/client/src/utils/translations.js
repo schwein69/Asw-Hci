@@ -1,0 +1,370 @@
+const translations = {
+  en: {
+    profile: {
+      title: "Profile Settings",
+      profileImage: "Profile Image",
+      accountInformation: "Account Information",
+      email: "Email",
+      changePassword: "Change Password",
+      currentPassword: "Current Password",
+      newPassword: "New Password",
+      confirmPassword: "Confirm New Password",
+      updatePassword: "Update Password",
+      cancel: "Cancel",
+      change: "Change",
+      languagePreferences: "Language Preferences",
+      notifications: "Notifications",
+      notificationsEnabled: "Notifications are enabled",
+      notificationsDisabled: "Notifications are disabled",
+      deleteAccount: "Delete Account",
+      deleteAccountWarning: "Once you delete your account, there is no going back. Please be certain.",
+      deleteImage: "Delete Image",
+      chooseFile: "Choose File",
+      noFileChosen: "No file chosen",
+      saveImage: "Save Image",
+      selectImage: "Select Image",
+      loading: "Loading profile...",
+      passwordRequired: "Password is required",
+      currentPasswordRequired: "Current password is required",
+      newPasswordRequired: "New password is required",
+      confirmPasswordRequired: "Please confirm your password",
+      passwordTooShort: "Password must be at least 6 characters",
+      passwordsDontMatch: "Passwords do not match",
+      passwordSame: "New password must be different from current password",
+      deletePasswordRequired: "Password is required to confirm account deletion",
+      confirmDeletion: "Confirm Account Deletion",
+      deletePasswordPlaceholder: "Your password",
+      deleteWarning: "Enter your password to permanently delete your account. This action cannot be undone.",
+      delete: "Delete",
+      profileImageUpdated: "Profile image updated successfully!",
+      profileImageDeleted: "Profile image deleted successfully!",
+      passwordChanged: "Password changed successfully!",
+      accountDeleted: "Your account has been deleted successfully",
+      selectImageFirst: "Please select an image first",
+      imageTooLarge: "Image size must be less than 5MB",
+      errorProcessingImage: "Error processing image. Please try again.",
+      errorUploadingImage: "Failed to upload image. Please try again.",
+      errorDeletingImage: "Failed to delete image. Please try again.",
+      errorChangingPassword: "Failed to change password. Please try again.",
+      errorDeletingAccount: "Failed to delete account. Please try again.",
+      mustBeLoggedIn: "You must be logged in",
+      unexpectedResponse: "Unexpected response from server",
+      invalidPassword: "Invalid password",
+      currentPasswordIncorrect: "Current password is incorrect",
+      userNotFound: "User not found"
+    },
+    nav: {
+      dashboard: "Dashboard",
+      plan: "Plan",
+      world: "World",
+      pastTrips: "Past Trips",
+      live: "Live",
+      discover: "Discover",
+      rewards: "Rewards",
+      tips: "Tips",
+      feedback: "Feedback",
+      admin: "Admin",
+      profile: "Profile",
+      logout: "Logout",
+      viewProfile: "View Profile"
+    },
+    app: {
+      travelGreen: "Travel Green • Live Clean",
+      profile: "Profile"
+    },
+    dashboard: {
+      totalCo2Saved: "Total CO₂ Saved",
+      greenMiles: "Green Miles",
+      ecoScore: "Eco Score",
+      monthlyGoal: "Monthly Goal",
+      vsLastMonth: "↑ 15% vs last month",
+      thisMonth: "✓ 1,200 this month",
+      topGlobally: "🏆 Top 10% globally",
+      progressBar: "Progress bar visualization",
+      environmentalImpact: "Your Environmental Impact",
+      trees: "7 trees",
+      treesDesc: "Equivalent to planting",
+      energy: "340 kWh",
+      energyDesc: "Energy saved equals",
+      miles: "458 miles",
+      milesDesc: "Car miles avoided"
+    },
+    world: {
+      tripSummary: "Trip Summary",
+      totalDestinations: "Total Destinations",
+      carbonFootprint: "Carbon Footprint",
+      totalCost: "Total Cost",
+      from: "From",
+      to: "To",
+      departure: "Departure",
+      arrival: "Arrival",
+      duration: "Duration",
+      platform: "Platform",
+      seat: "Seat",
+      gate: "Gate",
+      terminal: "Terminal",
+      class: "Class",
+      completed: "Completed",
+      upcoming: "Upcoming",
+      delete: "Delete",
+      expand: "Expand",
+      collapse: "Collapse"
+    },
+    pastTrips: {
+      title: "Past Trips History",
+      subtitle: "completed trips • View detailed itineraries and transport methods",
+      segments: "segments",
+      emissions: "Emissions",
+      cost: "Cost",
+      duration: "Duration",
+      status: "Status",
+      completed: "Completed",
+      route: "Route",
+      provider: "Provider",
+      code: "Code",
+      departure: "Departure",
+      arrival: "Arrival",
+      time: "Time",
+      co2: "CO₂",
+      deleteTrip: "Delete Trip"
+    },
+    live: {
+      title: "Live Trip Tracking",
+      currentLocation: "Current Location",
+      nextStop: "Next Stop",
+      estimatedArrival: "Estimated Arrival",
+      onTime: "On Time",
+      delayed: "Delayed"
+    },
+    discover: {
+      title: "Discover",
+      explore: "Explore",
+      search: "Search"
+    },
+    rewards: {
+      title: "Rewards",
+      points: "Points",
+      achievements: "Achievements",
+      redeem: "Redeem"
+    },
+    tips: {
+      title: "Eco Travel Tips",
+      readMore: "Read More",
+      showLess: "Show Less"
+    },
+    feedback: {
+      title: "Feedback",
+      submit: "Submit",
+      yourFeedback: "Your Feedback"
+    },
+    common: {
+      english: "English",
+      italiano: "Italiano",
+      save: "Save",
+      cancel: "Cancel",
+      delete: "Delete",
+      edit: "Edit",
+      close: "Close"
+    }
+  },
+  it: {
+    profile: {
+      title: "Impostazioni Profilo",
+      profileImage: "Immagine Profilo",
+      accountInformation: "Informazioni Account",
+      email: "Email",
+      changePassword: "Cambia Password",
+      currentPassword: "Password Attuale",
+      newPassword: "Nuova Password",
+      confirmPassword: "Conferma Nuova Password",
+      updatePassword: "Aggiorna Password",
+      cancel: "Annulla",
+      change: "Cambia",
+      languagePreferences: "Preferenze Lingua",
+      notifications: "Notifiche",
+      notificationsEnabled: "Le notifiche sono abilitate",
+      notificationsDisabled: "Le notifiche sono disabilitate",
+      deleteAccount: "Elimina Account",
+      deleteAccountWarning: "Una volta eliminato il tuo account, non c'è modo di tornare indietro. Sii certo.",
+      deleteImage: "Elimina Immagine",
+      chooseFile: "Scegli File",
+      noFileChosen: "Nessun file selezionato",
+      saveImage: "Salva Immagine",
+      selectImage: "Seleziona Immagine",
+      loading: "Caricamento profilo...",
+      passwordRequired: "La password è richiesta",
+      currentPasswordRequired: "La password attuale è richiesta",
+      newPasswordRequired: "La nuova password è richiesta",
+      confirmPasswordRequired: "Conferma la tua password",
+      passwordTooShort: "La password deve essere di almeno 6 caratteri",
+      passwordsDontMatch: "Le password non corrispondono",
+      passwordSame: "La nuova password deve essere diversa dalla password attuale",
+      deletePasswordRequired: "La password è richiesta per confermare l'eliminazione dell'account",
+      confirmDeletion: "Conferma Eliminazione Account",
+      deletePasswordPlaceholder: "La tua password",
+      deleteWarning: "Inserisci la tua password per eliminare definitivamente il tuo account. Questa azione non può essere annullata.",
+      delete: "Elimina",
+      profileImageUpdated: "Immagine profilo aggiornata con successo!",
+      profileImageDeleted: "Immagine profilo eliminata con successo!",
+      passwordChanged: "Password cambiata con successo!",
+      accountDeleted: "Il tuo account è stato eliminato con successo",
+      selectImageFirst: "Seleziona prima un'immagine",
+      imageTooLarge: "La dimensione dell'immagine deve essere inferiore a 5MB",
+      errorProcessingImage: "Errore nell'elaborazione dell'immagine. Riprova.",
+      errorUploadingImage: "Caricamento immagine fallito. Riprova.",
+      errorDeletingImage: "Eliminazione immagine fallita. Riprova.",
+      errorChangingPassword: "Cambio password fallito. Riprova.",
+      errorDeletingAccount: "Eliminazione account fallita. Riprova.",
+      mustBeLoggedIn: "Devi essere connesso",
+      unexpectedResponse: "Risposta inaspettata dal server",
+      invalidPassword: "Password non valida",
+      currentPasswordIncorrect: "Password attuale non corretta",
+      userNotFound: "Utente non trovato"
+    },
+    nav: {
+      dashboard: "Dashboard",
+      plan: "Piano",
+      world: "Mondo",
+      pastTrips: "Viaggi Precedenti",
+      live: "Live",
+      discover: "Scopri",
+      rewards: "Ricompense",
+      tips: "Consigli",
+      feedback: "Feedback",
+      admin: "Amministratore",
+      profile: "Profilo",
+      logout: "Esci",
+      viewProfile: "Visualizza Profilo"
+    },
+    app: {
+      travelGreen: "Viaggia Verde • Vivi Pulito",
+      profile: "Profilo"
+    },
+    dashboard: {
+      totalCo2Saved: "CO₂ Totale Risparmiato",
+      greenMiles: "Miglia Verdi",
+      ecoScore: "Punteggio Eco",
+      monthlyGoal: "Obiettivo Mensile",
+      vsLastMonth: "↑ 15% vs mese scorso",
+      thisMonth: "✓ 1.200 questo mese",
+      topGlobally: "🏆 Top 10% globalmente",
+      progressBar: "Visualizzazione barra di progresso",
+      environmentalImpact: "Il Tuo Impatto Ambientale",
+      trees: "7 alberi",
+      treesDesc: "Equivalente a piantare",
+      energy: "340 kWh",
+      energyDesc: "Energia risparmiata equivale a",
+      miles: "458 miglia",
+      milesDesc: "Miglia in auto evitate"
+    },
+    world: {
+      tripSummary: "Riepilogo Viaggio",
+      totalDestinations: "Destinazioni Totali",
+      carbonFootprint: "Impronta di Carbonio",
+      totalCost: "Costo Totale",
+      from: "Da",
+      to: "A",
+      departure: "Partenza",
+      arrival: "Arrivo",
+      duration: "Durata",
+      platform: "Binario",
+      seat: "Posto",
+      gate: "Gate",
+      terminal: "Terminale",
+      class: "Classe",
+      completed: "Completato",
+      upcoming: "In arrivo",
+      delete: "Elimina",
+      expand: "Espandi",
+      collapse: "Comprimi"
+    },
+    pastTrips: {
+      title: "Storia Viaggi Precedenti",
+      subtitle: "viaggi completati • Visualizza itinerari dettagliati e metodi di trasporto",
+      segments: "segmenti",
+      emissions: "Emissioni",
+      cost: "Costo",
+      duration: "Durata",
+      status: "Stato",
+      completed: "Completato",
+      route: "Percorso",
+      provider: "Fornitore",
+      code: "Codice",
+      departure: "Partenza",
+      arrival: "Arrivo",
+      time: "Tempo",
+      co2: "CO₂",
+      deleteTrip: "Elimina Viaggio"
+    },
+    live: {
+      title: "Tracciamento Viaggio Live",
+      currentLocation: "Posizione Attuale",
+      nextStop: "Prossima Fermata",
+      estimatedArrival: "Arrivo Stimato",
+      onTime: "In Orario",
+      delayed: "In Ritardo"
+    },
+    discover: {
+      title: "Scopri",
+      explore: "Esplora",
+      search: "Cerca"
+    },
+    rewards: {
+      title: "Ricompense",
+      points: "Punti",
+      achievements: "Risultati",
+      redeem: "Riscatta"
+    },
+    tips: {
+      title: "Consigli per Viaggi Eco",
+      readMore: "Leggi di Più",
+      showLess: "Mostra Meno"
+    },
+    feedback: {
+      title: "Feedback",
+      submit: "Invia",
+      yourFeedback: "Il Tuo Feedback"
+    },
+    common: {
+      english: "English",
+      italiano: "Italiano",
+      save: "Salva",
+      cancel: "Annulla",
+      delete: "Elimina",
+      edit: "Modifica",
+      close: "Chiudi"
+    }
+  }
+};
+
+export const getLanguage = () => {
+  return localStorage.getItem('language') || 'en';
+};
+
+export const setLanguage = (lang) => {
+  localStorage.setItem('language', lang);
+  window.dispatchEvent(new CustomEvent('languageChanged', { detail: { language: lang } }));
+};
+
+export const t = (key, lang = null) => {
+  const currentLang = lang || getLanguage();
+  const keys = key.split('.');
+  let value = translations[currentLang];
+  
+  for (const k of keys) {
+    if (value && value[k]) {
+      value = value[k];
+    } else {
+      return key;
+    }
+  }
+  
+  return value || key;
+};
+
+export default {
+  getLanguage,
+  setLanguage,
+  t,
+  translations
+};
