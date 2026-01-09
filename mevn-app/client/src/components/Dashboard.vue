@@ -5,9 +5,9 @@ import {
   Zap,
   TrendingUp,
   Car,
-  Target,
   TreePine,
   Gauge,
+  Footprints,
 } from "lucide-vue-next";
 
 import CarbonTrendChart from "./charts/CarbonTrendChart.vue";
@@ -34,10 +34,11 @@ const stats = ref([
     icon: Gauge,
   },
   {
-    label: "Monthly Savings Target",
-    value: "65 / 100 kg",
-    subtitle: "65% achieved",
-    icon: Target,
+    label: "Zero CO₂ Trips",
+    value: "14",
+    subtitle: "Walk, Bike, or EV this month",
+    icon: Footprints,
+    isZeroCount: true,
   },
 ]);
 
@@ -52,7 +53,7 @@ const environmentalImpact = ref({
 </script>
 
 <template>
-  <div class="space-y-6">
+  <div class="space-y-6 overflow-hidden">
     <div
       class="stats stats-vertical md:stats-horizontal shadow-sm border border-green-100 bg-white w-full md:grid-cols-2 lg:grid-cols-4"
     >
@@ -68,14 +69,6 @@ const environmentalImpact = ref({
         </div>
         <div class="stat-desc text-xs md:text-sm text-gray-500">
           {{ stat.subtitle }}
-        </div>
-
-        <div v-if="idx === 3" class="mt-2 flex flex-col gap-1">
-          <progress
-            class="progress progress-success w-full h-2"
-            value="65"
-            max="100"
-          ></progress>
         </div>
       </div>
     </div>
