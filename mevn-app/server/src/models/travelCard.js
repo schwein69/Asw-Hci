@@ -1,33 +1,53 @@
 import mongoose from "mongoose";
 
 const TravelCardSchema = new mongoose.Schema({
-  title: String,
-  description: String,
-  sustainabilityScore: Number,
-  itinerary: {
-    type: [
-      {
-        country: { type: String, required: true },
-        city: { type: String, required: true },
-        type: {
-          type: String,
-          enum: ["restaurant", "tourism spot", "transport"],
-          required: true,
-        },
-        price: { type: Number, required: false },
-      },
-    ],
+  creator: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
     required: true,
   },
-  creator: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-  likes: Number,
-  dislikes: Number,
+
+  title: {
+    type: String,
+    required: true,
+    trim: true,
+  },
+  description: {
+    type: String,
+    required: true,
+  },
+  images: [{ type: String }],
+
+  category: {
+    type: String,
+    enum: ["Itinerary", "Restaurant", "Accommodation", "Activity"],
+    default: "Itinerary",
+  },
+
+  // DATI GEOGRAFICI
+  // Questo permette di mostrare la card come marker sulla mappa principale
+  location: {
+    type: { type: String, enum: ["Point"], default: "Point" },
+    coordinates: { type: [Number], required: true }, // [Longitudine, Latitudine]
+    address: { type: String }, // Indirizzo
+  },
+
+  price: {
+    type: Number,
+    default: 0,
+  },
+  // Array di ID per evitare voti doppi
+  likes: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+
   status: {
     type: String,
-    enum: ["Approved", "Suspecious", "Rejected"],
-    default: "Aproved",
+    enum: ["Approved", "Suspicious", "Rejected"],
+    default: "Approved",
   },
   createdAt: { type: Date, default: Date.now },
 });
+
+// Indice Geospaziale per cercare "TravelCard vicine a me"
+TravelCardSchema.index({ location: "2dsphere" });
 
 export default mongoose.model("TravelCard", TravelCardSchema);
