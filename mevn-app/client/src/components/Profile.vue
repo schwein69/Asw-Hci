@@ -2,7 +2,7 @@
 import { ref, onMounted, computed, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import axios from 'axios';
-import { User, Mail, Lock, Globe, Bell, Trash2, Upload } from 'lucide-vue-next';
+import { User, Mail, Lock, Globe, Bell, Trash2, Upload, ArrowLeft } from 'lucide-vue-next';
 import { getLanguage, setLanguage, t as translate } from '../utils/translations.js';
 
 const router = useRouter();
@@ -32,7 +32,8 @@ const notifications = ref(localStorage.getItem('notifications') !== 'false');
 const t = computed(() => (key) => translate(key, language.value));
 
 const isAdmin = computed(() => {
-  return user.value?.role === 'Admin';
+  return user.value?.role === 'AdminGeneral' || 
+         user.value?.role === 'AdminForum';
 });
 
 const profileImage = ref(null);
@@ -64,7 +65,6 @@ onMounted(() => {
   const userData = localStorage.getItem('user');
   if (userData) {
     user.value = JSON.parse(userData);
-    console.log('User role in Profile:', user.value?.role);
     if (user.value.profileImage) {
       profileImagePreview.value = user.value.profileImage;
     }
@@ -419,7 +419,15 @@ const handleDeleteAccount = async () => {
 <template>
   <div class="min-h-screen p-4 md:p-8">
     <div class="max-w-4xl mx-auto">
-      <div class="mb-6">
+      <div class="flex items-center gap-6 mb-6">
+        <button
+          v-if="user && (user.role === 'AdminGeneral' || user.role === 'AdminForum')"
+          @click="router.push('/admin')"
+          class="flex items-center justify-center w-9 h-9 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full transition-all duration-200 shadow-sm hover:shadow-md active:scale-90 border border-emerald-500/20"
+          title="Back to Admin Panel"
+        >
+          <ArrowLeft class="w-4 h-4" />
+        </button>
         <h1 class="text-2xl font-semibold text-gray-900 dark:text-white">
           {{ t('profile.title') }}
         </h1>

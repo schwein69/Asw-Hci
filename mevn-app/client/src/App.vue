@@ -43,13 +43,14 @@ export default {
       return this.route && this.route.name === "Profile";
     },
     isAdmin() {
-      return this.user?.role === "Admin";
+      return this.user?.role === "AdminGeneral" || 
+             this.user?.role === "AdminForum";
     },
     shouldShowNavbar() {
       if (this.isAuthPage) return false;
       if (this.isAdminPage) return false;
-      if (this.isProfilePage) return false;
-      if (this.isAdmin) return false;
+      if (this.isProfilePage && this.isAdmin) return false; // Navbar hidden only for admins on profile page
+      if (this.isAdmin) return false; // Navbar hidden for admins on other pages
       return true;
     },
     shouldShowHeader() {

@@ -105,7 +105,7 @@ const handleSubmit = async () => {
       localStorage.setItem('user', JSON.stringify(response.data.user));
       
       const userRole = response.data.user.role;
-      if (userRole === 'Admin') {
+      if (userRole === 'AdminGeneral' || userRole === 'AdminForum') {
         router.push('/admin');
       } else {
         router.push('/dashboard');

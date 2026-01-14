@@ -7,15 +7,20 @@ import {
   Car,
   Footprints,
   Bike,
+  Bus,
   Save,
   Trash2,
   Clock,
   Bookmark,
-  ChevronDown,
-  ChevronUp,
   Euro,
   Leaf,
   Shuffle,
+  X,
+  Loader2,
+  Hotel,
+  Utensils,
+  ToggleLeft,
+  ToggleRight,
 } from "lucide-vue-next";
 import mapboxgl from "mapbox-gl";
 import MapboxMap from "./maps/maps.vue";
@@ -35,28 +40,41 @@ const handleLanguageChange = (event) => {
 const accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
 
 const mapboxMapRef = ref(null);
+const mapContainerRef = ref(null);
 const activeTab = ref("world");
 const mapCenter = ref([12.56, 41.87]);
 const mapZoom = ref(9);
+const userLocation = ref(null);
 
 const fromSearchBox = ref(null);
 const toSearchBox = ref(null);
+const comparisonModalOpen = ref(false);
+const targetSegmentIndex = ref(null);
+const pendingComparisonData = ref(null);
+const isLoadingComparison = ref(false);
+
+const isEcoMode = ref(false);
+const ecoCategory = ref("accommodation");
+const currentEcoRating = ref(null);
+const isCalculatingEco = ref(false);
 
 const iconMap = {
   Airplane: Plane,
   Train: Train,
   Car: Car,
+  Bus: Bus,
   Walking: Footprints,
   Cycling: Bike,
+  Hotel: Hotel,
+  Restaurant: Utensils,
 };
 
-const isRecsOpen = ref(true);
 const draggableMarkers = ref([
-  { id: "red", color: "#ef4444", label: "Red Marker" },
-  { id: "blue", color: "#3b82f6", label: "Blue Marker" },
-  { id: "green", color: "#10b981", label: "Green Marker" },
-  { id: "orange", color: "#f59e0b", label: "Orange Marker" },
-  { id: "purple", color: "#8b5cf6", label: "Purple Marker" },
+  { id: "red", color: "#ef4444", label: "Red" },
+  { id: "blue", color: "#3b82f6", label: "Blue" },
+  { id: "green", color: "#10b981", label: "Green" },
+  { id: "orange", color: "#f59e0b", label: "Orange" },
+  { id: "purple", color: "#8b5cf6", label: "Purple" },
 ]);
 
 const newSegment = ref({
@@ -71,35 +89,69 @@ const newSegment = ref({
   arrivalTime: "",
   gate: "",
   transportNumber: "",
+  ecoScore: null,
 });
 
 const savedSegments = ref([]);
 let tempMarkers = [];
 let animationFrameId = null;
+let resizeObserver = null;
 
 const searchOptions = computed(() => {
-  const base = { language: "en", limit: 5 };
+  const base = {
+    language: "en",
+    limit: 6,
+    proximity: userLocation.value
+      ? userLocation.value.join(",")
+      : mapCenter.value.join(","),
+  };
+
+  if (isEcoMode.value) {
+    if (ecoCategory.value === "accommodation") {
+      return {
+        ...base,
+        poi_category: ["hotel", "motel", "guest_house", "hostel", "campground"],
+      };
+    } else {
+      return {
+        ...base,
+        poi_category: ["restaurant", "cafe", "fast_food", "bar", "bakery"],
+      };
+    }
+  }
   if (newSegment.value.type === "Airplane")
     return { ...base, poi_category: ["airport"] };
   if (newSegment.value.type === "Train")
     return { ...base, poi_category: ["train_station"] };
+  if (newSegment.value.type === "Bus")
+    return { ...base, poi_category: ["bus_station"] };
   return { ...base, types: ["place", "locality", "poi", "address"] };
 });
 
 onMounted(() => {
   handleMyLocation();
-  window.addEventListener('languageChanged', handleLanguageChange);
+
+  if (mapContainerRef.value) {
+    resizeObserver = new ResizeObserver(() => {
+      if (mapboxMapRef.value?.map) {
+        mapboxMapRef.value.map.resize();
+      }
+    });
+    resizeObserver.observe(mapContainerRef.value);
+  }
+  window.addEventListener("languageChanged", handleLanguageChange);
 });
 
 onUnmounted(() => {
   if (animationFrameId) cancelAnimationFrame(animationFrameId);
-  window.removeEventListener('languageChanged', handleLanguageChange);
+  if (resizeObserver) resizeObserver.disconnect();
+  window.removeEventListener("languageChanged", handleLanguageChange);
 });
 
 watch(activeTab, () => {
   setTimeout(() => {
     if (mapboxMapRef.value?.map) mapboxMapRef.value.map.resize();
-  }, 550);
+  }, 300);
 });
 
 function handleMyLocation() {
@@ -107,9 +159,11 @@ function handleMyLocation() {
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const { latitude, longitude } = position.coords;
-        mapCenter.value = [longitude, latitude];
+        const coords = [longitude, latitude];
+        mapCenter.value = coords;
+        userLocation.value = coords;
         if (mapboxMapRef.value?.flyTo) {
-          mapboxMapRef.value.flyTo([longitude, latitude], 15);
+          mapboxMapRef.value.flyTo(coords, 15);
         }
       },
       (err) => console.warn("Location denied:", err)
@@ -163,14 +217,22 @@ async function onMapDrop(event) {
     console.error("Reverse geocoding failed", err);
   }
 
-  if (!newSegment.value.fromCoords) {
-    newSegment.value.fromName = placeName;
-    newSegment.value.fromCoords = finalCoords;
-    if (fromSearchBox.value) fromSearchBox.value.value = placeName;
-  } else {
+  if (isEcoMode.value) {
     newSegment.value.toName = placeName;
     newSegment.value.toCoords = finalCoords;
     if (toSearchBox.value) toSearchBox.value.value = placeName;
+    if (mapboxMapRef.value?.flyTo) mapboxMapRef.value.flyTo(finalCoords, 16);
+    await getEcoRating(placeName, ecoCategory.value);
+  } else {
+    if (!newSegment.value.fromCoords) {
+      newSegment.value.fromName = placeName;
+      newSegment.value.fromCoords = finalCoords;
+      if (fromSearchBox.value) fromSearchBox.value.value = placeName;
+    } else {
+      newSegment.value.toName = placeName;
+      newSegment.value.toCoords = finalCoords;
+      if (toSearchBox.value) toSearchBox.value.value = placeName;
+    }
   }
 }
 
@@ -179,32 +241,64 @@ function handleRetrieveFrom(e) {
   if (feature) {
     newSegment.value.fromName =
       feature.properties.name_preferred || feature.properties.name;
-    newSegment.value.fromCoords = feature.geometry.coordinates;
+    const coords = feature.geometry.coordinates;
+    newSegment.value.fromCoords = coords;
+    if (mapboxMapRef.value?.flyTo) mapboxMapRef.value.flyTo(coords, 14);
   }
 }
 
-function handleRetrieveTo(e) {
+async function handleRetrieveTo(e) {
   const feature = e.detail?.features?.[0];
   if (feature) {
-    newSegment.value.toName =
-      feature.properties.name_preferred || feature.properties.name;
-    newSegment.value.toCoords = feature.geometry.coordinates;
+    const name = feature.properties.name_preferred || feature.properties.name;
+    const coords = feature.geometry.coordinates;
+    newSegment.value.toName = name;
+    newSegment.value.toCoords = coords;
+
+    if (mapboxMapRef.value?.flyTo) {
+      mapboxMapRef.value.flyTo(coords, 16);
+    }
+    if (isEcoMode.value) {
+      await getEcoRating(name, ecoCategory.value);
+    }
   }
+}
+
+async function getEcoRating(name, category) {
+  isCalculatingEco.value = true;
+  currentEcoRating.value = null;
+  setTimeout(() => {
+    const lowerName = name.toLowerCase();
+    let score = 3;
+    if (category === "food") {
+      if (lowerName.includes("mcdonald") || lowerName.includes("burger king"))
+        score = 1;
+      else if (lowerName.includes("vegan") || lowerName.includes("farm"))
+        score = 5;
+      else if (lowerName.includes("local")) score = 4;
+    } else {
+      if (lowerName.includes("resort")) score = 2;
+      else if (lowerName.includes("b&b") || lowerName.includes("eco"))
+        score = 5;
+      else if (lowerName.includes("hotel")) score = 3;
+    }
+    currentEcoRating.value = score;
+    newSegment.value.ecoScore = score;
+    isCalculatingEco.value = false;
+  }, 800);
 }
 
 async function geminiEstimation(mode, distanceKm, fuelType) {
   try {
     const payload = { mode, distance_km: distanceKm };
     if (mode === "Car") payload.fuel_type = fuelType;
-
     const response = await axios.post(
       "http://localhost:3000/api/plan/estimate",
       payload
     );
     return response.data;
   } catch (err) {
-    console.error("Error calling Gemini estimation API:", err);
-    return { cost: "0.00", co2: "0.0" };
+    return { cost: "0.00", co2: "0.0", time: "N/A" };
   }
 }
 
@@ -229,6 +323,41 @@ async function geocodeText(searchText) {
 }
 
 async function addSegment() {
+  if (isEcoMode.value) {
+    if (!newSegment.value.toCoords || !newSegment.value.toName) {
+      alert("Please search for a place first.");
+      return;
+    }
+    const segmentId = Date.now();
+    const segment = {
+      id: segmentId,
+      from: "Trip Stop",
+      to: newSegment.value.toName,
+      fromCoords: newSegment.value.toCoords,
+      toCoords: newSegment.value.toCoords,
+      type: ecoCategory.value === "accommodation" ? "Hotel" : "Restaurant",
+      date: newSegment.value.date,
+      ecoScore: currentEcoRating.value,
+      cost: "N/A",
+      co2: "0.0",
+      time: "",
+      distance: 0,
+      markers: [...tempMarkers],
+    };
+    tempMarkers = [];
+    savedSegments.value.push(segment);
+    visualizeRoute(
+      segment.toCoords,
+      segment.toCoords,
+      segment.type,
+      segment.id
+    );
+    if (toSearchBox.value) toSearchBox.value.value = "";
+    newSegment.value.toName = "";
+    newSegment.value.ecoScore = null;
+    currentEcoRating.value = null;
+    return;
+  }
   if (
     !newSegment.value.fromCoords &&
     fromSearchBox.value &&
@@ -240,7 +369,6 @@ async function addSegment() {
       newSegment.value.fromCoords = result.coords;
     }
   }
-
   if (
     !newSegment.value.toCoords &&
     toSearchBox.value &&
@@ -252,29 +380,24 @@ async function addSegment() {
       newSegment.value.toCoords = result.coords;
     }
   }
-
   if (!newSegment.value.fromCoords || !newSegment.value.toCoords) {
     alert("Please select Start and End locations.");
     return;
   }
-
   const rawDistance = turf.distance(
     newSegment.value.fromCoords,
     newSegment.value.toCoords,
     { units: "kilometers" }
   );
   const distanceKm = parseFloat(rawDistance.toFixed(2));
-
   const geminiData = await geminiEstimation(
     newSegment.value.type,
     distanceKm,
     newSegment.value.fuelType
   );
-
   const segmentId = Date.now();
   const nextStartName = newSegment.value.toName;
   const nextStartCoords = newSegment.value.toCoords;
-
   const segment = {
     id: segmentId,
     from: newSegment.value.fromName,
@@ -292,13 +415,13 @@ async function addSegment() {
     markers: [...tempMarkers],
     cost: geminiData.cost,
     co2: geminiData.co2,
+    time: geminiData.time,
     distance: distanceKm,
     activeRoute: "fastest",
     alternatives: null,
+    ecoScore: null,
   };
-
   tempMarkers = [];
-
   savedSegments.value.push(segment);
   await visualizeRoute(
     segment.fromCoords,
@@ -306,13 +429,10 @@ async function addSegment() {
     segment.type,
     segment.id
   );
-
   newSegment.value.fromName = nextStartName;
   newSegment.value.fromCoords = nextStartCoords;
-
   if (fromSearchBox.value) fromSearchBox.value.value = nextStartName;
   if (toSearchBox.value) toSearchBox.value.value = "";
-
   newSegment.value.toName = "";
   newSegment.value.toCoords = null;
   newSegment.value.departureTime = "";
@@ -321,42 +441,53 @@ async function addSegment() {
   newSegment.value.transportNumber = "";
 }
 
-async function toggleAlternativeRoute(index) {
+async function openComparisonModal(index) {
   const segment = savedSegments.value[index];
-
-  // If we haven't generated an alternative yet, simulate one
-  if (!segment.alternatives) {
-    // Simulation: Eco route saves 15% CO2 but costs 10% more (or takes longer)
-    const baseCo2 = parseFloat(segment.co2);
-    const baseCost = parseFloat(segment.cost);
-
-    segment.alternatives = {
-      fastest: { cost: segment.cost, co2: segment.co2 },
-      eco: {
-        cost: (baseCost * 1.1).toFixed(2),
-        co2: (baseCo2 * 0.85).toFixed(1),
-      },
-    };
+  if (segment.type === "Hotel" || segment.type === "Restaurant") return;
+  targetSegmentIndex.value = index;
+  comparisonModalOpen.value = true;
+  isLoadingComparison.value = true;
+  pendingComparisonData.value = null;
+  try {
+    const response = await axios.post(
+      "http://localhost:3000/api/plan/compare",
+      { distance_km: segment.distance }
+    );
+    const allOptions = response.data;
+    const alternatives = allOptions.filter((opt) => opt.mode !== segment.type);
+    pendingComparisonData.value = alternatives;
+  } catch (err) {
+    alert("Could not load alternatives.");
+    comparisonModalOpen.value = false;
+  } finally {
+    isLoadingComparison.value = false;
   }
+}
 
-  // Toggle state
-  if (segment.activeRoute === "fastest") {
-    segment.activeRoute = "eco";
-    segment.cost = segment.alternatives.eco.cost;
-    segment.co2 = segment.alternatives.eco.co2;
-  } else {
-    segment.activeRoute = "fastest";
-    segment.cost = segment.alternatives.fastest.cost;
-    segment.co2 = segment.alternatives.fastest.co2;
-  }
+async function confirmRouteSelection(selectionData) {
+  if (targetSegmentIndex.value === null) return;
+  const segment = savedSegments.value[targetSegmentIndex.value];
+  segment.type = selectionData.mode;
+  segment.cost = selectionData.cost;
+  segment.co2 = selectionData.co2;
+  segment.time = selectionData.time;
+  segment.activeRoute = "fastest";
+  segment.alternatives = null;
+  await visualizeRoute(
+    segment.fromCoords,
+    segment.toCoords,
+    segment.type,
+    segment.id
+  );
+  comparisonModalOpen.value = false;
+  targetSegmentIndex.value = null;
+  pendingComparisonData.value = null;
 }
 
 function removeSegment(index) {
   const segmentToRemove = savedSegments.value[index];
   const nextSegment = savedSegments.value[index + 1];
-
   const map = mapboxMapRef.value?.map;
-
   if (map) {
     const routeId = `route-${segmentToRemove.id}`;
     const pointId = `point-${segmentToRemove.id}`;
@@ -365,28 +496,12 @@ function removeSegment(index) {
     if (map.getLayer(pointId)) map.removeLayer(pointId);
     if (map.getSource(pointId)) map.removeSource(pointId);
   }
-
   if (segmentToRemove.markers && segmentToRemove.markers.length > 0) {
     segmentToRemove.markers.forEach((marker) => {
-      const markerLngLat = marker.getLngLat();
-      const isShared =
-        nextSegment &&
-        areCoordsEqual(
-          [markerLngLat.lng, markerLngLat.lat],
-          nextSegment.fromCoords
-        );
-
-      if (isShared) {
-        if (!nextSegment.markers) nextSegment.markers = [];
-        nextSegment.markers.push(marker);
-      } else {
-        marker.remove();
-      }
+      marker.remove();
     });
   }
-
   savedSegments.value.splice(index, 1);
-
   if (savedSegments.value.length === 0) {
     newSegment.value.fromName = "";
     newSegment.value.fromCoords = null;
@@ -397,15 +512,44 @@ function removeSegment(index) {
 }
 
 function saveTripToDB() {
-  console.log("Saving:", savedSegments.value);
   alert("Trip Saved!");
 }
 
 async function visualizeRoute(startCoords, endCoords, type, segmentId) {
   const map = mapboxMapRef.value?.map;
   if (!map) return;
+  const routeId = `route-${segmentId}`;
+  const pointId = `point-${segmentId}`;
+  if (map.getLayer(routeId)) map.removeLayer(routeId);
+  if (map.getSource(routeId)) map.removeSource(routeId);
+  if (map.getLayer(pointId)) map.removeLayer(pointId);
+  if (map.getSource(pointId)) map.removeSource(pointId);
+  if (type === "Hotel" || type === "Restaurant") {
+    const pointData = {
+      type: "FeatureCollection",
+      features: [
+        {
+          type: "Feature",
+          geometry: { type: "Point", coordinates: endCoords },
+        },
+      ],
+    };
+    map.addSource(pointId, { type: "geojson", data: pointData });
+    map.addLayer({
+      id: pointId,
+      type: "circle",
+      source: pointId,
+      paint: {
+        "circle-radius": 8,
+        "circle-color": type === "Restaurant" ? "#f59e0b" : "#8b5cf6",
+        "circle-stroke-width": 2,
+        "circle-stroke-color": "#ffffff",
+      },
+    });
+    map.flyTo({ center: endCoords, zoom: 13 });
+    return;
+  }
   let routeGeoJSON = null;
-
   try {
     if (type === "Airplane") {
       routeGeoJSON = turf.greatCircle(startCoords, endCoords, {
@@ -415,7 +559,7 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
       let profile = "driving";
       if (type === "Walking") profile = "walking";
       if (type === "Cycling") profile = "cycling";
-
+      if (type === "Train" || type === "Bus") profile = "driving";
       const res = await fetch(
         `https://api.mapbox.com/directions/v5/mapbox/${profile}/${startCoords[0]},${startCoords[1]};${endCoords[0]},${endCoords[1]}?steps=true&geometries=geojson&access_token=${accessToken}`
       );
@@ -425,29 +569,27 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
   } catch (e) {
     routeGeoJSON = turf.lineString([startCoords, endCoords]).geometry;
   }
-
   if (!routeGeoJSON) return;
-
-  const routeId = `route-${segmentId}`;
-  const pointId = `point-${segmentId}`;
-
   map.addSource(routeId, {
     type: "geojson",
     data: { type: "Feature", geometry: routeGeoJSON },
   });
+  let lineColor = "#10b981";
+  if (type === "Airplane") lineColor = "#3b82f6";
+  if (type === "Train") lineColor = "#f97316";
+  if (type === "Bus") lineColor = "#8b5cf6"; // Purple for Bus
   map.addLayer({
     id: routeId,
     type: "line",
     source: routeId,
     layout: { "line-join": "round", "line-cap": "round" },
     paint: {
-      "line-color": type === "Airplane" ? "#3b82f6" : "#10b981",
+      "line-color": lineColor,
       "line-width": 4,
       "line-dasharray": type === "Airplane" ? [2, 2] : [1],
       "line-opacity": 0.8,
     },
   });
-
   const pointData = {
     type: "FeatureCollection",
     features: [
@@ -466,10 +608,9 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
       "circle-radius": 6,
       "circle-color": "#ffffff",
       "circle-stroke-width": 3,
-      "circle-stroke-color": type === "Airplane" ? "#3b82f6" : "#10b981",
+      "circle-stroke-color": lineColor,
     },
   });
-
   const pathFeature = { type: "Feature", geometry: routeGeoJSON };
   const lineDistance = turf.length(pathFeature);
   const duration = 10000;
@@ -494,13 +635,13 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
 </script>
 
 <template>
-  <div class="space-y-4">
+  <div class="pb-20">
     <div
-      class="flex flex-col md:flex-row justify-between items-center gap-4 bg-success rounded-2xl"
+      class="flex flex-col md:flex-row justify-between items-center gap-4 bg-success rounded-2xl my-2"
     >
       <div class="flex gap-2 items-center">
         <h2 class="text-2xl font-bold text-gray-800 tracking-tight p-2">
-          {{ t('plan.ecoTravelPlanner') }}
+          {{ t("plan.ecoTravelPlanner") }}
         </h2>
       </div>
       <div class="tabs tabs-boxed rounded-xl p-1">
@@ -510,7 +651,7 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
             'tab-active bg-white text-green-700': activeTab === 'world',
           }"
           @click="activeTab = 'world'"
-          >{{ t('plan.planTrip') }}</a
+          >{{ t("plan.planTrip") }}</a
         >
         <a
           class="tab rounded-lg"
@@ -518,344 +659,321 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
             'tab-active bg-white text-green-700': activeTab === 'city',
           }"
           @click="activeTab = 'city'"
-          >{{ t('plan.navigateCity') }}</a
+          >{{ t("plan.navigateCity") }}</a
         >
       </div>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+    <div
+      class="grid gap-5 h-auto lg:h-[85vh]"
+      :class="
+        activeTab === 'world'
+          ? 'grid-cols-1 lg:grid-cols-[24rem_1fr] lg:grid-rows-[auto_1fr]'
+          : 'grid-cols-1 lg:grid-rows-1'
+      "
+    >
       <div
         v-if="activeTab === 'world'"
-        class="lg:col-span-4 h-full flex flex-col"
+        class="lg:col-start-1 lg:row-start-1 card bg-white border border-green-100 shadow-lg rounded-2xl flex-none"
       >
-        <div
-          class="card bg-white border border-green-100 shadow-lg flex-1 overflow-visible rounded-2xl z-20"
-        >
-          <div class="card-body p-5">
-            <h3 class="font-bold text-gray-700 flex items-center gap-2 mb-2">
-              <Plus class="w-5 h-5 text-green-600" /> {{ t('plan.addTripSegment') }}
+        <div class="card-body p-5">
+          <div class="flex justify-between items-center mb-2">
+            <h3 class="font-bold text-gray-700 flex items-center gap-2">
+              <Plus class="w-5 h-5 text-green-600" />
+              {{ t("plan.addTripSegment") }}
             </h3>
-
             <div
-              class="bg-gray-50 p-4 rounded-xl space-y-3 border border-gray-100 relative"
+              class="flex items-center gap-2 cursor-pointer bg-gray-100 p-1 rounded-full"
+              @click="isEcoMode = !isEcoMode"
             >
-              <div class="space-y-1">
-                <label class="text-xs font-bold text-gray-500 uppercase"
-                  >{{ t('plan.from') }}</label
-                >
-                <div
-                  class="rounded-lg overflow-hidden border border-gray-200 bg-white"
-                >
-                  <mapbox-search-box
-                    ref="fromSearchBox"
-                    :access-token="accessToken"
-                    :options="searchOptions"
-                    :placeholder="t('plan.searchStartLocation')"
-                    @retrieve="handleRetrieveFrom"
-                  ></mapbox-search-box>
-                </div>
-              </div>
+              <span
+                class="text-[10px] font-bold uppercase pl-2"
+                :class="!isEcoMode ? 'text-green-600' : 'text-gray-400'"
+                >Travel</span
+              >
+              <component
+                :is="isEcoMode ? ToggleRight : ToggleLeft"
+                class="w-6 h-6 text-green-600 transition-all"
+              />
+              <span
+                class="text-[10px] font-bold uppercase pr-2"
+                :class="isEcoMode ? 'text-green-600' : 'text-gray-400'"
+                >Eat/Stay</span
+              >
+            </div>
+          </div>
 
-              <div class="space-y-1">
-                <label class="text-xs font-bold text-gray-500 uppercase"
-                  >{{ t('plan.to') }}</label
-                >
-                <div
-                  class="rounded-lg overflow-hidden border border-gray-200 bg-white"
-                >
-                  <mapbox-search-box
-                    ref="toSearchBox"
-                    :access-token="accessToken"
-                    :options="searchOptions"
-                    :placeholder="t('plan.searchDestination')"
-                    @retrieve="handleRetrieveTo"
-                  ></mapbox-search-box>
-                </div>
+          <div
+            class="bg-gray-50 p-4 rounded-xl space-y-3 border border-gray-100 relative"
+          >
+            <div class="space-y-1" v-if="!isEcoMode">
+              <label class="text-xs font-bold text-gray-500 uppercase">{{
+                t("plan.from")
+              }}</label>
+              <div
+                class="rounded-lg overflow-hidden border border-gray-200 bg-white"
+              >
+                <mapbox-search-box
+                  ref="fromSearchBox"
+                  :access-token="accessToken"
+                  :options="searchOptions"
+                  :placeholder="t('plan.searchStartLocation')"
+                  @retrieve="handleRetrieveFrom"
+                ></mapbox-search-box>
               </div>
-
-              <div class="grid grid-cols-2 gap-2">
-                <div>
-                  <label class="text-xs font-bold text-gray-500 uppercase"
-                    >{{ t('plan.mode') }}</label
-                  >
-                  <select
-                    v-model="newSegment.type"
-                    class="select select-sm select-bordered bg-white w-full rounded-lg mt-1"
-                  >
-                    <option value="Airplane">{{ t('plan.transportTypes.airplane') }}</option>
-                    <option value="Train">{{ t('plan.transportTypes.train') }}</option>
-                    <option value="Car">{{ t('plan.transportTypes.car') }}</option>
-                    <option value="Walking">{{ t('plan.transportTypes.walking') }}</option>
-                    <option value="Cycling">{{ t('plan.transportTypes.cycling') }}</option>
-                  </select>
+            </div>
+            <div class="space-y-1">
+              <label class="text-xs font-bold text-gray-500 uppercase">{{
+                isEcoMode ? "Find Place" : t("plan.to")
+              }}</label>
+              <div
+                class="rounded-lg overflow-hidden border border-gray-200 bg-white"
+              >
+                <mapbox-search-box
+                  ref="toSearchBox"
+                  :access-token="accessToken"
+                  :options="searchOptions"
+                  :placeholder="
+                    isEcoMode
+                      ? ecoCategory === 'accommodation'
+                        ? 'Search hotels...'
+                        : 'Search restaurants...'
+                      : t('plan.searchDestination')
+                  "
+                  @retrieve="handleRetrieveTo"
+                ></mapbox-search-box>
+              </div>
+            </div>
+            <div v-if="isEcoMode" class="grid grid-cols-2 gap-2">
+              <button
+                @click="ecoCategory = 'accommodation'"
+                class="btn btn-sm"
+                :class="
+                  ecoCategory === 'accommodation'
+                    ? 'btn-primary text-white'
+                    : 'btn-outline bg-white border-gray-200 text-gray-500'
+                "
+              >
+                <Hotel class="w-4 h-4 mr-1" /> Stay
+              </button>
+              <button
+                @click="ecoCategory = 'food'"
+                class="btn btn-sm"
+                :class="
+                  ecoCategory === 'food'
+                    ? 'btn-warning text-white'
+                    : 'btn-outline bg-white border-gray-200 text-gray-500'
+                "
+              >
+                <Utensils class="w-4 h-4 mr-1" /> Eat
+              </button>
+            </div>
+            <div
+              v-if="isEcoMode && (isCalculatingEco || currentEcoRating)"
+              class="p-3 bg-white rounded-lg border border-green-100 shadow-sm transition-all"
+            >
+              <div
+                v-if="isCalculatingEco"
+                class="flex items-center justify-center gap-2 text-gray-400 text-xs py-2"
+              >
+                <Loader2 class="w-4 h-4 animate-spin text-green-500" /> AI
+                Evaluating Eco Level...
+              </div>
+              <div v-else class="flex flex-col items-center">
+                <div
+                  class="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1"
+                >
+                  Eco Rating
                 </div>
-                <div>
-                  <label class="text-xs font-bold text-gray-500 uppercase"
-                    >{{ t('plan.date') }}</label
-                  >
-                  <input
-                    v-model="newSegment.date"
-                    type="date"
-                    class="input input-sm input-bordered bg-white w-full rounded-lg mt-1"
+                <div class="flex gap-1">
+                  <Leaf
+                    v-for="n in 5"
+                    :key="n"
+                    class="w-6 h-6"
+                    :class="
+                      n <= currentEcoRating
+                        ? 'text-green-500 fill-green-500'
+                        : 'text-gray-200'
+                    "
                   />
                 </div>
               </div>
-
-              <div
-                v-if="newSegment.type === 'Airplane'"
-                class="grid grid-cols-2 gap-2 p-2 bg-blue-50 rounded-lg border border-blue-100"
-              >
-                <div class="col-span-2 text-xs font-bold text-blue-500">
-                  {{ t('plan.flightDetails') }}
-                </div>
-                <input
-                  v-model="newSegment.transportNumber"
-                  :placeholder="t('plan.flightNumber')"
-                  class="input input-sm input-bordered w-full rounded-md"
-                />
-                <input
-                  v-model="newSegment.gate"
-                  :placeholder="t('plan.gate')"
-                  class="input input-sm input-bordered w-full rounded-md"
-                />
-                <input
-                  v-model="newSegment.departureTime"
-                  type="time"
-                  class="input input-sm input-bordered w-full rounded-md"
-                  aria-label="Departure"
-                />
-                <input
-                  v-model="newSegment.arrivalTime"
-                  type="time"
-                  class="input input-sm input-bordered w-full rounded-md"
-                  aria-label="Arrival"
-                />
-              </div>
-
-              <div
-                v-if="newSegment.type === 'Train'"
-                class="grid grid-cols-2 gap-2 p-2 bg-orange-50 rounded-lg border border-orange-100"
-              >
-                <div class="col-span-2 text-xs font-bold text-orange-500">
-                  {{ t('plan.trainDetails') }}
-                </div>
-                <input
-                  v-model="newSegment.transportNumber"
-                  :placeholder="t('plan.trainNumber')"
-                  class="input input-sm input-bordered w-full col-span-2 rounded-md"
-                />
-                <div class="text-[10px] text-gray-500 uppercase">{{ t('plan.departs') }}</div>
-                <div class="text-[10px] text-gray-500 uppercase">{{ t('plan.arrives') }}</div>
-                <input
-                  v-model="newSegment.departureTime"
-                  type="time"
-                  class="input input-sm input-bordered w-full rounded-md"
-                />
-                <input
-                  v-model="newSegment.arrivalTime"
-                  type="time"
-                  class="input input-sm input-bordered w-full rounded-md"
-                />
-              </div>
-
-              <div v-if="newSegment.type === 'Car'" class="space-y-1">
-                <label class="text-xs font-bold text-gray-500 uppercase"
-                  >{{ t('plan.fuelType') }}</label
-                >
+            </div>
+            <div v-if="!isEcoMode" class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="text-xs font-bold text-gray-500 uppercase">{{
+                  t("plan.mode")
+                }}</label>
                 <select
-                  v-model="newSegment.fuelType"
-                  class="select select-sm select-bordered bg-white w-full rounded-lg"
+                  v-model="newSegment.type"
+                  class="select select-sm select-bordered bg-white w-full rounded-lg mt-1"
                 >
-                  <option value="Gasoline">{{ t('plan.fuelTypes.gasoline') }}</option>
-                  <option value="Diesel">{{ t('plan.fuelTypes.diesel') }}</option>
-                  <option value="Electric">{{ t('plan.fuelTypes.electric') }}</option>
+                  <option value="Airplane">
+                    {{ t("plan.transportTypes.airplane") }}
+                  </option>
+                  <option value="Train">
+                    {{ t("plan.transportTypes.train") }}
+                  </option>
+                  <option value="Car">
+                    {{ t("plan.transportTypes.car") }}
+                  </option>
+                  <option value="Bus">
+                    {{ t("plan.transportTypes.bus") }}
+                  </option>
+                  <option value="Walking">
+                    {{ t("plan.transportTypes.walking") }}
+                  </option>
+                  <option value="Cycling">
+                    {{ t("plan.transportTypes.cycling") }}
+                  </option>
                 </select>
               </div>
-
-              <button
-                @click="addSegment"
-                class="btn btn-sm btn-success w-full text-white rounded-lg shadow-sm mt-2"
-              >
-                {{ t('plan.addSegment') }}
-              </button>
-            </div>
-
-            <div
-              class="mt-4 border border-green-100 rounded-xl overflow-hidden"
-            >
-              <div
-                @click="isRecsOpen = !isRecsOpen"
-                class="p-3 bg-green-50 flex justify-between items-center cursor-pointer hover:bg-green-100 transition-colors"
-              >
-                <span class="text-sm font-bold text-green-800"
-                  >{{ t('plan.dragDropMarkers') }}</span
-                >
-                <component
-                  :is="isRecsOpen ? ChevronUp : ChevronDown"
-                  class="w-4 h-4 text-green-700"
+              <div>
+                <label class="text-xs font-bold text-gray-500 uppercase">{{
+                  t("plan.date")
+                }}</label
+                ><input
+                  v-model="newSegment.date"
+                  type="date"
+                  class="input input-sm input-bordered bg-white w-full rounded-lg mt-1"
                 />
               </div>
-
-              <div v-if="isRecsOpen" class="p-4 bg-white">
-                <div class="text-xs text-gray-400 mb-2">
-                  {{ t('plan.dragPinInstruction') }}
-                </div>
-                <div class="flex gap-3 justify-between">
-                  <div
-                    v-for="marker in draggableMarkers"
-                    :key="marker.id"
-                    draggable="true"
-                    @dragstart="onDragStart($event, marker)"
-                    class="cursor-grab active:cursor-grabbing hover:scale-110 transition-transform"
-                    :title="marker.label"
-                  >
-                    <svg
-                      width="32"
-                      height="32"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      :style="{
-                        fill: marker.color,
-                        filter: 'drop-shadow(0px 2px 2px rgba(0,0,0,0.3))',
-                      }"
-                      stroke="white"
-                      stroke-width="1.5"
-                    >
-                      <path
-                        d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"
-                      ></path>
-                      <circle cx="12" cy="10" r="3" fill="white"></circle>
-                    </svg>
-                  </div>
-                </div>
-              </div>
             </div>
-
-            <div class="divider my-2 text-xs text-gray-400">{{ t('plan.yourItinerary') }}</div>
-            <div class="space-y-2 flex-1 overflow-y-auto custom-scrollbar h-48">
-              <div
-                v-if="savedSegments.length === 0"
-                class="text-center py-8 text-gray-400 text-sm italic"
-              >
-                {{ t('plan.noTripsAdded') }}
-              </div>
-              <div
-                v-for="(seg, idx) in savedSegments"
-                :key="seg.id"
-                class="flex flex-col p-3 border border-gray-100 rounded-xl hover:bg-green-50 bg-white shadow-sm"
-              >
-                <div class="flex items-center justify-between">
-                  <div class="flex items-center gap-3">
-                    <div class="text-green-600 bg-green-100 p-2 rounded-full">
-                      <component
-                        :is="iconMap[seg.type]"
-                        class="w-4 h-4"
-                        v-if="iconMap[seg.type]"
-                      />
-                      <Footprints v-else class="w-4 h-4" />
-                    </div>
-                    <div class="text-sm">
-                      <div class="font-bold text-gray-800">
-                        {{ seg.from }} <span class="text-gray-400 mx-1">➜</span>
-                        {{ seg.to }}
-                      </div>
-                      <div class="text-xs text-gray-500">
-                        {{ seg.date || t('plan.noDate') }}
-                        <span v-if="seg.type === 'Car' && seg.fuelType"
-                          >({{ seg.fuelType }})</span
-                        >
-                        <span class="font-bold text-green-700 ml-1"
-                          >• {{ seg.distance }} km</span
-                        >
-                      </div>
-                    </div>
-                  </div>
-                  <button
-                    @click="removeSegment(idx)"
-                    class="btn btn-ghost btn-xs text-gray-400 hover:text-red-500"
-                  >
-                    <Trash2 class="w-4 h-4" />
-                  </button>
-                </div>
-
-                <div
-                  v-if="seg.type === 'Airplane' || seg.type === 'Train'"
-                  class="mt-2 ml-12 text-xs text-gray-600 grid grid-cols-2 gap-x-2 bg-gray-50 p-1.5 rounded"
-                >
-                  <div v-if="seg.transportNumber">
-                    <b>{{ t('plan.labels.number') }}</b> {{ seg.transportNumber }}
-                  </div>
-                  <div v-if="seg.gate"><b>{{ t('plan.labels.gate') }}</b> {{ seg.gate }}</div>
-                  <div v-if="seg.departureTime">
-                    <b>{{ t('plan.labels.dep') }}</b> {{ seg.departureTime }}
-                  </div>
-                  <div v-if="seg.arrivalTime">
-                    <b>{{ t('plan.labels.arr') }}</b> {{ seg.arrivalTime }}
-                  </div>
-                </div>
-
-                <div class="flex items-center justify-between mt-2 ml-12">
-                  <div class="flex gap-2">
-                    <div
-                      class="flex items-center text-xs font-medium bg-gray-100 px-2 py-1 rounded"
-                    >
-                      <Euro class="w-3 h-3 mr-1 text-gray-500" />
-                      {{ seg.cost || "0.00" }}
-                    </div>
-                    <div
-                      class="flex items-center text-xs font-medium bg-green-100 px-2 py-1 rounded"
-                      :class="
-                        seg.activeRoute === 'eco'
-                          ? 'text-green-800 ring-1 ring-green-500'
-                          : 'text-green-700'
-                      "
-                    >
-                      <Leaf class="w-3 h-3 mr-1" />
-                      {{ seg.co2 || "0.0" }} kg
-                    </div>
-                  </div>
-
-                  <button
-                    @click="toggleAlternativeRoute(idx)"
-                    class="btn btn-xs rounded-full gap-1 border-none shadow-sm"
-                    :class="
-                      seg.activeRoute === 'eco'
-                        ? 'bg-green-600 text-white hover:bg-green-700'
-                        : 'bg-white text-gray-500 hover:bg-gray-100 border border-gray-200'
-                    "
-                    :title="t('plan.findEcoAlternative')"
-                  >
-                    <Shuffle class="w-3 h-3" />
-                    {{ seg.activeRoute === "eco" ? t('plan.ecoMode') : t('plan.alt') }}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="p-4 border-t bg-gray-50/80 backdrop-blur">
-            <button
-              @click="saveTripToDB"
-              class="btn btn-success w-full text-white gap-2 rounded-xl shadow-md"
+            <div
+              v-if="!isEcoMode && newSegment.type === 'Airplane'"
+              class="grid grid-cols-2 gap-2 p-2 bg-blue-50 rounded-lg border border-blue-100"
             >
-              <Save class="w-4 h-4" /> {{ t('plan.saveFullTrip') }}
+              <input
+                v-model="newSegment.transportNumber"
+                :placeholder="t('plan.flightDetails')"
+                class="input input-sm input-bordered w-full rounded-md"
+              />
+              <input
+                v-model="newSegment.gate"
+                :placeholder="t('plan.gate')"
+                class="input input-sm input-bordered w-full rounded-md"
+              />
+              <input
+                v-model="newSegment.departureTime"
+                type="time"
+                class="input input-sm input-bordered w-full rounded-md"
+              />
+              <input
+                v-model="newSegment.arrivalTime"
+                type="time"
+                class="input input-sm input-bordered w-full rounded-md"
+              />
+            </div>
+            <div
+              v-if="
+                !isEcoMode &&
+                (newSegment.type === 'Train' || newSegment.type === 'Bus')
+              "
+              class="grid grid-cols-2 gap-2 p-2 rounded-lg"
+              :class="
+                newSegment.type === 'Train'
+                  ? 'bg-orange-50 border border-orange-100'
+                  : 'bg-purple-50 border border-purple-100'
+              "
+            >
+              <input
+                v-model="newSegment.transportNumber"
+                :placeholder="newSegment.type === 'Train' ? 'Train #' : 'Bus #'"
+                class="input input-sm input-bordered w-full col-span-2 rounded-md"
+              />
+              <input
+                v-model="newSegment.departureTime"
+                type="time"
+                class="input input-sm input-bordered w-full rounded-md"
+              />
+              <input
+                v-model="newSegment.arrivalTime"
+                type="time"
+                class="input input-sm input-bordered w-full rounded-md"
+              />
+            </div>
+            <div
+              v-if="!isEcoMode && newSegment.type === 'Car'"
+              class="space-y-1"
+            >
+              <label class="text-xs font-bold text-gray-500 uppercase"
+                >Fuel Type</label
+              >
+              <select
+                v-model="newSegment.fuelType"
+                class="select select-sm select-bordered bg-white w-full rounded-lg"
+              >
+                <option>Gasoline</option>
+                <option>Diesel</option>
+                <option>Electric</option>
+              </select>
+            </div>
+            <div class="mt-2 pt-2 border-t border-gray-200">
+              <div class="text-[10px] text-gray-400 font-bold mb-2 uppercase">
+                Drag Markers to Map
+              </div>
+              <div class="flex gap-4 overflow-x-auto pb-1">
+                <div
+                  v-for="marker in draggableMarkers"
+                  :key="marker.id"
+                  draggable="true"
+                  @dragstart="onDragStart($event, marker)"
+                  class="cursor-grab active:cursor-grabbing hover:scale-110 transition-transform p-1 border rounded bg-gray-50 shrink-0"
+                >
+                  <svg
+                    width="28"
+                    height="28"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    :style="{
+                      fill: marker.color,
+                      filter: 'drop-shadow(0px 1px 2px rgba(0,0,0,0.2))',
+                    }"
+                    stroke="white"
+                    stroke-width="1.5"
+                  >
+                    <path
+                      d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"
+                    ></path>
+                    <circle cx="12" cy="10" r="3" fill="white"></circle>
+                  </svg>
+                </div>
+              </div>
+            </div>
+            <button
+              @click="addSegment"
+              class="btn btn-sm w-full text-white rounded-lg shadow-sm mt-2"
+              :class="isEcoMode ? 'btn-primary' : 'btn-success'"
+            >
+              {{ isEcoMode ? "Add Stop to Itinerary" : "Add Segment" }}
             </button>
           </div>
         </div>
       </div>
 
       <div
-        :class="activeTab === 'world' ? 'lg:col-span-8' : 'lg:col-span-12'"
-        class="h-full transition-all duration-500 ease-in-out"
+        ref="mapContainerRef"
+        class="relative rounded-3xl overflow-hidden shadow-xl border border-green-100"
+        :class="
+          activeTab === 'world'
+            ? 'lg:col-start-2 lg:row-start-1 lg:row-span-2 h-[50vh] lg:h-full'
+            : 'lg:col-start-1 lg:row-start-1 lg:col-span-1 h-[65vh] lg:h-full'
+        "
       >
         <div
-          class="card bg-white border border-green-100 shadow-xl overflow-hidden h-full relative rounded-3xl"
+          class="absolute inset-0"
           :class="{ 'hide-directions': activeTab === 'world' }"
           @dragover.prevent
           @drop="onMapDrop"
         >
-          <MapboxMap ref="mapboxMapRef" :center="mapCenter" :zoom="mapZoom" />
+          <MapboxMap
+            ref="mapboxMapRef"
+            :center="mapCenter"
+            :zoom="mapZoom"
+            class="w-full h-full"
+          />
           <div
-            class="absolute top-4 left-1/2 -translate-x-1/2 z-10 pointer-events-none"
+            class="absolute top-4 left-1/2 -translate-x-1/2 pointer-events-none"
           >
             <div
               class="badge badge-lg gap-2 shadow-lg backdrop-blur-md border-white/20"
@@ -866,24 +984,212 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
               "
             >
               {{
-                activeTab === "world" ? `🌍 ${t('plan.worldView')}` : `🏙️ ${t('plan.navigationMode')}`
+                activeTab === "world" ? "🌍 World View" : "🏙️ Navigation Mode"
               }}
             </div>
           </div>
           <div
             v-if="activeTab === 'city'"
-            class="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex gap-2"
+            class="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-2"
           >
             <button
-              class="btn btn-sm glass text-gray-800 gap-2 rounded-full shadow-lg hover:text-green-700"
+              class="btn btn-sm glass text-gray-800 gap-2 rounded-full shadow-lg"
             >
               <Clock class="w-4 h-4" /> Recent
             </button>
             <button
-              class="btn btn-sm glass text-gray-800 gap-2 rounded-full shadow-lg hover:text-green-700"
+              class="btn btn-sm glass text-gray-800 gap-2 rounded-full shadow-lg"
             >
-              <Bookmark class="w-4 h-4" /> {{ t('plan.saved') }}
+              <Bookmark class="w-4 h-4" /> Saved
             </button>
+          </div>
+        </div>
+      </div>
+
+      <div
+        v-if="activeTab === 'world'"
+        class="lg:col-start-1 lg:row-start-2 card bg-white border border-green-100 shadow-lg flex flex-col min-h-0 rounded-2xl"
+      >
+        <div class="card-body p-4 lg:p-5 overflow-y-auto custom-scrollbar">
+          <div class="divider my-0 text-xs text-gray-400 mb-4">
+            YOUR ITINERARY
+          </div>
+          <div class="space-y-3">
+            <div
+              v-if="savedSegments.length === 0"
+              class="text-center py-8 text-gray-400 text-sm italic"
+            >
+              No trips added yet.
+            </div>
+            <div
+              v-for="(seg, idx) in savedSegments"
+              :key="seg.id"
+              class="flex flex-col p-3 border border-gray-100 rounded-xl hover:bg-green-50 bg-white shadow-sm"
+            >
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <div class="text-green-600 bg-green-100 p-2 rounded-full">
+                    <component
+                      :is="iconMap[seg.type]"
+                      class="w-4 h-4"
+                      v-if="iconMap[seg.type]"
+                    />
+                  </div>
+                  <div class="text-sm">
+                    <div
+                      v-if="seg.type !== 'Hotel' && seg.type !== 'Restaurant'"
+                      class="font-bold text-gray-800"
+                    >
+                      {{ seg.from }} <span class="text-gray-400 mx-1">➜</span>
+                      {{ seg.to }}
+                    </div>
+                    <div v-else class="font-bold text-gray-800">
+                      {{ seg.to }}
+                    </div>
+                    <div class="text-xs text-gray-500">
+                      {{ seg.date }}
+                      <span
+                        v-if="seg.distance"
+                        class="font-bold text-green-700 ml-1"
+                        >• {{ seg.distance }} km</span
+                      >
+                      <span
+                        v-if="seg.time"
+                        class="mt-1 text-gray-400 flex items-center"
+                      >
+                        <Clock class="w-3 h-3 mr-1" /> {{ seg.time }}
+                      </span>
+                      <span v-if="seg.ecoScore" class="flex gap-0.5 mt-1"
+                        ><Leaf
+                          v-for="n in 5"
+                          :key="n"
+                          class="w-3 h-3"
+                          :class="
+                            n <= seg.ecoScore
+                              ? 'text-green-500 fill-green-500'
+                              : 'text-gray-200'
+                          "
+                      /></span>
+                    </div>
+                  </div>
+                </div>
+                <button
+                  @click="removeSegment(idx)"
+                  class="btn btn-ghost btn-xs text-gray-400 hover:text-red-500"
+                >
+                  <Trash2 class="w-4 h-4" />
+                </button>
+              </div>
+
+              <div
+                v-if="seg.type !== 'Hotel' && seg.type !== 'Restaurant'"
+                class="flex items-center justify-between mt-2 ml-12"
+              >
+                <div class="flex gap-2">
+                  <div
+                    class="flex items-center text-xs font-medium bg-gray-100 px-2 py-1 rounded"
+                  >
+                    <Euro class="w-3 h-3 mr-1 text-gray-500" /> {{ seg.cost }}
+                  </div>
+                  <div
+                    class="flex items-center text-xs font-medium bg-green-100 px-2 py-1 rounded text-green-700"
+                  >
+                    <Leaf class="w-3 h-3 mr-1" /> {{ seg.co2 }} kg
+                  </div>
+                </div>
+                <button
+                  @click="openComparisonModal(idx)"
+                  class="btn btn-xs rounded-full gap-1 border border-gray-200 bg-white text-gray-500 shadow-sm"
+                >
+                  <Shuffle class="w-3 h-3" /> Compare
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="p-4 border-t bg-gray-50/80 backdrop-blur">
+          <button
+            @click="saveTripToDB"
+            class="btn btn-success w-full text-white gap-2 rounded-xl shadow-md"
+          >
+            <Save class="w-4 h-4" /> Save Full Trip
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div
+      v-if="comparisonModalOpen"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+    >
+      <div
+        class="card bg-white w-full max-w-lg shadow-2xl overflow-hidden rounded-2xl"
+      >
+        <div
+          class="flex justify-between items-center p-4 border-b border-gray-100"
+        >
+          <h3 class="font-bold text-lg text-gray-800">Alternative Modes</h3>
+          <button
+            @click="comparisonModalOpen = false"
+            class="btn btn-ghost btn-circle btn-sm"
+          >
+            <X class="w-5 h-5" />
+          </button>
+        </div>
+        <div class="card-body p-4 bg-gray-50 min-h-[150px]">
+          <div
+            v-if="isLoadingComparison"
+            class="flex flex-col items-center justify-center h-full py-8 text-gray-400"
+          >
+            <Loader2 class="w-8 h-8 animate-spin mb-2 text-green-600" /><span
+              class="text-sm"
+              >Calculating alternatives...</span
+            >
+          </div>
+          <div v-else>
+            <div
+              v-if="
+                !pendingComparisonData || pendingComparisonData.length === 0
+              "
+              class="text-center text-gray-400 text-sm py-4"
+            >
+              No alternatives found.
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+              <div
+                v-for="option in pendingComparisonData"
+                :key="option.mode"
+                class="flex flex-col bg-white p-3 rounded-xl border-2 border-transparent hover:border-green-400 cursor-pointer transition-all shadow-sm group"
+                @click="confirmRouteSelection(option)"
+              >
+                <div class="flex items-center justify-between mb-2">
+                  <div
+                    class="flex items-center gap-2 text-xs font-bold text-gray-500 uppercase group-hover:text-green-600"
+                  >
+                    <component :is="iconMap[option.mode]" class="w-4 h-4" />
+                    {{ option.mode }}
+                  </div>
+                  <div
+                    class="text-[10px] font-bold bg-gray-100 px-1.5 py-0.5 rounded text-gray-500"
+                  >
+                    <Clock class="w-3 h-3 inline mr-0.5" /> {{ option.time }}
+                  </div>
+                </div>
+                <div class="text-2xl font-bold text-gray-800">
+                  €{{ option.cost }}
+                </div>
+                <div class="text-sm font-medium text-gray-500 mt-1">
+                  {{ option.co2 }} kg CO2
+                </div>
+                <div class="mt-3">
+                  <button
+                    class="btn btn-sm btn-outline group-hover:btn-success group-hover:text-white w-full rounded-lg"
+                  >
+                    Switch to {{ option.mode }}
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
