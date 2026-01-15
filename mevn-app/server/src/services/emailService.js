@@ -34,7 +34,7 @@ export const sendEmail = async ({ to, subject, html, text }) => {
     }
 
     const senderEmail = process.env.EMAIL_FROM || process.env.EMAIL_USER;
-    const displayName = process.env.EMAIL_DISPLAY_NAME || "EcoVoyage noreply";
+    const displayName = process.env.EMAIL_DISPLAY_NAME || "EcoGo noreply";
     
     const mailOptions = {
       from: `"${displayName}" <${senderEmail}>`,
@@ -59,7 +59,7 @@ export const sendPasswordResetEmail = async (email, resetToken) => {
   
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-      <h2 style="color: #10b981;">EcoVoyage - Password Reset</h2>
+      <h2 style="color: #10b981;">EcoGo - Password Reset</h2>
       <p>Hello,</p>
       <p>To reset your password, click the button below:</p>
       <div style="text-align: center; margin: 30px 0;">
@@ -77,7 +77,7 @@ export const sendPasswordResetEmail = async (email, resetToken) => {
   `;
 
   const text = `
-EcoVoyage - Password Reset
+EcoGo - Password Reset
 
 Hello,
 
@@ -90,7 +90,7 @@ This link will expire in 1 hour. If you didn't request this, please ignore this 
 
   return await sendEmail({
     to: email,
-    subject: "EcoVoyage - Password Reset Request",
+    subject: "EcoGo - Password Reset Request",
     html,
     text,
   });
