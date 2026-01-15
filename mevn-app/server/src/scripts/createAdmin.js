@@ -47,7 +47,7 @@ async function createAdmin() {
       username: ADMIN_USERNAME,
       email: ADMIN_EMAIL,
       password: hashedPassword,
-      role: "Admin"
+      role: "AdminGeneral"
     });
 
     await newAdmin.save();
