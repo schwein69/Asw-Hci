@@ -26,6 +26,7 @@ export default {
   data() {
     return {
       language: getLanguage(),
+      currentUserRole: null,
       // Stats Data
       stats: [
         { labelKey: "admin.totalUsers", value: "1247" },
@@ -35,7 +36,7 @@ export default {
       ],
 
       // Tab State
-      activeTab: "forum", // Set to 'forum' to see changes immediately
+      activeTab: "users",
 
       // Settings Data
       platformName: "EcoVoyage",
@@ -120,15 +121,34 @@ export default {
     t() {
       return (key) => translate(key, this.language);
     },
+    isForumAdmin() {
+      return this.currentUserRole === "AdminForum";
+    },
   },
   mounted() {
     this.language = getLanguage();
     window.addEventListener('languageChanged', this.handleLanguageChange);
+    this.setCurrentUserRole();
+    if (this.isForumAdmin) {
+      this.activeTab = "forum";
+    }
   },
   beforeUnmount() {
     window.removeEventListener('languageChanged', this.handleLanguageChange);
   },
   methods: {
+    setCurrentUserRole() {
+      try {
+        const storedUser = localStorage.getItem("user");
+        if (storedUser) {
+          const parsedUser = JSON.parse(storedUser);
+          this.currentUserRole = parsedUser?.role || null;
+        }
+      } catch (error) {
+        console.error("Failed to parse user from localStorage:", error);
+        this.currentUserRole = null;
+      }
+    },
     handleLanguageChange(event) {
       this.language = event.detail.language;
     },
@@ -195,14 +215,15 @@ export default {
     <div
       class="bg-white rounded-xl p-1 border border-gray-100 shadow-sm flex overflow-x-auto"
     >
-      <button
-        @click="activeTab = 'forum'"
-        class="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-sm font-medium transition-colors"
-        :class="
-          activeTab === 'forum'
-            ? 'bg-emerald-50 text-emerald-700 font-bold'
-            : 'text-gray-600 hover:bg-gray-50'
-        "
+        <button
+          v-if="isForumAdmin"
+          @click="activeTab = 'forum'"
+          class="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-sm font-medium transition-colors"
+          :class="
+            activeTab === 'forum'
+              ? 'bg-emerald-50 text-emerald-700 font-bold'
+              : 'text-gray-600 hover:bg-gray-50'
+          "
         >
           <MessageCircle class="w-4 h-4" />
           {{ t('admin.forumModeration') }}
@@ -355,7 +376,7 @@ export default {
     </div>
 
     <div
-      v-if="activeTab === 'forum'"
+      v-if="isForumAdmin && activeTab === 'forum'"
       class="bg-white p-6 rounded-2xl border border-green-200 shadow-sm"
     >
       <div class="mb-6">
