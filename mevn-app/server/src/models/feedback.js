@@ -8,7 +8,7 @@ const FeedbackSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ["Bug", "Suggestion", "Other", "Content Report"],
+    enum: ["Bug", "Suggestion", "Content Report"],
     required: true,
   },
 

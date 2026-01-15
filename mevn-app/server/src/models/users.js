@@ -1,7 +1,6 @@
 import mongoose from "mongoose";
 
 const UserSchema = new mongoose.Schema({
-  // Profilo Utente
   username: {
     type: String,
     required: true,
@@ -27,21 +26,39 @@ const UserSchema = new mongoose.Schema({
 
   profileImage: { type: String },
 
-  // Gamification & Statistiche Eco
+  // --- APP PREFERENCES  ---
+  preferences: {
+    language: {
+      type: String,
+      enum: ["en", "it"],
+      default: "en",
+    },
+    theme: {
+      type: String,
+      enum: ["light", "dark"],
+      default: "light",
+    },
+    notificationsEnabled: {
+      type: Boolean,
+      default: true,
+    },
+  },
+
+  // --- GAMIFICATION & ECO STATS ---
   ecoLevel: { type: Number, default: 1 },
   ecoPoints: { type: Number, default: 0 },
-  totalCo2Saved: { type: Number, default: 0 }, // In base al calcolo dei viaggi pianificati rispetto a viaggi medi in auto/aereo
-  badges: [{ type: String }], // Array di badge ottenuti
+  totalCo2Saved: { type: Number, default: 0 },
+  badges: [{ type: String }],
 
-  // Relazioni
-  travelCards: [{ type: mongoose.Schema.Types.ObjectId, ref: "TravelCard" }], // I post creati dall'utente
-  feedbacks: [{ type: mongoose.Schema.Types.ObjectId, ref: "Feedback" }], // I feedback inviati
-  savedTrips: [{ type: mongoose.Schema.Types.ObjectId, ref: "Trip" }], // Viaggi salvati dall'utente
+  // --- RELATIONS ---
+  travelCards: [{ type: mongoose.Schema.Types.ObjectId, ref: "TravelCard" }],
+  feedbacks: [{ type: mongoose.Schema.Types.ObjectId, ref: "Feedback" }],
+  savedTrips: [{ type: mongoose.Schema.Types.ObjectId, ref: "Trip" }],
   savedDiscoveries: [
     { type: mongoose.Schema.Types.ObjectId, ref: "TravelCard" },
-  ], // Salvare TravelCard interessanti di altri utenti
+  ],
 
-  // Auth & System
+  // --- AUTH SYSTEM ---
   resetToken: { type: String },
   resetTokenExpiry: { type: Date },
   createdAt: { type: Date, default: Date.now },
