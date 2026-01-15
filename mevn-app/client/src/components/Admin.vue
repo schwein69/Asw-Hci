@@ -26,6 +26,7 @@ export default {
   data() {
     return {
       language: getLanguage(),
+      currentUserRole: null,
       // Stats Data
       stats: [
         { labelKey: "admin.totalUsers", value: "1247" },
@@ -35,10 +36,10 @@ export default {
       ],
 
       // Tab State
-      activeTab: "forum", // Set to 'forum' to see changes immediately
+      activeTab: "users",
 
       // Settings Data
-      platformName: "EcoVoyage",
+      platformName: "EcoGo",
       ecoScoreThreshold: 70,
       weatherSensitivity: 3,
       maintenanceMessage: "",
@@ -120,15 +121,37 @@ export default {
     t() {
       return (key) => translate(key, this.language);
     },
+    isForumAdmin() {
+      return this.currentUserRole === "AdminForum";
+    },
+    isGeneralAdmin() {
+      return this.currentUserRole === "AdminGeneral";
+    },
   },
   mounted() {
     this.language = getLanguage();
     window.addEventListener('languageChanged', this.handleLanguageChange);
+    this.setCurrentUserRole();
+    if (this.isForumAdmin) {
+      this.activeTab = "forum";
+    }
   },
   beforeUnmount() {
     window.removeEventListener('languageChanged', this.handleLanguageChange);
   },
   methods: {
+    setCurrentUserRole() {
+      try {
+        const storedUser = localStorage.getItem("user");
+        if (storedUser) {
+          const parsedUser = JSON.parse(storedUser);
+          this.currentUserRole = parsedUser?.role || null;
+        }
+      } catch (error) {
+        console.error("Failed to parse user from localStorage:", error);
+        this.currentUserRole = null;
+      }
+    },
     handleLanguageChange(event) {
       this.language = event.detail.language;
     },
@@ -176,9 +199,7 @@ export default {
         <Shield class="w-6 h-6" />
         <h2 class="text-xl font-bold">{{ t('admin.adminPanel') }}</h2>
       </div>
-      <p class="text-emerald-100 text-sm opacity-90">
-        {{ t('admin.generalAdministratorAccess') }}
-      </p>
+      <p class="text-emerald-100 text-sm opacity-90"></p>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -195,20 +216,22 @@ export default {
     <div
       class="bg-white rounded-xl p-1 border border-gray-100 shadow-sm flex overflow-x-auto"
     >
-      <button
-        @click="activeTab = 'forum'"
-        class="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-sm font-medium transition-colors"
-        :class="
-          activeTab === 'forum'
-            ? 'bg-emerald-50 text-emerald-700 font-bold'
-            : 'text-gray-600 hover:bg-gray-50'
-        "
+        <button
+          v-if="isForumAdmin"
+          @click="activeTab = 'forum'"
+          class="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-sm font-medium transition-colors"
+          :class="
+            activeTab === 'forum'
+              ? 'bg-emerald-50 text-emerald-700 font-bold'
+              : 'text-gray-600 hover:bg-gray-50'
+          "
         >
           <MessageCircle class="w-4 h-4" />
           {{ t('admin.forumModeration') }}
         </button>
 
         <button
+          v-if="isGeneralAdmin"
           @click="activeTab = 'users'"
           class="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-sm font-medium transition-colors"
           :class="
@@ -222,6 +245,7 @@ export default {
         </button>
 
         <button
+          v-if="isGeneralAdmin"
           @click="activeTab = 'settings'"
           class="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-sm font-medium transition-colors"
           :class="
@@ -236,7 +260,7 @@ export default {
     </div>
 
     <div
-      v-if="activeTab === 'settings'"
+      v-if="isGeneralAdmin && activeTab === 'settings'"
       class="bg-white p-6 rounded-2xl border border-green-200 shadow-sm"
     >
       <div class="mb-6">
@@ -295,7 +319,7 @@ export default {
     </div>
 
     <div
-      v-if="activeTab === 'users'"
+      v-if="isGeneralAdmin && activeTab === 'users'"
       class="bg-white p-6 rounded-2xl border border-green-200 shadow-sm"
     >
       <div class="mb-6">
@@ -355,7 +379,7 @@ export default {
     </div>
 
     <div
-      v-if="activeTab === 'forum'"
+      v-if="isForumAdmin && activeTab === 'forum'"
       class="bg-white p-6 rounded-2xl border border-green-200 shadow-sm"
     >
       <div class="mb-6">

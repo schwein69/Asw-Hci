@@ -26,6 +26,7 @@ const ItinerarySegmentSchema = new mongoose.Schema({
   // Dettagli specifici (opzionali)
   transportNumber: { type: String, trim: true },
   gate: { type: String, trim: true },
+  arrivalGate: { type: String, trim: true },
   seatNumber: { type: String, trim: true },
   class: { type: String, trim: true },
 
@@ -56,9 +57,6 @@ const ItinerarySegmentSchema = new mongoose.Schema({
     address: { type: String },
   },
 
-  // DATE E ORARI (Modificati: NON più obbligatori per supportare walking/car)
-  // Per Aereo/Treno: Li compilerai.
-  // Per Camminata/Auto: Potresti avere solo la data generica o nulla se è una tappa intermedia.
   startTime: { type: Date },
   endTime: { type: Date },
 
@@ -78,7 +76,6 @@ const TripSchema = new mongoose.Schema({
     required: true,
     trim: true,
   },
-  description: { type: String },
 
   // STATO
   status: {

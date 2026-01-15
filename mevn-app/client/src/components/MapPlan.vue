@@ -11,7 +11,6 @@ import {
   Save,
   Trash2,
   Clock,
-  Bookmark,
   Euro,
   Leaf,
   Shuffle,
@@ -21,6 +20,10 @@ import {
   Utensils,
   ToggleLeft,
   ToggleRight,
+  Armchair,
+  DoorOpen,
+  Ticket,
+  Edit,
 } from "lucide-vue-next";
 import mapboxgl from "mapbox-gl";
 import MapboxMap from "./maps/maps.vue";
@@ -29,6 +32,8 @@ import axios from "axios";
 import "@mapbox/search-js-web";
 import { getLanguage, t as translate } from "../utils/translations.js";
 import { useTripStore } from "../data/tripStore";
+import EditTripModal from "./template/EditTripModal.vue";
+import ComparisonModal from "./template/ComparisonModal.vue";
 
 const tripStore = useTripStore();
 
@@ -80,6 +85,7 @@ const draggableMarkers = ref([
   { id: "purple", color: "#8b5cf6", label: "Purple" },
 ]);
 
+// --- AGGIORNATO: Aggiunti nuovi campi allo stato ---
 const newSegment = ref({
   fromName: "",
   fromCoords: null,
@@ -90,7 +96,10 @@ const newSegment = ref({
   date: "",
   departureTime: "",
   arrivalTime: "",
-  gate: "",
+  gate: "", // Partenza
+  arrivalGate: "", // Arrivo (Nuovo)
+  seat: "", // Posto (Nuovo)
+  travelClass: "", // Classe (Nuovo)
   transportNumber: "",
   ecoScore: null,
 });
@@ -139,12 +148,10 @@ onMounted(async () => {
     tripStore.currentTrip.routes &&
     tripStore.currentTrip.routes.length > 0
   ) {
-    // Cloniamo i dati per evitare mutazioni dirette indesiderate
     savedSegments.value = JSON.parse(
       JSON.stringify(tripStore.currentTrip.routes)
     );
 
-    // Impostiamo l'ultimo punto come punto di partenza per il prossimo segmento
     const lastSeg = savedSegments.value[savedSegments.value.length - 1];
     if (lastSeg && lastSeg.toCoords) {
       mapCenter.value = lastSeg.toCoords;
@@ -188,7 +195,6 @@ watch(activeTab, () => {
 function waitForMap() {
   return new Promise((resolve) => {
     const check = () => {
-      // Controllo se mapboxMapRef esiste e se l'istanza .map è inizializzata
       if (
         mapboxMapRef.value &&
         mapboxMapRef.value.map &&
@@ -196,7 +202,7 @@ function waitForMap() {
       ) {
         resolve();
       } else {
-        setTimeout(check, 100); // Riprova ogni 100ms
+        setTimeout(check, 100);
       }
     };
     check();
@@ -312,7 +318,7 @@ async function handleRetrieveTo(e) {
     }
   }
 }
-// TODO Fake eco rating based on keywords
+
 async function getEcoRating(name, category) {
   isCalculatingEco.value = true;
   currentEcoRating.value = null;
@@ -447,6 +453,8 @@ async function addSegment() {
   const segmentId = Date.now();
   const nextStartName = newSegment.value.toName;
   const nextStartCoords = newSegment.value.toCoords;
+
+  // --- AGGIORNATO: Salvataggio nuovi campi ---
   const segment = {
     id: segmentId,
     from: newSegment.value.fromName,
@@ -459,16 +467,16 @@ async function addSegment() {
     date: newSegment.value.date,
     departureTime: newSegment.value.departureTime,
     arrivalTime: newSegment.value.arrivalTime,
-    gate: newSegment.value.gate,
+    gate: newSegment.value.gate, // Gate Partenza
+    arrivalGate: newSegment.value.arrivalGate, // Gate Arrivo
+    seat: newSegment.value.seat, // Posto
+    travelClass: newSegment.value.travelClass, // Classe
     transportNumber: newSegment.value.transportNumber,
     markers: [...tempMarkers],
     cost: geminiData.cost,
     co2: geminiData.co2,
     time: geminiData.time,
     distance: distanceKm,
-    activeRoute: "fastest",
-    alternatives: null,
-    ecoScore: null,
   };
   tempMarkers = [];
   savedSegments.value.push(segment);
@@ -487,6 +495,9 @@ async function addSegment() {
   newSegment.value.departureTime = "";
   newSegment.value.arrivalTime = "";
   newSegment.value.gate = "";
+  newSegment.value.arrivalGate = ""; // Reset
+  newSegment.value.seat = ""; // Reset
+  newSegment.value.travelClass = ""; // Reset
   newSegment.value.transportNumber = "";
 }
 
@@ -520,8 +531,6 @@ async function confirmRouteSelection(selectionData) {
   segment.cost = selectionData.cost;
   segment.co2 = selectionData.co2;
   segment.time = selectionData.time;
-  segment.activeRoute = "fastest";
-  segment.alternatives = null;
   await visualizeRoute(
     segment.fromCoords,
     segment.toCoords,
@@ -662,7 +671,7 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
   });
   const pathFeature = { type: "Feature", geometry: routeGeoJSON };
   const lineDistance = turf.length(pathFeature);
-  const duration = 10000;
+  const duration = 4000;
   let startTimestamp = null;
   function animate(timestamp) {
     if (!map || !map.getSource(pointId)) return;
@@ -674,12 +683,38 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
       animationFrameId = requestAnimationFrame(animate);
     } else {
       startTimestamp = null;
-      animationFrameId = requestAnimationFrame(animate);
     }
   }
   const bbox = turf.bbox(pathFeature);
   map.fitBounds(bbox, { padding: 80, maxZoom: 10 });
   animationFrameId = requestAnimationFrame(animate);
+}
+
+// --- Funzioni per modifica segmenti ---
+const editingSegmentIndex = ref(null);
+const segmentToEdit = computed(() => {
+  if (
+    editingSegmentIndex.value !== null &&
+    savedSegments.value[editingSegmentIndex.value]
+  ) {
+    return savedSegments.value[editingSegmentIndex.value];
+  }
+  return {};
+});
+function openEditModal(index) {
+  editingSegmentIndex.value = index;
+}
+
+function handleSaveEdit(updatedData) {
+  if (editingSegmentIndex.value !== null) {
+    const original = savedSegments.value[editingSegmentIndex.value];
+    Object.assign(original, updatedData);
+    closeEditModal();
+  }
+}
+
+function closeEditModal() {
+  editingSegmentIndex.value = null;
 }
 </script>
 
@@ -714,7 +749,7 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
     </div>
 
     <div
-      class="grid gap-5 h-auto lg:h-[85vh]"
+      class="grid gap-5 h-auto lg:min-h-[85vh]"
       :class="
         activeTab === 'world'
           ? 'grid-cols-1 lg:grid-cols-[24rem_1fr] lg:grid-rows-[auto_1fr]'
@@ -888,6 +923,7 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
                 />
               </div>
             </div>
+
             <div
               v-if="!isEcoMode && newSegment.type === 'Airplane'"
               class="grid grid-cols-2 gap-2 p-2 bg-blue-50 rounded-lg border border-blue-100"
@@ -897,11 +933,34 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
                 :placeholder="t('plan.flightDetails')"
                 class="input input-sm input-bordered w-full rounded-md"
               />
+              <select
+                v-model="newSegment.travelClass"
+                class="select select-sm select-bordered w-full rounded-md"
+              >
+                <option value="" disabled selected>Select Class</option>
+                <option value="Economy">Economy</option>
+                <option value="Premium Economy">Prem. Eco</option>
+                <option value="Business">Business</option>
+                <option value="First">First</option>
+              </select>
+
               <input
                 v-model="newSegment.gate"
-                :placeholder="t('plan.gate')"
+                placeholder="Dep Gate"
                 class="input input-sm input-bordered w-full rounded-md"
               />
+              <input
+                v-model="newSegment.arrivalGate"
+                placeholder="Arr Gate"
+                class="input input-sm input-bordered w-full rounded-md"
+              />
+
+              <input
+                v-model="newSegment.seat"
+                placeholder="Seat (e.g. 12A)"
+                class="input input-sm input-bordered w-full rounded-md col-span-2"
+              />
+
               <input
                 v-model="newSegment.departureTime"
                 type="time"
@@ -913,6 +972,7 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
                 class="input input-sm input-bordered w-full rounded-md"
               />
             </div>
+
             <div
               v-if="
                 !isEcoMode &&
@@ -930,6 +990,39 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
                 :placeholder="newSegment.type === 'Train' ? 'Train #' : 'Bus #'"
                 class="input input-sm input-bordered w-full col-span-2 rounded-md"
               />
+              <select
+                v-model="newSegment.travelClass"
+                class="select select-sm select-bordered w-full rounded-md"
+              >
+                <option value="" disabled selected>Class</option>
+                <option value="Standard">Standard</option>
+                <option value="Business">Business</option>
+                <option value="First">First</option>
+                <option v-if="newSegment.type === 'Bus'" value="Sleeper">
+                  Sleeper
+                </option>
+              </select>
+              <input
+                v-model="newSegment.seat"
+                placeholder="Seat"
+                class="input input-sm input-bordered w-full rounded-md"
+              />
+
+              <input
+                v-model="newSegment.gate"
+                :placeholder="
+                  newSegment.type === 'Train' ? 'Dep Platform' : 'Dep Bay'
+                "
+                class="input input-sm input-bordered w-full rounded-md"
+              />
+              <input
+                v-model="newSegment.arrivalGate"
+                :placeholder="
+                  newSegment.type === 'Train' ? 'Arr Platform' : 'Arr Bay'
+                "
+                class="input input-sm input-bordered w-full rounded-md"
+              />
+
               <input
                 v-model="newSegment.departureTime"
                 type="time"
@@ -941,6 +1034,7 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
                 class="input input-sm input-bordered w-full rounded-md"
               />
             </div>
+
             <div
               v-if="!isEcoMode && newSegment.type === 'Car'"
               class="space-y-1"
@@ -1042,14 +1136,9 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
             class="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-2"
           >
             <button
-              class="btn btn-sm glass text-gray-800 gap-2 rounded-full shadow-lg"
+              class="btn btn-sm text-gray-800 gap-2 rounded-full shadow-lg"
             >
-              <Clock class="w-4 h-4" /> Recent
-            </button>
-            <button
-              class="btn btn-sm glass text-gray-800 gap-2 rounded-full shadow-lg"
-            >
-              <Bookmark class="w-4 h-4" /> Saved
+              {{ t("common.save") }}
             </button>
           </div>
         </div>
@@ -1061,14 +1150,14 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
       >
         <div class="card-body p-4 lg:p-5 overflow-y-auto custom-scrollbar">
           <div class="divider my-0 text-xs text-gray-400 mb-4">
-            YOUR ITINERARY
+            {{ t("plan.yourItinerary") }}
           </div>
           <div class="space-y-3">
             <div
               v-if="savedSegments.length === 0"
               class="text-center py-8 text-gray-400 text-sm italic"
             >
-              No trips added yet.
+              {{ t("plan.noTripsAdded") }}
             </div>
             <div
               v-for="(seg, idx) in savedSegments"
@@ -1131,6 +1220,34 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
               </div>
 
               <div
+                v-if="
+                  seg.type === 'Airplane' ||
+                  seg.type === 'Train' ||
+                  seg.type === 'Bus'
+                "
+                class="ml-12 mt-2 grid grid-cols-2 gap-x-2 gap-y-1 text-[10px] text-gray-500 bg-gray-50 p-2 rounded-md border border-gray-100"
+              >
+                <div
+                  v-if="seg.transportNumber"
+                  class="col-span-2 font-bold text-gray-700"
+                >
+                  {{ seg.transportNumber }}
+                </div>
+                <div v-if="seg.travelClass" class="flex items-center gap-1">
+                  <Ticket class="w-3 h-3" /> {{ seg.travelClass }}
+                </div>
+                <div v-if="seg.seat" class="flex items-center gap-1">
+                  <Armchair class="w-3 h-3" /> {{ seg.seat }}
+                </div>
+                <div v-if="seg.gate" class="flex items-center gap-1">
+                  <DoorOpen class="w-3 h-3" /> Dep: {{ seg.gate }}
+                </div>
+                <div v-if="seg.arrivalGate" class="flex items-center gap-1">
+                  <DoorOpen class="w-3 h-3" /> Arr: {{ seg.arrivalGate }}
+                </div>
+              </div>
+
+              <div
                 v-if="seg.type !== 'Hotel' && seg.type !== 'Restaurant'"
                 class="flex items-center justify-between mt-2 ml-12"
               >
@@ -1147,10 +1264,16 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
                   </div>
                 </div>
                 <button
+                  @click="openEditModal(idx)"
+                  class="btn btn-xs rounded-full gap-1 border border-gray-200 bg-white text-gray-500 shadow-sm"
+                >
+                  <Edit class="w-3 h-3" />{{ t("common.edit") }}
+                </button>
+                <button
                   @click="openComparisonModal(idx)"
                   class="btn btn-xs rounded-full gap-1 border border-gray-200 bg-white text-gray-500 shadow-sm"
                 >
-                  <Shuffle class="w-3 h-3" /> Compare
+                  <Shuffle class="w-3 h-3" /> {{ t("plan.compare") }}
                 </button>
               </div>
             </div>
@@ -1161,88 +1284,26 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
             @click="saveTripToDB"
             class="btn btn-success w-full text-white gap-2 rounded-xl shadow-md"
           >
-            <Save class="w-4 h-4" /> Save Full Trip
+            <Save class="w-4 h-4" /> {{ t("plan.saveFullTrip") }}
           </button>
         </div>
       </div>
     </div>
 
-    <div
-      v-if="comparisonModalOpen"
-      class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
-    >
-      <div
-        class="card bg-white w-full max-w-lg shadow-2xl overflow-hidden rounded-2xl"
-      >
-        <div
-          class="flex justify-between items-center p-4 border-b border-gray-100"
-        >
-          <h3 class="font-bold text-lg text-gray-800">Alternative Modes</h3>
-          <button
-            @click="comparisonModalOpen = false"
-            class="btn btn-ghost btn-circle btn-sm"
-          >
-            <X class="w-5 h-5" />
-          </button>
-        </div>
-        <div class="card-body p-4 bg-gray-50 min-h-[150px]">
-          <div
-            v-if="isLoadingComparison"
-            class="flex flex-col items-center justify-center h-full py-8 text-gray-400"
-          >
-            <Loader2 class="w-8 h-8 animate-spin mb-2 text-green-600" /><span
-              class="text-sm"
-              >Calculating alternatives...</span
-            >
-          </div>
-          <div v-else>
-            <div
-              v-if="
-                !pendingComparisonData || pendingComparisonData.length === 0
-              "
-              class="text-center text-gray-400 text-sm py-4"
-            >
-              No alternatives found.
-            </div>
-            <div class="grid grid-cols-2 gap-4">
-              <div
-                v-for="option in pendingComparisonData"
-                :key="option.mode"
-                class="flex flex-col bg-white p-3 rounded-xl border-2 border-transparent hover:border-green-400 cursor-pointer transition-all shadow-sm group"
-                @click="confirmRouteSelection(option)"
-              >
-                <div class="flex items-center justify-between mb-2">
-                  <div
-                    class="flex items-center gap-2 text-xs font-bold text-gray-500 uppercase group-hover:text-green-600"
-                  >
-                    <component :is="iconMap[option.mode]" class="w-4 h-4" />
-                    {{ option.mode }}
-                  </div>
-                  <div
-                    class="text-[10px] font-bold bg-gray-100 px-1.5 py-0.5 rounded text-gray-500"
-                  >
-                    <Clock class="w-3 h-3 inline mr-0.5" /> {{ option.time }}
-                  </div>
-                </div>
-                <div class="text-2xl font-bold text-gray-800">
-                  €{{ option.cost }}
-                </div>
-                <div class="text-sm font-medium text-gray-500 mt-1">
-                  {{ option.co2 }} kg CO2
-                </div>
-                <div class="mt-3">
-                  <button
-                    class="btn btn-sm btn-outline group-hover:btn-success group-hover:text-white w-full rounded-lg"
-                  >
-                    Switch to {{ option.mode }}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+    <ComparisonModal
+      :is-open="comparisonModalOpen"
+      :is-loading="isLoadingComparison"
+      :segment-data="savedSegments[targetSegmentIndex]"
+      :alternatives="pendingComparisonData"
+      @close="comparisonModalOpen = false"
+      @confirm="confirmRouteSelection"
+    />
+    <EditTripModal
+      :is-open="editingSegmentIndex !== null"
+      :segment-data="segmentToEdit"
+      @close="closeEditModal"
+      @save="handleSaveEdit"
+    />
   </div>
 </template>
 
