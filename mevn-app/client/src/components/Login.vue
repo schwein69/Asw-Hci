@@ -145,7 +145,7 @@ const goToForgotPassword = () => {
         </div>
         
         <h1 class="text-xl font-semibold text-gray-900 dark:text-white tracking-tight">
-          EcoVoyage
+          EcoGo
         </h1>
 
         <p class="text-[9px] text-success font-light uppercase tracking-[0.2em] mt-1 text-center">
