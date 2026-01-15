@@ -11,7 +11,6 @@ import {
   Save,
   Trash2,
   Clock,
-  Bookmark,
   Euro,
   Leaf,
   Shuffle,
@@ -466,9 +465,6 @@ async function addSegment() {
     co2: geminiData.co2,
     time: geminiData.time,
     distance: distanceKm,
-    activeRoute: "fastest",
-    alternatives: null,
-    ecoScore: null,
   };
   tempMarkers = [];
   savedSegments.value.push(segment);
@@ -520,8 +516,6 @@ async function confirmRouteSelection(selectionData) {
   segment.cost = selectionData.cost;
   segment.co2 = selectionData.co2;
   segment.time = selectionData.time;
-  segment.activeRoute = "fastest";
-  segment.alternatives = null;
   await visualizeRoute(
     segment.fromCoords,
     segment.toCoords,
@@ -1042,14 +1036,9 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
             class="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-2"
           >
             <button
-              class="btn btn-sm glass text-gray-800 gap-2 rounded-full shadow-lg"
+              class="btn btn-sm text-gray-800 gap-2 rounded-full shadow-lg"
             >
-              <Clock class="w-4 h-4" /> Recent
-            </button>
-            <button
-              class="btn btn-sm glass text-gray-800 gap-2 rounded-full shadow-lg"
-            >
-              <Bookmark class="w-4 h-4" /> Saved
+              t()
             </button>
           </div>
         </div>
@@ -1061,14 +1050,14 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
       >
         <div class="card-body p-4 lg:p-5 overflow-y-auto custom-scrollbar">
           <div class="divider my-0 text-xs text-gray-400 mb-4">
-            YOUR ITINERARY
+            {{ t("plan.yourItinerary") }}
           </div>
           <div class="space-y-3">
             <div
               v-if="savedSegments.length === 0"
               class="text-center py-8 text-gray-400 text-sm italic"
             >
-              No trips added yet.
+              {{ t("plan.noTripsAdded") }}
             </div>
             <div
               v-for="(seg, idx) in savedSegments"
@@ -1150,7 +1139,7 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
                   @click="openComparisonModal(idx)"
                   class="btn btn-xs rounded-full gap-1 border border-gray-200 bg-white text-gray-500 shadow-sm"
                 >
-                  <Shuffle class="w-3 h-3" /> Compare
+                  <Shuffle class="w-3 h-3" /> {{ t("plan.compare") }}
                 </button>
               </div>
             </div>
@@ -1161,7 +1150,7 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
             @click="saveTripToDB"
             class="btn btn-success w-full text-white gap-2 rounded-xl shadow-md"
           >
-            <Save class="w-4 h-4" /> Save Full Trip
+            <Save class="w-4 h-4" /> {{ t("plan.saveFullTrip") }}
           </button>
         </div>
       </div>
@@ -1177,7 +1166,9 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
         <div
           class="flex justify-between items-center p-4 border-b border-gray-100"
         >
-          <h3 class="font-bold text-lg text-gray-800">Alternative Modes</h3>
+          <h3 class="font-bold text-lg text-gray-800">
+            {{ t("plan.alternativeModes") }}
+          </h3>
           <button
             @click="comparisonModalOpen = false"
             class="btn btn-ghost btn-circle btn-sm"
