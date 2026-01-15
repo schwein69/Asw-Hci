@@ -418,7 +418,7 @@ onUnmounted(() => {
             </div>
           </div>
 
-          <p class="text-gray-500 text-sm line-clamp-2 mb-4 flex-grow">
+          <p class="text-gray-500 text-sm line-clamp-2 mb-4 grow">
             {{ place.description }}
           </p>
 
