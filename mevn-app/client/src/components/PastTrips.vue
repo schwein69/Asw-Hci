@@ -1,5 +1,13 @@
 <script>
-import { Calendar, MapPin, TrendingUp, Trash2, ChevronDown, ChevronUp, X } from "lucide-vue-next";
+import {
+  Calendar,
+  MapPin,
+  TrendingUp,
+  Trash2,
+  ChevronDown,
+  ChevronUp,
+  X,
+} from "lucide-vue-next";
 import { getLanguage, t as translate } from "../utils/translations.js";
 import actualMap from "./maps/actualMap.vue";
 import * as turf from "@turf/turf";
@@ -169,24 +177,29 @@ export default {
       return (key) => translate(key, this.language);
     },
     routeGeoJSON() {
-      if (!this.showMapForTrip) return { type: "FeatureCollection", features: [] };
-      
-      const trip = this.trips.find(t => t.id === this.showMapForTrip);
-      if (!trip || !trip.transportMethods || trip.transportMethods.length === 0) {
+      if (!this.showMapForTrip)
+        return { type: "FeatureCollection", features: [] };
+
+      const trip = this.trips.find((t) => t.id === this.showMapForTrip);
+      if (
+        !trip ||
+        !trip.transportMethods ||
+        trip.transportMethods.length === 0
+      ) {
         return { type: "FeatureCollection", features: [] };
       }
 
       const features = [];
       trip.transportMethods.forEach((method) => {
-        let routeParts = method.route.split('→');
+        let routeParts = method.route.split("→");
         if (routeParts.length === 1) {
-          routeParts = method.route.split('->');
+          routeParts = method.route.split("->");
         }
-        const fromCity = routeParts[0] ? routeParts[0].trim() : '';
-        const toCity = routeParts[1] ? routeParts[1].trim() : '';
+        const fromCity = routeParts[0] ? routeParts[0].trim() : "";
+        const toCity = routeParts[1] ? routeParts[1].trim() : "";
         const fromCoords = this.getCityCoordinates(fromCity);
         const toCoords = this.getCityCoordinates(toCity);
-        
+
         if (fromCoords && toCoords) {
           const start = turf.point(fromCoords);
           const end = turf.point(toCoords);
@@ -195,28 +208,33 @@ export default {
           features.push(curvedLine);
         }
       });
-      
+
       return { type: "FeatureCollection", features };
     },
     markersGeoJSON() {
-      if (!this.showMapForTrip) return { type: "FeatureCollection", features: [] };
-      
-      const trip = this.trips.find(t => t.id === this.showMapForTrip);
-      if (!trip || !trip.transportMethods || trip.transportMethods.length === 0) {
+      if (!this.showMapForTrip)
+        return { type: "FeatureCollection", features: [] };
+
+      const trip = this.trips.find((t) => t.id === this.showMapForTrip);
+      if (
+        !trip ||
+        !trip.transportMethods ||
+        trip.transportMethods.length === 0
+      ) {
         return { type: "FeatureCollection", features: [] };
       }
 
       const features = [];
       trip.transportMethods.forEach((method, index) => {
-        let routeParts = method.route.split('→');
+        let routeParts = method.route.split("→");
         if (routeParts.length === 1) {
-          routeParts = method.route.split('->');
+          routeParts = method.route.split("->");
         }
-        const fromCity = routeParts[0] ? routeParts[0].trim() : '';
-        const toCity = routeParts[1] ? routeParts[1].trim() : '';
+        const fromCity = routeParts[0] ? routeParts[0].trim() : "";
+        const toCity = routeParts[1] ? routeParts[1].trim() : "";
         const fromCoords = this.getCityCoordinates(fromCity);
         const toCoords = this.getCityCoordinates(toCity);
-        
+
         if (fromCoords) {
           features.push({
             type: "Feature",
@@ -228,7 +246,7 @@ export default {
             },
           });
         }
-        
+
         if (toCoords && index === trip.transportMethods.length - 1) {
           features.push({
             type: "Feature",
@@ -241,15 +259,15 @@ export default {
           });
         }
       });
-      
+
       return { type: "FeatureCollection", features };
     },
   },
   mounted() {
-    window.addEventListener('languageChanged', this.handleLanguageChange);
+    window.addEventListener("languageChanged", this.handleLanguageChange);
   },
   beforeUnmount() {
-    window.removeEventListener('languageChanged', this.handleLanguageChange);
+    window.removeEventListener("languageChanged", this.handleLanguageChange);
   },
   methods: {
     deleteTrip(id) {
@@ -269,46 +287,46 @@ export default {
     },
     getCityCoordinates(cityName) {
       if (!cityName) return null;
-      
+
       cityName = cityName.trim();
-      
+
       const cityCoords = {
-        "Paris": [2.3522, 48.8566],
-        "Berlin": [13.4050, 52.5200],
-        "Amsterdam": [4.9041, 52.3676],
-        "London": [-0.1276, 51.5074],
-        "Rome": [12.4964, 41.9028],
-        "Madrid": [-3.7038, 40.4168],
-        "Vienna": [16.3738, 48.2082],
-        "Barcelona": [2.1734, 41.3851],
-        "Prague": [14.4378, 50.0755],
-        "Warsaw": [21.0122, 52.2297],
-        "Stockholm": [18.0686, 59.3293],
-        "Copenhagen": [12.5683, 55.6761],
-        "Brussels": [4.3517, 50.8503],
-        "Dublin": [-6.2603, 53.3498],
-        "Lisbon": [-9.1393, 38.7223],
-        "Athens": [23.7275, 37.9838],
-        "Budapest": [19.0402, 47.4979],
-        "Munich": [11.5820, 48.1351],
-        "Milan": [9.1900, 45.4642],
-        "Zurich": [8.5417, 47.3769],
-        "Lisboa": [-9.1393, 38.7223],
-        "Roma": [12.4964, 41.9028],
-        "Atene": [23.7275, 37.9838],
+        Paris: [2.3522, 48.8566],
+        Berlin: [13.405, 52.52],
+        Amsterdam: [4.9041, 52.3676],
+        London: [-0.1276, 51.5074],
+        Rome: [12.4964, 41.9028],
+        Madrid: [-3.7038, 40.4168],
+        Vienna: [16.3738, 48.2082],
+        Barcelona: [2.1734, 41.3851],
+        Prague: [14.4378, 50.0755],
+        Warsaw: [21.0122, 52.2297],
+        Stockholm: [18.0686, 59.3293],
+        Copenhagen: [12.5683, 55.6761],
+        Brussels: [4.3517, 50.8503],
+        Dublin: [-6.2603, 53.3498],
+        Lisbon: [-9.1393, 38.7223],
+        Athens: [23.7275, 37.9838],
+        Budapest: [19.0402, 47.4979],
+        Munich: [11.582, 48.1351],
+        Milan: [9.19, 45.4642],
+        Zurich: [8.5417, 47.3769],
+        Lisboa: [-9.1393, 38.7223],
+        Roma: [12.4964, 41.9028],
+        Atene: [23.7275, 37.9838],
       };
-      
+
       if (cityCoords[cityName]) {
         return cityCoords[cityName];
       }
-      
+
       const cityKey = Object.keys(cityCoords).find(
-        key => key.toLowerCase() === cityName.toLowerCase()
+        (key) => key.toLowerCase() === cityName.toLowerCase()
       );
       if (cityKey) {
         return cityCoords[cityKey];
       }
-      
+
       return null;
     },
   },
@@ -320,9 +338,11 @@ export default {
     <div class="flex items-center gap-2 mb-6">
       <Calendar class="w-6 h-6 text-success" />
       <div>
-        <h2 class="text-2xl font-bold text-gray-800">{{ t('pastTrips.title') }}</h2>
-        <p class="text-sm text-gray-600">
-          {{ trips.length }} {{ t('pastTrips.subtitle') }}
+        <h2 class="text-2xl font-bold text-gray-800 dark:text-white">
+          {{ t("pastTrips.title") }}
+        </h2>
+        <p class="text-sm text-gray-600 dark:text-gray-300">
+          {{ trips.length }} {{ t("pastTrips.subtitle") }}
         </p>
       </div>
     </div>
@@ -341,7 +361,9 @@ export default {
                   {{ trip.title }}
                 </h3>
                 <span class="badge badge-sm badge-neutral">{{
-                  trip.status === 'Completed' ? t('pastTrips.completed') : trip.status
+                  trip.status === "Completed"
+                    ? t("pastTrips.completed")
+                    : trip.status
                 }}</span>
               </div>
               <p class="text-sm text-gray-600 mt-1">
@@ -349,12 +371,15 @@ export default {
               </p>
             </div>
             <div class="flex items-center gap-2">
-              <button 
-                @click="toggleExpand(trip)" 
+              <button
+                @click="toggleExpand(trip)"
                 class="btn btn-ghost btn-sm p-1"
                 :title="trip.isExpanded ? 'Hide details' : 'Show details'"
               >
-                <ChevronDown v-if="!trip.isExpanded" class="w-5 h-5 text-gray-600" />
+                <ChevronDown
+                  v-if="!trip.isExpanded"
+                  class="w-5 h-5 text-gray-600"
+                />
                 <ChevronUp v-else class="w-5 h-5 text-gray-600" />
               </button>
               <button @click="deleteTrip(trip.id)" class="btn btn-ghost btn-sm">
@@ -370,7 +395,9 @@ export default {
               <div class="text-lg font-bold text-gray-800">
                 {{ trip.segments }}
               </div>
-              <div class="text-xs text-gray-600">{{ t('pastTrips.segments') }}</div>
+              <div class="text-xs text-gray-600">
+                {{ t("pastTrips.segments") }}
+              </div>
             </div>
             <div
               class="bg-green-50 rounded-lg p-3 text-center border border-green-200"
@@ -378,13 +405,15 @@ export default {
               <div class="text-lg font-bold text-gray-800">
                 {{ trip.emissions }}
               </div>
-              <div class="text-xs text-gray-600">{{ t('pastTrips.emissions') }}</div>
+              <div class="text-xs text-gray-600">
+                {{ t("pastTrips.emissions") }}
+              </div>
             </div>
             <div
               class="bg-green-50 rounded-lg p-3 text-center border border-green-200"
             >
               <div class="text-lg font-bold text-gray-800">{{ trip.cost }}</div>
-              <div class="text-xs text-gray-600">{{ t('pastTrips.cost') }}</div>
+              <div class="text-xs text-gray-600">{{ t("pastTrips.cost") }}</div>
             </div>
             <div
               class="bg-green-50 rounded-lg p-3 text-center border border-green-200"
@@ -392,18 +421,22 @@ export default {
               <div class="text-lg font-bold text-gray-800">
                 {{ trip.duration }}
               </div>
-              <div class="text-xs text-gray-600">{{ t('pastTrips.duration') }}</div>
+              <div class="text-xs text-gray-600">
+                {{ t("pastTrips.duration") }}
+              </div>
             </div>
           </div>
 
-          <div v-if="trip.isExpanded" class="mt-4 pt-4 border-t border-gray-200">
-
+          <div
+            v-if="trip.isExpanded"
+            class="mt-4 pt-4 border-t border-gray-200"
+          >
             <div v-if="trip.transportMethods.length > 0" class="mt-4">
               <h4
                 class="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2"
               >
                 <TrendingUp class="w-4 h-4" />
-                {{ t('pastTrips.route') }}
+                {{ t("pastTrips.route") }}
               </h4>
               <div class="space-y-3">
                 <div
@@ -427,25 +460,31 @@ export default {
 
                   <div class="text-xs text-gray-600 mb-3">
                     <div class="font-medium">{{ method.provider }}</div>
-                    <div>{{ method.code }}                    </div>
+                    <div>{{ method.code }}</div>
                   </div>
 
                   <div class="grid grid-cols-3 gap-2 text-xs mb-3">
                     <div>
-                      <div class="text-gray-500">{{ t('pastTrips.departure') }}</div>
+                      <div class="text-gray-500">
+                        {{ t("pastTrips.departure") }}
+                      </div>
                       <div class="font-semibold text-gray-800">
                         {{ method.departure }}
                       </div>
-                      <div class="text-gray-500">{{ method.departureType }}</div>
+                      <div class="text-gray-500">
+                        {{ method.departureType }}
+                      </div>
                     </div>
                     <div class="text-center">
-                      <div class="text-gray-500">{{ t('pastTrips.time') }}</div>
+                      <div class="text-gray-500">{{ t("pastTrips.time") }}</div>
                       <div class="font-semibold text-gray-800">
                         {{ method.time }}
                       </div>
                     </div>
                     <div>
-                      <div class="text-gray-500">{{ t('pastTrips.arrival') }}</div>
+                      <div class="text-gray-500">
+                        {{ t("pastTrips.arrival") }}
+                      </div>
                       <div class="font-semibold text-gray-800">
                         {{ method.arrival }}
                       </div>
@@ -477,17 +516,23 @@ export default {
                 class="btn btn-outline btn-sm w-full mt-4 text-success border-success hover:bg-success hover:text-white"
               >
                 <MapPin class="w-4 h-4" />
-                {{ showMapForTrip === trip.id ? 'Hide Map' : 'Load to Map' }}
+                {{ showMapForTrip === trip.id ? "Hide Map" : "Load to Map" }}
               </button>
-              
+
               <div
-                v-if="showMapForTrip === trip.id && trip.transportMethods.length > 0"
+                v-if="
+                  showMapForTrip === trip.id && trip.transportMethods.length > 0
+                "
                 class="mt-4 border border-green-200 rounded-xl overflow-hidden bg-white"
               >
-                <div class="bg-green-50 px-4 py-2 flex items-center justify-between border-b border-green-200">
-                  <h4 class="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                <div
+                  class="bg-green-50 px-4 py-2 flex items-center justify-between border-b border-green-200"
+                >
+                  <h4
+                    class="text-sm font-semibold text-gray-700 flex items-center gap-2"
+                  >
                     <MapPin class="w-4 h-4 text-green-600" />
-                    {{ t('world.interactiveRouteMap') }}
+                    {{ t("world.interactiveRouteMap") }}
                   </h4>
                   <button
                     @click="showMapForTrip = null"
@@ -511,5 +556,4 @@ export default {
   </div>
 </template>
 
-<style scoped>
-</style>
+<style scoped></style>
