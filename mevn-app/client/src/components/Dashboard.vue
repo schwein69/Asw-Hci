@@ -34,7 +34,6 @@ onUnmounted(() => {
 const t = (key) => translate(key, language.value);
 
 // --- Stats Data (Merged) ---
-// We use a computed property here so it updates when 'language' changes
 const stats = computed(() => [
   {
     label: t("dashboard.totalCo2Saved"),
@@ -55,9 +54,9 @@ const stats = computed(() => [
     icon: Gauge,
   },
   {
-    label: "Zero CO₂ Trips",
+    label: t("dashboard.zeroTrips"),
     value: "14",
-    subtitle: "Walk, Bike, or EV this month",
+    subtitle: t("dashboard.zeroTripsBanner"),
     icon: Footprints,
     isZeroCount: true,
   },
