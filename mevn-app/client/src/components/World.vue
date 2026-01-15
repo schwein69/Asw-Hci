@@ -31,7 +31,6 @@ const tripStore = useTripStore();
 // --- TRANSLATION STATE & LOGIC ---
 const language = ref(getLanguage());
 
-// Computed function to allow reactivity when language changes
 const t = computed(() => (key) => translate(key, language.value));
 
 const handleLanguageChange = (event) => {
