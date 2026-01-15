@@ -699,6 +699,12 @@ const translations = {
       markIncomplete: "Segna come Non Completato",
       deleteSegment: "Elimina Segmento",
       active: "attivo",
+      finishSegments:
+        "Completa tutto il percorso per completare questo viaggio",
+      allSegmentsDone: "Tutto il percorso completato",
+      modifyTrip: "Modifica",
+      title: "I Miei Viaggi Attivi",
+      description: "Gestisci e visualizza i tuoi viaggi in corso",
       transportTypes: {
         train: "Treno",
         airplane: "Aereo",
