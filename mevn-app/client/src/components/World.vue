@@ -19,6 +19,7 @@ import {
   Check,
   AlertCircle,
   Edit,
+  Calendar,
 } from "lucide-vue-next";
 import actualMap from "./maps/actualMap.vue";
 import * as turf from "@turf/turf";
@@ -50,6 +51,7 @@ const trips = ref([
         type: "Train",
         transportName: "TGV",
         transportCode: "TG9452",
+        date: "04/08/2026",
         depTime: "10:30 AM",
         arrTime: "01:45 PM",
         duration: "3h 15m",
@@ -70,6 +72,7 @@ const trips = ref([
         type: "Car",
         transportName: "Rental",
         transportCode: "Tesla M3",
+        date: "06/08/2026",
         depTime: "03:00 PM",
         arrTime: "09:30 PM",
         duration: "6h 30m",
@@ -96,6 +99,7 @@ const trips = ref([
         type: "Bus",
         transportName: "FlixBus",
         transportCode: "FLX100",
+        date: "18/08/2026",
         depTime: "10:00 AM",
         arrTime: "02:30 PM",
         duration: "4h 30m",
@@ -116,6 +120,7 @@ const trips = ref([
         type: "Train",
         transportName: "Railjet",
         transportCode: "RJ79",
+        date: "25/08/2026",
         depTime: "03:30 PM",
         arrTime: "07:30 PM",
         duration: "4h 00m",
@@ -142,6 +147,7 @@ const trips = ref([
         type: "Bicycle",
         transportName: "My Bike",
         transportCode: "BIKE01",
+        date: "18/09/2026",
         depTime: "08:00 AM",
         arrTime: "01:15 PM",
         duration: "5h 15m",
@@ -162,6 +168,7 @@ const trips = ref([
         type: "Train",
         transportName: "Italo",
         transportCode: "IT892",
+        date: "22/09/2026",
         depTime: "02:00 PM",
         arrTime: "05:35 PM",
         duration: "3h 35m",
@@ -590,6 +597,16 @@ onUnmounted(() => {
                     <Clock class="w-3 h-3" /> {{ t("world.departure") }}
                   </div>
                   <div
+                    v-if="segment.date"
+                    class="text-xs font-medium mb-0.5 flex items-center gap-1"
+                    :class="
+                      segment.completed ? 'text-gray-400' : 'text-green-600'
+                    "
+                  >
+                    <Calendar class="w-3 h-3" />
+                    {{ segment.date }}
+                  </div>
+                  <div
                     class="text-lg font-bold"
                     :class="
                       segment.completed ? 'text-gray-500' : 'text-gray-800'
@@ -598,6 +615,7 @@ onUnmounted(() => {
                     {{ segment.depTime }}
                   </div>
                 </div>
+
                 <div
                   class="rounded-xl p-3 border transition-colors"
                   :class="
@@ -612,7 +630,7 @@ onUnmounted(() => {
                     <MapPin class="w-3 h-3" /> {{ t("world.arrival") }}
                   </div>
                   <div
-                    class="text-lg font-bold"
+                    class="text-lg font-bold mt-auto pt-4"
                     :class="
                       segment.completed ? 'text-gray-500' : 'text-gray-800'
                     "

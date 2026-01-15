@@ -466,9 +466,6 @@ async function addSegment() {
     co2: geminiData.co2,
     time: geminiData.time,
     distance: distanceKm,
-    activeRoute: "fastest",
-    alternatives: null,
-    ecoScore: null,
   };
   tempMarkers = [];
   savedSegments.value.push(segment);
@@ -520,8 +517,6 @@ async function confirmRouteSelection(selectionData) {
   segment.cost = selectionData.cost;
   segment.co2 = selectionData.co2;
   segment.time = selectionData.time;
-  segment.activeRoute = "fastest";
-  segment.alternatives = null;
   await visualizeRoute(
     segment.fromCoords,
     segment.toCoords,
