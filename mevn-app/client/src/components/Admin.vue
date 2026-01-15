@@ -39,7 +39,7 @@ export default {
       activeTab: "users",
 
       // Settings Data
-      platformName: "EcoVoyage",
+      platformName: "EcoGo",
       ecoScoreThreshold: 70,
       weatherSensitivity: 3,
       maintenanceMessage: "",
@@ -124,6 +124,9 @@ export default {
     isForumAdmin() {
       return this.currentUserRole === "AdminForum";
     },
+    isGeneralAdmin() {
+      return this.currentUserRole === "AdminGeneral";
+    },
   },
   mounted() {
     this.language = getLanguage();
@@ -196,9 +199,7 @@ export default {
         <Shield class="w-6 h-6" />
         <h2 class="text-xl font-bold">{{ t('admin.adminPanel') }}</h2>
       </div>
-      <p class="text-emerald-100 text-sm opacity-90">
-        {{ t('admin.generalAdministratorAccess') }}
-      </p>
+      <p class="text-emerald-100 text-sm opacity-90"></p>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -230,6 +231,7 @@ export default {
         </button>
 
         <button
+          v-if="isGeneralAdmin"
           @click="activeTab = 'users'"
           class="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-sm font-medium transition-colors"
           :class="
@@ -243,6 +245,7 @@ export default {
         </button>
 
         <button
+          v-if="isGeneralAdmin"
           @click="activeTab = 'settings'"
           class="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-sm font-medium transition-colors"
           :class="
@@ -257,7 +260,7 @@ export default {
     </div>
 
     <div
-      v-if="activeTab === 'settings'"
+      v-if="isGeneralAdmin && activeTab === 'settings'"
       class="bg-white p-6 rounded-2xl border border-green-200 shadow-sm"
     >
       <div class="mb-6">
@@ -316,7 +319,7 @@ export default {
     </div>
 
     <div
-      v-if="activeTab === 'users'"
+      v-if="isGeneralAdmin && activeTab === 'users'"
       class="bg-white p-6 rounded-2xl border border-green-200 shadow-sm"
     >
       <div class="mb-6">
