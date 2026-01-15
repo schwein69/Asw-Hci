@@ -419,6 +419,14 @@ const validateDeletePassword = () => {
 const handleDeleteAccount = async () => {
   if (isDeletingAccount.value) return;
 
+  if (
+    user.value &&
+    (user.value.role === "AdminGeneral" || user.value.role === "AdminForum")
+  ) {
+    deletePassword.value = "";
+    return;
+  }
+
   if (!validateDeletePassword()) {
     return;
   }
@@ -721,7 +729,15 @@ const handleDeleteAccount = async () => {
             </p>
           </div>
 
-          <div class="border-t border-red-200 dark:border-red-800 pt-6">
+          <div
+            v-if="
+              user &&
+              !(
+                user.role === 'AdminGeneral' || user.role === 'AdminForum'
+              )
+            "
+            class="border-t border-red-200 dark:border-red-800 pt-6"
+          >
             <div class="flex items-center justify-between flex-wrap gap-4">
               <div>
                 <h3
