@@ -1,14 +1,37 @@
 import mongoose from "mongoose";
 
 const FeedbackSchema = new mongoose.Schema({
-  user: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-  message: String,
-  type: { type: String, enum: ["Bug", "Suggestion", "Usability"] },
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: true,
+  },
+  type: {
+    type: String,
+    enum: ["Bug", "Suggestion", "Content Report"],
+    required: true,
+  },
+
+  message: {
+    type: String,
+    required: true,
+    trim: true,
+    minlength: 5,
+  },
+
+  // Opzionale: Se il feedback riguarda una specifica TravelCard Content Report
   travelCard: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "TravelCard",
-    required: false,
+    default: null,
   },
+
+  status: {
+    type: String,
+    enum: ["Open", "In Progress", "Closed"],
+    default: "Open",
+  },
+
   createdAt: { type: Date, default: Date.now },
 });
 
