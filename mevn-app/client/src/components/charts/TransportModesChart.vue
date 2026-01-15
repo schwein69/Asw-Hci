@@ -113,9 +113,6 @@ onUnmounted(() => {
         <h3 class="text-lg font-bold text-gray-800 mb-1">
           {{ t("dashboard.transportModes") }}
         </h3>
-        <p class="text-xs text-gray-500 mb-4">
-          {{ t("dashboard.transportModesDesc") }}
-        </p>
       </div>
 
       <div class="grow relative min-h-[200px] flex justify-center items-center">

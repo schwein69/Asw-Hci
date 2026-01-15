@@ -28,6 +28,9 @@ import * as turf from "@turf/turf";
 import axios from "axios";
 import "@mapbox/search-js-web";
 import { getLanguage, t as translate } from "../utils/translations.js";
+import { useTripStore } from "../data/tripStore";
+
+const tripStore = useTripStore();
 
 const language = ref(getLanguage());
 
@@ -128,9 +131,37 @@ const searchOptions = computed(() => {
   return { ...base, types: ["place", "locality", "poi", "address"] };
 });
 
-onMounted(() => {
+onMounted(async () => {
   handleMyLocation();
+  // CARICAMENTO DATI DA PINIA
+  if (
+    tripStore.currentTrip &&
+    tripStore.currentTrip.routes &&
+    tripStore.currentTrip.routes.length > 0
+  ) {
+    // Cloniamo i dati per evitare mutazioni dirette indesiderate
+    savedSegments.value = JSON.parse(
+      JSON.stringify(tripStore.currentTrip.routes)
+    );
 
+    // Impostiamo l'ultimo punto come punto di partenza per il prossimo segmento
+    const lastSeg = savedSegments.value[savedSegments.value.length - 1];
+    if (lastSeg && lastSeg.toCoords) {
+      mapCenter.value = lastSeg.toCoords;
+      newSegment.value.fromName = lastSeg.to;
+      newSegment.value.fromCoords = lastSeg.toCoords;
+
+      setTimeout(() => {
+        if (fromSearchBox.value) fromSearchBox.value.value = lastSeg.to;
+      }, 500);
+    }
+
+    await waitForMap();
+
+    savedSegments.value.forEach((seg) => {
+      visualizeRoute(seg.fromCoords, seg.toCoords, seg.type, seg.id);
+    });
+  }
   if (mapContainerRef.value) {
     resizeObserver = new ResizeObserver(() => {
       if (mapboxMapRef.value?.map) {
@@ -153,6 +184,24 @@ watch(activeTab, () => {
     if (mapboxMapRef.value?.map) mapboxMapRef.value.map.resize();
   }, 300);
 });
+
+function waitForMap() {
+  return new Promise((resolve) => {
+    const check = () => {
+      // Controllo se mapboxMapRef esiste e se l'istanza .map è inizializzata
+      if (
+        mapboxMapRef.value &&
+        mapboxMapRef.value.map &&
+        mapboxMapRef.value.map.isStyleLoaded()
+      ) {
+        resolve();
+      } else {
+        setTimeout(check, 100); // Riprova ogni 100ms
+      }
+    };
+    check();
+  });
+}
 
 function handleMyLocation() {
   if (navigator.geolocation) {
@@ -263,7 +312,7 @@ async function handleRetrieveTo(e) {
     }
   }
 }
-
+// TODO Fake eco rating based on keywords
 async function getEcoRating(name, category) {
   isCalculatingEco.value = true;
   currentEcoRating.value = null;

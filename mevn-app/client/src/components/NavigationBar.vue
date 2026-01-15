@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from "vue";
-import { useRoute, useRouter } from "vue-router";
+import { useRoute } from "vue-router";
 import {
   Leaf,
   Map,
@@ -17,7 +17,6 @@ import {
 import { getLanguage, t as translate } from "../utils/translations.js";
 
 const route = useRoute();
-const router = useRouter();
 const isMenuOpen = ref(false);
 const user = ref(null);
 const language = ref(getLanguage());

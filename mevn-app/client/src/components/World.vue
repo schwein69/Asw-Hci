@@ -11,10 +11,11 @@ import {
   MousePointerClick,
   Plane,
   Car,
+  Bike,
+  Bus,
   Armchair,
   DoorOpen,
   Hash,
-  Building2,
   Check,
   AlertCircle,
   Edit,
@@ -22,14 +23,14 @@ import {
 import actualMap from "./maps/actualMap.vue";
 import * as turf from "@turf/turf";
 import { getLanguage, t as translate } from "../utils/translations.js";
-// TODO ROUTING import { useRouter } from 'vue-router'; // Uncomment for real routing
+import { useRouter } from "vue-router";
+import { useTripStore } from "../data/tripStore.js";
 
-// const router = useRouter();
-
+const router = useRouter();
+const tripStore = useTripStore();
 // --- TRANSLATION STATE & LOGIC ---
 const language = ref(getLanguage());
 
-// Computed function to allow reactivity when language changes
 const t = computed(() => (key) => translate(key, language.value));
 
 const handleLanguageChange = (event) => {
@@ -50,10 +51,9 @@ const trips = ref([
         transportName: "TGV",
         transportCode: "TG9452",
         depTime: "10:30 AM",
-        depPlatform: "Platform 7",
         arrTime: "01:45 PM",
-        arrPlatform: "Platform 12",
         duration: "3h 15m",
+        distance: 430,
         co2: 14,
         cost: 95,
         startCoords: [2.3522, 48.8566],
@@ -61,30 +61,27 @@ const trips = ref([
         completed: true,
         seat: "42A",
         gate: null,
-        terminal: "Gare du Nord",
         class: "1st",
       },
       {
         id: 2,
         from: "Amsterdam",
         to: "Berlin",
-        type: "Train",
-        transportName: "ICE",
-        transportCode: "ICE123",
+        type: "Car",
+        transportName: "Rental",
+        transportCode: "Tesla M3",
         depTime: "03:00 PM",
-        depPlatform: "Platform 2",
         arrTime: "09:30 PM",
-        arrPlatform: "Platform 5",
         duration: "6h 30m",
-        co2: 22,
+        distance: 655,
+        co2: 45,
         cost: 120,
         startCoords: [4.9041, 52.3676],
         endCoords: [13.405, 52.52],
         completed: false,
-        seat: "15C",
+        seat: "Driver",
         gate: null,
-        terminal: "Centraal",
-        class: "2nd",
+        class: "Standard",
       },
     ],
   },
@@ -96,23 +93,21 @@ const trips = ref([
         id: 3,
         from: "Berlin",
         to: "Prague",
-        type: "Train",
-        transportName: "EC",
-        transportCode: "EC173",
+        type: "Bus",
+        transportName: "FlixBus",
+        transportCode: "FLX100",
         depTime: "10:00 AM",
-        depPlatform: "Platform 1",
         arrTime: "02:30 PM",
-        arrPlatform: "Platform 3",
         duration: "4h 30m",
-        co2: 18,
-        cost: 80,
+        distance: 350,
+        co2: 12,
+        cost: 35,
         startCoords: [13.405, 52.52],
         endCoords: [14.4378, 50.0755],
         completed: false,
-        seat: "88",
+        seat: "12",
         gate: null,
-        terminal: "Hbf",
-        class: "2nd",
+        class: "Eco",
       },
       {
         id: 4,
@@ -122,10 +117,9 @@ const trips = ref([
         transportName: "Railjet",
         transportCode: "RJ79",
         depTime: "03:30 PM",
-        depPlatform: "Platform 4",
         arrTime: "07:30 PM",
-        arrPlatform: "Platform 8",
         duration: "4h 00m",
+        distance: 330,
         co2: 16,
         cost: 75,
         startCoords: [14.4378, 50.0755],
@@ -133,7 +127,6 @@ const trips = ref([
         completed: false,
         seat: "22F",
         gate: null,
-        terminal: "Hlavní Nádraží",
         class: "Business",
       },
     ],
@@ -145,45 +138,41 @@ const trips = ref([
       {
         id: 7,
         from: "Venice",
-        to: "Florence",
-        type: "Train",
-        transportName: "Frecciarossa",
-        transportCode: "FR999",
-        depTime: "10:00 AM",
-        depPlatform: "Platform 4",
-        arrTime: "12:15 PM",
-        arrPlatform: "Platform 9",
-        duration: "2h 15m",
-        co2: 18,
-        cost: 55,
+        to: "Ferrara",
+        type: "Bicycle",
+        transportName: "My Bike",
+        transportCode: "BIKE01",
+        depTime: "08:00 AM",
+        arrTime: "01:15 PM",
+        duration: "5h 15m",
+        distance: 110,
+        co2: 0,
+        cost: 0,
         startCoords: [12.3155, 45.4408],
-        endCoords: [11.2558, 43.7696],
+        endCoords: [11.6198, 44.8381],
         completed: false,
-        seat: "9D",
+        seat: null,
         gate: null,
-        terminal: "Santa Lucia",
-        class: "Premium",
+        class: "Sport",
       },
       {
         id: 8,
-        from: "Florence",
+        from: "Ferrara",
         to: "Rome",
         type: "Train",
         transportName: "Italo",
         transportCode: "IT892",
         depTime: "02:00 PM",
-        depPlatform: "Platform 11",
-        arrTime: "03:35 PM",
-        arrPlatform: "Platform 6",
-        duration: "1h 35m",
+        arrTime: "05:35 PM",
+        duration: "3h 35m",
+        distance: 380,
         co2: 15,
         cost: 60,
-        startCoords: [11.2558, 43.7696],
+        startCoords: [11.6198, 44.8381],
         endCoords: [12.4964, 41.9028],
         completed: false,
         seat: "12A",
         gate: null,
-        terminal: "SMN",
         class: "Prima",
       },
     ],
@@ -197,6 +186,10 @@ const getTripStats = (trip) => {
     totalDestinations: trip.routes.length + 1, // Start + End points
     carbonFootprint: trip.routes.reduce((acc, curr) => acc + curr.co2, 0),
     totalCost: trip.routes.reduce((acc, curr) => acc + curr.cost, 0),
+    totalDistance: trip.routes.reduce(
+      (acc, curr) => acc + (curr.distance || 0),
+      0
+    ),
   };
 };
 
@@ -210,14 +203,10 @@ const translateTransportType = (type) => {
     Train: t.value("world.transportTypes.train"),
     Airplane: t.value("world.transportTypes.airplane"),
     Car: t.value("world.transportTypes.car"),
+    Bus: "Bus",
+    Bicycle: "Bici",
   };
   return typeMap[type] || type;
-};
-
-const translatePlatform = (platform) => {
-  if (!platform) return "";
-  const platformWord = language.value === "it" ? "Binario" : "Platform";
-  return platform.replace(/Platform/gi, platformWord);
 };
 
 // --- MAP & GEOJSON COMPUTED ---
@@ -300,20 +289,19 @@ function completeTrip(tripId) {
   const trip = trips.value.find((t) => t.id === tripId);
   if (!trip) return;
   if (!isTripComplete(trip)) return;
-
   if (
     confirm(`Are you sure you want to complete and archive "${trip.name}"?`)
   ) {
-    // Remove trip from list
     trips.value = trips.value.filter((t) => t.id !== tripId);
   }
 }
 
 function modifyTrip(tripId) {
-  // Logic to redirect to MapPlan page
-  console.log("Redirecting to MapPlan with trip ID:", tripId);
-  alert("Redirecting to MapPlan editor...");
-  // router.push({ name: 'MapPlan', query: { tripId } });
+  const tripToPass = trips.value.find((t) => t.id === tripId);
+  if (tripToPass) {
+    tripStore.setTripToEdit(tripToPass);
+    router.push({ name: "Plan" });
+  }
 }
 
 // --- LIFECYCLE ---
@@ -333,11 +321,13 @@ onUnmounted(() => {
       class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4"
     >
       <div>
-        <h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2">
+        <h2
+          class="text-2xl font-bold text-gray-800 dark:text-white flex items-center gap-2"
+        >
           <Clock class="w-6 h-6 text-green-600" />
           {{ t("world.title") }}
         </h2>
-        <p class="text-gray-500 text-sm">
+        <p class="text-gray-500 dark:text-gray-300 text-sm">
           {{ t("world.description") }}
         </p>
       </div>
@@ -349,11 +339,13 @@ onUnmounted(() => {
       class="border-b-4 border-gray-100 pb-8 last:border-0"
     >
       <div class="mb-4 px-1">
-        <h3 class="text-xl font-bold text-gray-800">{{ trip.name }}</h3>
+        <h3 class="text-xl font-bold text-gray-800 dark:text-white">
+          {{ trip.name }}
+        </h3>
         <div class="text-xs text-gray-400 font-mono">ID: #{{ trip.id }}</div>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <div
           class="card bg-white border border-green-100 shadow-sm p-5 text-center rounded-2xl"
         >
@@ -364,6 +356,18 @@ onUnmounted(() => {
             {{ getTripStats(trip).totalDestinations }}
           </div>
         </div>
+
+        <div
+          class="card bg-white border border-green-100 shadow-sm p-5 text-center rounded-2xl"
+        >
+          <div class="text-xs uppercase font-bold text-gray-400 tracking-wider">
+            Total Km
+          </div>
+          <div class="text-4xl font-extrabold text-blue-600 mt-2">
+            {{ getTripStats(trip).totalDistance }}
+          </div>
+        </div>
+
         <div
           class="card bg-white border border-green-100 shadow-sm p-5 text-center rounded-2xl"
         >
@@ -374,7 +378,7 @@ onUnmounted(() => {
             class="text-4xl font-extrabold text-green-600 mt-2 flex justify-center items-center gap-1"
           >
             {{ getTripStats(trip).carbonFootprint }}
-            <span class="text-lg text-gray-500 font-normal">kg CO₂</span>
+            <span class="text-lg text-gray-500 font-normal">kg</span>
           </div>
         </div>
         <div
@@ -394,7 +398,7 @@ onUnmounted(() => {
       <div
         class="space-y-3 border border-green-500 rounded-2xl p-4 bg-green-50/30"
       >
-        <h3 class="text-lg font-bold text-green-800">
+        <h3 class="text-lg font-bold text-green-800 dark:text-white">
           {{ t("world.journeySegments") }}
         </h3>
 
@@ -494,6 +498,12 @@ onUnmounted(() => {
                       v-else-if="segment.type === 'Airplane'"
                       class="w-5 h-5"
                     />
+                    <Car v-else-if="segment.type === 'Car'" class="w-5 h-5" />
+                    <Bike
+                      v-else-if="segment.type === 'Bicycle'"
+                      class="w-5 h-5"
+                    />
+                    <Bus v-else-if="segment.type === 'Bus'" class="w-5 h-5" />
                     <Car v-else class="w-5 h-5" />
                   </div>
                   <div>
@@ -528,23 +538,13 @@ onUnmounted(() => {
               </div>
 
               <div
-                class="grid grid-cols-2 md:grid-cols-4 gap-2 mb-4 p-2 rounded-xl border transition-colors"
+                class="grid grid-cols-3 gap-2 mb-4 p-2 rounded-xl border transition-colors"
                 :class="
                   segment.completed
                     ? 'bg-gray-50 border-gray-100'
                     : 'bg-green-50/30 border-green-100'
                 "
               >
-                <div v-if="segment.terminal">
-                  <div
-                    class="text-[9px] text-gray-400 font-bold uppercase flex items-center gap-1"
-                  >
-                    <Building2 class="w-3 h-3" /> {{ t("world.terminal") }}
-                  </div>
-                  <div class="text-xs font-semibold text-gray-700">
-                    {{ segment.terminal }}
-                  </div>
-                </div>
                 <div v-if="segment.gate">
                   <div
                     class="text-[9px] text-gray-400 font-bold uppercase flex items-center gap-1"
@@ -597,14 +597,6 @@ onUnmounted(() => {
                   >
                     {{ segment.depTime }}
                   </div>
-                  <div
-                    class="text-xs font-medium"
-                    :class="
-                      segment.completed ? 'text-gray-400' : 'text-green-600'
-                    "
-                  >
-                    {{ translatePlatform(segment.depPlatform) }}
-                  </div>
                 </div>
                 <div
                   class="rounded-xl p-3 border transition-colors"
@@ -627,14 +619,6 @@ onUnmounted(() => {
                   >
                     {{ segment.arrTime }}
                   </div>
-                  <div
-                    class="text-xs font-medium"
-                    :class="
-                      segment.completed ? 'text-gray-400' : 'text-green-600'
-                    "
-                  >
-                    {{ translatePlatform(segment.arrPlatform) }}
-                  </div>
                 </div>
               </div>
 
@@ -649,6 +633,16 @@ onUnmounted(() => {
                     {{ segment.duration }}
                   </div>
                 </div>
+
+                <div class="text-center">
+                  <div class="text-[10px] text-gray-400 font-bold uppercase">
+                    Distance
+                  </div>
+                  <div class="font-bold text-blue-600">
+                    {{ segment.distance }} km
+                  </div>
+                </div>
+
                 <div class="text-center">
                   <div class="text-[10px] text-gray-400 font-bold uppercase">
                     {{ t("world.carbonFootprint") }}
@@ -662,6 +656,7 @@ onUnmounted(() => {
                     {{ segment.co2 }} kg
                   </div>
                 </div>
+
                 <div class="text-center">
                   <div class="text-[10px] text-gray-400 font-bold uppercase">
                     {{ t("world.cost") }}

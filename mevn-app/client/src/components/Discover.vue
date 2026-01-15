@@ -238,6 +238,9 @@ const submitRecommendation = () => {
   }, 1500);
 };
 
+function openProfile(userName) {
+  alert(`Opening profile for ${userName}...`);
+}
 onMounted(() => {
   loadMorePlaces();
   observer.value = new IntersectionObserver(
@@ -261,7 +264,9 @@ onUnmounted(() => {
       class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4"
     >
       <div>
-        <h2 class="text-2xl md:text-3xl font-bold text-gray-800">
+        <h2
+          class="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white"
+        >
           {{ t("discover.title") }}
         </h2>
         <p class="text-emerald-600 mt-0.5 text-sm md:text-base">
@@ -286,7 +291,7 @@ onUnmounted(() => {
             v-model="searchQuery"
             type="text"
             placeholder="Search by country, city, or name..."
-            class="input input-bordered w-full rounded-full pl-10 focus:input-success focus:outline-none shadow-sm"
+            class="input input-bordered w-full rounded-full pl-10 focus:input-success focus:outline-none shadow-sm dark:bg-slate-800 dark:text-white dark:border-slate-700"
           />
           <Search
             class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"
@@ -294,21 +299,21 @@ onUnmounted(() => {
         </div>
 
         <div
-          class="tabs tabs-boxed bg-gray-100 rounded-full p-1 self-start md:self-auto"
+          class="tabs tabs-boxed bg-gray-100 rounded-full p-1 self-start md:self-auto dark:bg-slate-800"
         >
           <a
-            class="tab rounded-full transition-all duration-200"
+            class="tab rounded-full transition-all duration-200 dark:text-gray-300"
             :class="{
-              'tab-active bg-white text-emerald-600 shadow-sm':
+              'tab-active bg-white text-emerald-600 shadow-sm dark:bg-slate-600 dark:text-white':
                 viewMode === 'all',
             }"
             @click="viewMode = 'all'"
             >All</a
           >
           <a
-            class="tab rounded-full transition-all duration-200 gap-2"
+            class="tab rounded-full transition-all duration-200 gap-2 dark:text-gray-300"
             :class="{
-              'tab-active bg-white text-emerald-600 shadow-sm':
+              'tab-active bg-white text-emerald-600 shadow-sm dark:bg-slate-600 dark:text-white':
                 viewMode === 'my-posts',
             }"
             @click="viewMode = 'my-posts'"
@@ -316,9 +321,9 @@ onUnmounted(() => {
             <User class="w-3 h-3" /> My Posts
           </a>
           <a
-            class="tab rounded-full transition-all duration-200 gap-2"
+            class="tab rounded-full transition-all duration-200 gap-2 dark:text-gray-300"
             :class="{
-              'tab-active bg-white text-emerald-600 shadow-sm':
+              'tab-active bg-white text-emerald-600 shadow-sm dark:bg-slate-600 dark:text-white':
                 viewMode === 'saved',
             }"
             @click="viewMode = 'saved'"
