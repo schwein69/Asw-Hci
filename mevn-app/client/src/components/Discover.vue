@@ -238,6 +238,9 @@ const submitRecommendation = () => {
   }, 1500);
 };
 
+function openProfile(userName) {
+  alert(`Opening profile for ${userName}...`);
+}
 onMounted(() => {
   loadMorePlaces();
   observer.value = new IntersectionObserver(

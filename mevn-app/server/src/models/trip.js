@@ -27,6 +27,7 @@ const ItinerarySegmentSchema = new mongoose.Schema({
   transportNumber: { type: String, trim: true },
   gate: { type: String, trim: true },
   seatNumber: { type: String, trim: true },
+  class: { type: String, trim: true },
 
   // LUOGHI
   fromLocation: {

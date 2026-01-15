@@ -43,8 +43,9 @@ export default {
       return this.route && this.route.name === "Profile";
     },
     isAdmin() {
-      return this.user?.role === "AdminGeneral" || 
-             this.user?.role === "AdminForum";
+      return (
+        this.user?.role === "AdminGeneral" || this.user?.role === "AdminForum"
+      );
     },
     shouldShowNavbar() {
       if (this.isAuthPage) return false;
@@ -232,7 +233,7 @@ export default {
           <h1
             class="text-xl font-semibold text-gray-900 dark:text-white tracking-tight"
           >
-            EcoVoyage
+            EcoGo
           </h1>
           <p
             class="text-[9px] text-success font-light uppercase tracking-[0.2em]"
@@ -268,7 +269,7 @@ export default {
                 <User v-else class="w-5 h-5 text-white" />
               </div>
               <span class="hidden sm:inline">{{
-                user?.username || t('app.profile')
+                user?.username || t("app.profile")
               }}</span>
             </button>
 
@@ -322,14 +323,14 @@ export default {
                     class="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
                   >
                     <User class="w-5 h-5" />
-                    <span>{{ t('nav.viewProfile') }}</span>
+                    <span>{{ t("nav.viewProfile") }}</span>
                   </button>
                   <button
                     @click="logout"
                     class="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                   >
                     <LogOut class="w-5 h-5" />
-                    <span>{{ t('nav.logout') }}</span>
+                    <span>{{ t("nav.logout") }}</span>
                   </button>
                 </div>
               </div>
