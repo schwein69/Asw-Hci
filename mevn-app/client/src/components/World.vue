@@ -322,11 +322,13 @@ onUnmounted(() => {
       class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4"
     >
       <div>
-        <h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2">
+        <h2
+          class="text-2xl font-bold text-gray-800 dark:text-white flex items-center gap-2"
+        >
           <Clock class="w-6 h-6 text-green-600" />
           {{ t("world.title") }}
         </h2>
-        <p class="text-gray-500 text-sm">
+        <p class="text-gray-500 dark:text-gray-300 text-sm">
           {{ t("world.description") }}
         </p>
       </div>
@@ -338,7 +340,9 @@ onUnmounted(() => {
       class="border-b-4 border-gray-100 pb-8 last:border-0"
     >
       <div class="mb-4 px-1">
-        <h3 class="text-xl font-bold text-gray-800">{{ trip.name }}</h3>
+        <h3 class="text-xl font-bold text-gray-800 dark:text-white">
+          {{ trip.name }}
+        </h3>
         <div class="text-xs text-gray-400 font-mono">ID: #{{ trip.id }}</div>
       </div>
 
@@ -395,7 +399,7 @@ onUnmounted(() => {
       <div
         class="space-y-3 border border-green-500 rounded-2xl p-4 bg-green-50/30"
       >
-        <h3 class="text-lg font-bold text-green-800">
+        <h3 class="text-lg font-bold text-green-800 dark:text-white">
           {{ t("world.journeySegments") }}
         </h3>
 
