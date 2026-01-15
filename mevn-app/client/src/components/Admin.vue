@@ -39,7 +39,7 @@ export default {
       activeTab: "users",
 
       // Settings Data
-      platformName: "EcoVoyage",
+      platformName: "EcoGo",
       ecoScoreThreshold: 70,
       weatherSensitivity: 3,
       maintenanceMessage: "",
