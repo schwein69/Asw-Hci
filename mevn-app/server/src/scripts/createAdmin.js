@@ -9,7 +9,6 @@ const MONGO_URI = process.env.MONGO_URI;
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
 const ADMIN_USERNAME = process.env.ADMIN_USERNAME;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
-const ADMIN_ROLE = process.env.ADMIN_ROLE || "AdminGeneral";
 
 async function createAdmin() {
   try {
@@ -48,7 +47,7 @@ async function createAdmin() {
       username: ADMIN_USERNAME,
       email: ADMIN_EMAIL,
       password: hashedPassword,
-      role: ADMIN_ROLE
+      role: "AdminGeneral"
     });
 
     await newAdmin.save();
