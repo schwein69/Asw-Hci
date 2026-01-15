@@ -60,7 +60,13 @@ export default {
         },
         { rank: 2, name: "Marcus T.", points: 1401, icon: "🥈", isMe: false },
         { rank: 3, name: "Yuki S.", points: 1287, icon: "🥉", isMe: false },
-        { rank: 4, nameKey: "rewards.you", points: 892, icon: "⭐", isMe: true }, // isMe triggers green highlight
+        {
+          rank: 4,
+          nameKey: "rewards.you",
+          points: 892,
+          icon: "⭐",
+          isMe: true,
+        }, // isMe triggers green highlight
         { rank: 5, name: "Emma W.", points: 845, icon: "#5", isMe: false },
       ],
 
@@ -165,10 +171,10 @@ export default {
     },
   },
   mounted() {
-    window.addEventListener('languageChanged', this.handleLanguageChange);
+    window.addEventListener("languageChanged", this.handleLanguageChange);
   },
   beforeUnmount() {
-    window.removeEventListener('languageChanged', this.handleLanguageChange);
+    window.removeEventListener("languageChanged", this.handleLanguageChange);
   },
   methods: {
     handleLanguageChange(event) {
@@ -184,17 +190,21 @@ export default {
       <div class="flex items-center gap-3 mb-4">
         <div class="text-3xl">👑</div>
         <div>
-          <h2 class="text-2xl font-bold">{{ t('rewards.sustainabilityHero') }}</h2>
-          <p class="text-sm opacity-90">{{ t('rewards.level') }} {{ userLevel }}</p>
+          <h2 class="text-2xl font-bold">
+            {{ t("rewards.sustainabilityHero") }}
+          </h2>
+          <p class="text-sm opacity-90">
+            {{ t("rewards.level") }} {{ userLevel }}
+          </p>
         </div>
         <div class="ml-auto text-right">
           <div class="text-3xl font-bold">{{ ecoPoints }}</div>
-          <p class="text-sm opacity-90">{{ t('rewards.ecoPoints') }}</p>
+          <p class="text-sm opacity-90">{{ t("rewards.ecoPoints") }}</p>
         </div>
       </div>
 
       <div class="flex justify-between items-end mb-2">
-        <p class="text-sm">{{ t('rewards.progressToPlanetGuardian') }}</p>
+        <p class="text-sm">{{ t("rewards.progressToPlanetGuardian") }}</p>
         <p class="text-sm font-medium opacity-90">
           {{ ecoPoints }} / {{ maxPointsForLevel }}
         </p>
@@ -206,12 +216,16 @@ export default {
           :style="{ width: progressPercentage + '%' }"
         ></div>
       </div>
-      <p class="text-sm mt-2">{{ pointsToNextLevel }} {{ t('rewards.pointsToNextLevel') }}</p>
+      <p class="text-sm mt-2">
+        {{ pointsToNextLevel }} {{ t("rewards.pointsToNextLevel") }}
+      </p>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
       <div class="bg-white rounded-xl p-4 border border-green-200">
-        <p class="text-gray-500 text-sm mb-1">{{ t('rewards.achievementsUnlocked') }}</p>
+        <p class="text-gray-500 text-sm mb-1">
+          {{ t("rewards.achievementsUnlocked") }}
+        </p>
         <div class="flex items-center gap-2">
           <Trophy class="w-6 h-6 text-yellow-500" />
           <p class="text-2xl font-bold text-gray-800">
@@ -221,7 +235,9 @@ export default {
       </div>
 
       <div class="bg-white rounded-xl p-4 border border-green-200">
-        <p class="text-gray-500 text-sm mb-1">{{ t('rewards.totalEcoPoints') }}</p>
+        <p class="text-gray-500 text-sm mb-1">
+          {{ t("rewards.totalEcoPoints") }}
+        </p>
         <div class="flex items-center gap-2">
           <Star class="w-6 h-6 text-green-500 fill-current" />
           <p class="text-2xl font-bold text-success">{{ ecoPoints }}</p>
@@ -229,7 +245,7 @@ export default {
       </div>
 
       <div class="bg-white rounded-xl p-4 border border-green-200">
-        <p class="text-gray-500 text-sm mb-1">{{ t('rewards.globalRank') }}</p>
+        <p class="text-gray-500 text-sm mb-1">{{ t("rewards.globalRank") }}</p>
         <div class="flex items-center gap-2">
           <Zap class="w-6 h-6 text-green-500 fill-current" />
           <p class="text-2xl font-bold text-success">{{ globalRank }}</p>
@@ -238,7 +254,9 @@ export default {
     </div>
 
     <div>
-      <h3 class="text-lg font-semibold text-gray-800 mb-4">{{ t('rewards.achievements') }}</h3>
+      <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">
+        {{ t("rewards.achievements") }}
+      </h3>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div
           v-for="achievement in achievements"
@@ -281,13 +299,13 @@ export default {
                   : 'bg-success text-white'
               "
             >
-              {{ achievement.points }} {{ t('rewards.pts') }}
+              {{ achievement.points }} {{ t("rewards.pts") }}
             </div>
           </div>
 
           <div v-if="achievement.target > 0" class="mt-4">
             <div class="flex justify-between text-xs mb-1 text-gray-500">
-              <span>{{ t('rewards.progress') }}</span>
+              <span>{{ t("rewards.progress") }}</span>
               <span>{{ achievement.current }} / {{ achievement.target }}</span>
             </div>
             <div class="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
@@ -311,19 +329,21 @@ export default {
     <div class="bg-white rounded-2xl p-6 border border-green-200 shadow-sm">
       <div class="flex items-center gap-2 mb-4">
         <Target class="w-6 h-6 text-emerald-700" />
-        <h3 class="text-lg font-bold text-emerald-800">{{ t('rewards.currentStreak') }}</h3>
+        <h3 class="text-lg font-bold text-emerald-800">
+          {{ t("rewards.currentStreak") }}
+        </h3>
       </div>
 
       <div class="flex flex-col md:flex-row items-center gap-6">
         <div class="flex flex-col items-center justify-center min-w-20">
           <div class="text-4xl mb-1">🔥</div>
           <div class="text-xl font-bold text-gray-800">{{ streakDays }}</div>
-          <div class="text-xs text-gray-500">{{ t('rewards.days') }}</div>
+          <div class="text-xs text-gray-500">{{ t("rewards.days") }}</div>
         </div>
 
         <div class="flex-1 w-full">
           <p class="text-sm text-gray-500 mb-3">
-            {{ t('rewards.keepMakingChoices') }}
+            {{ t("rewards.keepMakingChoices") }}
           </p>
           <div class="flex gap-2 h-8 w-full">
             <div
@@ -334,7 +354,8 @@ export default {
             ></div>
           </div>
           <p class="text-xs text-emerald-600 mt-2 font-medium">
-            {{ t('rewards.thisWeek') }}: {{ activeStreakCount }}/7 {{ t('rewards.daysActive') }}
+            {{ t("rewards.thisWeek") }}: {{ activeStreakCount }}/7
+            {{ t("rewards.daysActive") }}
           </p>
         </div>
       </div>
@@ -344,9 +365,11 @@ export default {
       <div class="mb-4">
         <div class="flex items-center gap-2">
           <Trophy class="w-6 h-6 text-emerald-700" />
-          <h3 class="text-lg font-bold text-gray-800">{{ t('rewards.globalLeaderboard') }}</h3>
+          <h3 class="text-lg font-bold text-gray-800">
+            {{ t("rewards.globalLeaderboard") }}
+          </h3>
         </div>
-        <p class="text-sm text-gray-500">{{ t('rewards.topEcoTravelers') }}</p>
+        <p class="text-sm text-gray-500">{{ t("rewards.topEcoTravelers") }}</p>
       </div>
 
       <div class="space-y-3">
@@ -376,7 +399,7 @@ export default {
             class="px-3 py-1 rounded-full text-sm font-bold text-white shadow-sm"
             :class="user.isMe ? 'bg-emerald-500' : 'bg-emerald-600'"
           >
-            {{ user.points }} {{ t('rewards.pts') }}
+            {{ user.points }} {{ t("rewards.pts") }}
           </div>
         </div>
       </div>
