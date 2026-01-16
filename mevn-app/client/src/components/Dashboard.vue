@@ -4,6 +4,7 @@ import {
   Leaf,
   Zap,
   TrendingUp,
+  Sprout,
   Car,
   TreePine,
   Gauge,
@@ -37,14 +38,20 @@ const t = (key) => translate(key, language.value);
 const stats = computed(() => [
   {
     label: t("dashboard.totalCo2Saved"),
-    value: "245 kg", // Kept Base value, used Snippet 2 key
-    subtitle: t("dashboard.vsLastMonth"), // "↑ 18% vs last month" equivalent
+    value: "245 kg",
+    subtitle: "", // compare to average equivalent distance
     icon: Leaf,
   },
   {
-    label: t("dashboard.greenMiles"), // "Green Distance"
-    value: "3,842 km",
+    label: t("dashboard.totalDistance"), // "Total Distance"
+    value: "5542 km",
     subtitle: t("dashboard.thisMonth"),
+    icon: Sprout,
+  },
+  {
+    label: t("dashboard.greenDistance"), // "Green Distance"
+    value: "3842 km",
+    subtitle: t("dashboard.thisMonthGreen"),
     icon: TrendingUp,
   },
   {
