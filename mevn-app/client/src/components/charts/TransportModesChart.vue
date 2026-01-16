@@ -1,20 +1,21 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from "vue";
-import { Pie } from "vue-chartjs";
-import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
+import { PolarArea } from "vue-chartjs";
+import {
+  Chart as ChartJS,
+  RadialLinearScale,
+  ArcElement,
+  Tooltip,
+  Legend,
+} from "chart.js";
 import { getLanguage, t as translate } from "../../utils/translations.js";
 
-// Register Chart.js components
-ChartJS.register(ArcElement, Tooltip, Legend);
+ChartJS.register(RadialLinearScale, ArcElement, Tooltip, Legend);
 
-// --- STATE ---
 const language = ref(getLanguage());
 
-// --- TRANSLATION HELPER ---
 const t = (key) => translate(key, language.value);
 
-// --- CHART DATA (Reactive) ---
-// Using computed ensures labels are re-translated when language changes
 const chartData = computed(() => ({
   labels: [
     translate("dashboard.transportTypes.train", language.value),
@@ -28,20 +29,12 @@ const chartData = computed(() => ({
     {
       data: [30, 25, 20, 10, 10, 5],
       backgroundColor: [
-        "#3b82f6", // Train: Blue
-        "#8b5cf6", // Bus: Purple
-        "#10b981", // Bike: Emerald
-        "#84cc16", // Walk: Lime
-        "#f97316", // Car: Orange (High Carbon)
-        "#ef4444", // Airplane: Red (Highest Carbon)
-      ],
-      hoverBackgroundColor: [
-        "#2563eb",
-        "#7c3aed",
-        "#059669",
-        "#65a30d",
-        "#ea580c",
-        "#dc2626",
+        "rgba(59, 130, 246, 0.7)",
+        "rgba(139, 92, 246, 0.7)",
+        "rgba(16, 185, 129, 0.7)",
+        "rgba(132, 204, 22, 0.7)",
+        "rgba(249, 115, 22, 0.7)",
+        "rgba(239, 68, 68, 0.7)",
       ],
       borderColor: "#ffffff",
       borderWidth: 2,
@@ -50,12 +43,23 @@ const chartData = computed(() => ({
   ],
 }));
 
-// --- CHART OPTIONS ---
 const chartOptions = {
   responsive: true,
   maintainAspectRatio: false,
   layout: {
     padding: 10,
+  },
+  scales: {
+    r: {
+      ticks: {
+        backdropColor: "transparent",
+        color: "#9ca3af",
+        font: { size: 10 },
+      },
+      grid: {
+        color: "rgba(0, 0, 0, 0.05)",
+      },
+    },
   },
   plugins: {
     tooltip: {
@@ -69,7 +73,7 @@ const chartOptions = {
       boxPadding: 4,
       callbacks: {
         label: function (context) {
-          return ` ${context.label}: ${context.parsed}%`;
+          return ` ${context.label}: ${context.parsed.r}%`;
         },
       },
     },
@@ -91,12 +95,10 @@ const chartOptions = {
   },
 };
 
-// --- EVENT HANDLING ---
 const handleLanguageChange = (event) => {
   language.value = event.detail.language;
 };
 
-// --- LIFECYCLE HOOKS ---
 onMounted(() => {
   window.addEventListener("languageChanged", handleLanguageChange);
 });
@@ -115,8 +117,8 @@ onUnmounted(() => {
         </h3>
       </div>
 
-      <div class="grow relative min-h-[200px] flex justify-center items-center">
-        <Pie :data="chartData" :options="chartOptions" />
+      <div class="grow relative min-h-[250px] flex justify-center items-center">
+        <PolarArea :data="chartData" :options="chartOptions" />
       </div>
     </div>
   </div>
