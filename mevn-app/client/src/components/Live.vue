@@ -143,6 +143,7 @@ export default {
           weather: {
             condition: "Loading...",
             temp: "--",
+            windSpeed: null,
             icon: "Cloud",
             alert: false,
           },
@@ -165,6 +166,7 @@ export default {
           weather: {
             condition: "Loading...",
             temp: "--",
+            windSpeed: null,
             icon: "Cloud",
             alert: false,
           },
@@ -187,6 +189,7 @@ export default {
           weather: {
             condition: "Loading...",
             temp: "--",
+            windSpeed: null,
             icon: "Cloud",
             alert: false,
           },
@@ -209,6 +212,7 @@ export default {
           weather: {
             condition: "Loading...",
             temp: "--",
+            windSpeed: null,
             icon: "Cloud",
             alert: false,
           },
@@ -223,6 +227,7 @@ export default {
           alternative: null,
         },
       ],
+      refreshInterval: null, // For auto-refresh
     };
   },
   computed: {
@@ -231,11 +236,24 @@ export default {
     },
   },
   mounted() {
-    this.fetchRealWeather();
-    window.addEventListener('languageChanged', this.handleLanguageChange);
+    this.fetchNotifications();
+    this.checkWeatherAndNotify();
+
+    // Auto-refresh every 30 seconds
+    this.refreshInterval = setInterval(() => {
+      console.log("Auto-refreshing weather and notifications...");
+      this.fetchNotifications();
+      this.checkWeatherAndNotify();
+    }, 30000); // 30 seconds
+
+    window.addEventListener("languageChanged", this.handleLanguageChange);
   },
   beforeUnmount() {
-    window.removeEventListener('languageChanged', this.handleLanguageChange);
+    // Clear interval when leaving page
+    if (this.refreshInterval) {
+      clearInterval(this.refreshInterval);
+    }
+    window.removeEventListener("languageChanged", this.handleLanguageChange);
   },
   methods: {
     handleLanguageChange(event) {
@@ -244,33 +262,114 @@ export default {
     dismissReminder() {
       this.hasUpcomingTrip = false;
     },
-    markAllRead() {
-      alert("All notifications marked as read!");
-    },
-    // Fetch Real Weather Data
-    async fetchRealWeather() {
-      for (const loc of this.locations) {
-        try {
-          const response = await fetch(
-            `https://api.open-meteo.com/v1/forecast?latitude=${loc.lat}&longitude=${loc.lon}&current_weather=true`
-          );
-          const data = await response.json();
+    async markAllRead() {
+      const userId = this.getUserId();
+      if (!userId) return;
 
-          if (data.current_weather) {
-            const { temperature, weathercode } = data.current_weather;
-            const weatherInfo = this.getWeatherInfo(weathercode);
+      try {
+        const response = await fetch(
+          `http://localhost:3000/api/notifications/mark-all-read/${userId}`,
+          { method: "PUT" }
+        );
 
-            // Update the location object with real data
-            loc.weather.temp = `${Math.round(temperature)}°C`;
-            loc.weather.condition = weatherInfo.text;
-            loc.weather.icon = weatherInfo.icon;
-            loc.weather.alert = weatherInfo.alert;
-          }
-        } catch (error) {
-          console.error(`Failed to fetch weather for ${loc.name}`, error);
-          loc.weather.condition = this.t('live.weatherConditions.unavailable');
+        if (response.ok) {
+          this.notifications = this.notifications.map((n) => ({
+            ...n,
+            isRead: true,
+          }));
+          alert("All notifications marked as read!");
         }
+      } catch (error) {
+        console.error("Failed to mark all as read:", error);
       }
+    },
+    getUserId() {
+      const user = JSON.parse(localStorage.getItem("user") || "{}");
+      return user._id || user.id;
+    },
+    // Fetch notifications from backend
+    async fetchNotifications() {
+      const userId = this.getUserId();
+      if (!userId) return;
+
+      try {
+        const response = await fetch(
+          `http://localhost:3000/api/notifications/${userId}?limit=20`
+        );
+        const data = await response.json();
+
+        if (data.success) {
+          console.log("Received notifications:", data.notifications.length);
+          this.notifications = data.notifications.map((n) => ({
+            id: n._id,
+            type: n.type,
+            city: n.city || "N/A",
+            time: new Date(n.createdAt).toLocaleTimeString(),
+            message: n.message,
+            icon: n.icon || "Bell",
+            color: this.getNotificationColor(n.type),
+            isRead: n.isRead,
+          }));
+          console.log("Processed notifications:", this.notifications.length);
+        }
+      } catch (error) {
+        console.error("Failed to fetch notifications:", error);
+      }
+    },
+    // Check weather and create notifications
+    async checkWeatherAndNotify() {
+      const userId = this.getUserId();
+      if (!userId) return;
+
+      const locations = this.locations.map((loc) => ({
+        name: loc.name,
+        lat: loc.lat,
+        lon: loc.lon,
+      }));
+
+      try {
+        const response = await fetch(
+          `http://localhost:3000/api/notifications/weather/${userId}`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ locations }),
+          }
+        );
+
+        const data = await response.json();
+
+        if (data.success && data.weatherData) {
+          // Update locations with weather data
+          data.weatherData.forEach((weather) => {
+            const loc = this.locations.find((l) => l.name === weather.city);
+            if (loc && !weather.error) {
+              loc.weather.temp = `${weather.temperature}°C`;
+              loc.weather.condition = weather.condition;
+              loc.weather.windSpeed = weather.windSpeed || null;
+              loc.weather.icon = weather.icon;
+              loc.weather.alert = weather.alert;
+            }
+          });
+
+          // Refresh notifications if new alerts were created
+          if (data.alertsCreated > 0) {
+            this.fetchNotifications();
+          }
+        }
+      } catch (error) {
+        console.error("Failed to check weather:", error);
+      }
+    },
+    getNotificationColor(type) {
+      const colors = {
+        weather: "bg-blue-100 text-blue-600",
+        social: "bg-purple-100 text-purple-600",
+        location: "bg-emerald-100 text-emerald-600",
+        tourist: "bg-yellow-100 text-yellow-600",
+        transport: "bg-orange-100 text-orange-600",
+      };
+      return colors[type] || "bg-gray-100 text-gray-600";
     },
     // changing codes to icons ---
     getWeatherInfo(code) {
@@ -295,10 +394,12 @@ export default {
     <div class="bg-amber-50 border border-amber-200 rounded-2xl p-6">
       <div class="flex items-center gap-2 mb-1 text-amber-900">
         <Clock class="w-5 h-5" />
-        <h3 class="font-bold text-lg">{{ t('live.upcomingTravelReminders') }}</h3>
+        <h3 class="font-bold text-lg">
+          {{ t("live.upcomingTravelReminders") }}
+        </h3>
       </div>
       <p class="text-amber-800/70 text-sm mb-6">
-        {{ t('live.dontMissDeparture') }}
+        {{ t("live.dontMissDeparture") }}
       </p>
 
       <div
@@ -312,13 +413,15 @@ export default {
             </div>
             <div>
               <h4 class="font-bold text-gray-900 text-lg">{{ trip.title }}</h4>
-              <p class="text-gray-500 text-sm">{{ t('live.departureIn') }} 24 {{ t('live.hours') }}</p>
+              <p class="text-gray-500 text-sm">
+                {{ t("live.departureIn") }} 24 {{ t("live.hours") }}
+              </p>
             </div>
           </div>
           <span
             class="bg-amber-400 text-white text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1"
           >
-            <Bell class="w-3 h-3 fill-current" /> {{ t('live.new') }}
+            <Bell class="w-3 h-3 fill-current" /> {{ t("live.new") }}
           </span>
         </div>
 
@@ -330,7 +433,7 @@ export default {
               <p
                 class="text-xs font-bold text-emerald-700 flex items-center gap-1 mb-1"
               >
-                <MapPin class="w-3.5 h-3.5" /> {{ t('live.route') }}
+                <MapPin class="w-3.5 h-3.5" /> {{ t("live.route") }}
               </p>
               <div class="flex items-center gap-2 font-semibold text-gray-800">
                 <span>{{ trip.from }}</span>
@@ -343,7 +446,7 @@ export default {
               <p
                 class="text-xs font-bold text-emerald-700 flex items-center gap-1 mb-1"
               >
-                <TrainFront class="w-3.5 h-3.5" /> {{ t('live.transport') }}
+                <TrainFront class="w-3.5 h-3.5" /> {{ t("live.transport") }}
               </p>
               <span
                 class="inline-block bg-emerald-600 text-white text-xs font-bold px-2 py-0.5 rounded"
@@ -356,7 +459,7 @@ export default {
               <p
                 class="text-xs font-bold text-emerald-700 flex items-center gap-1 mb-1"
               >
-                <Calendar class="w-3.5 h-3.5" /> {{ t('live.date') }}
+                <Calendar class="w-3.5 h-3.5" /> {{ t("live.date") }}
               </p>
               <span class="font-semibold text-gray-800">{{ trip.date }}</span>
             </div>
@@ -365,7 +468,7 @@ export default {
               <p
                 class="text-xs font-bold text-emerald-700 flex items-center gap-1 mb-1"
               >
-                <Clock class="w-3.5 h-3.5" /> {{ t('live.time') }}
+                <Clock class="w-3.5 h-3.5" /> {{ t("live.time") }}
               </p>
               <span class="font-semibold text-gray-800">{{ trip.time }}</span>
             </div>
@@ -376,13 +479,13 @@ export default {
           <button
             class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-lg transition-colors flex justify-center items-center gap-2"
           >
-            <Info class="w-4 h-4" /> {{ t('live.viewTripDetails') }}
+            <Info class="w-4 h-4" /> {{ t("live.viewTripDetails") }}
           </button>
           <button
             @click="dismissReminder"
             class="px-6 border border-gray-300 hover:bg-gray-50 text-gray-600 font-bold py-2.5 rounded-lg transition-colors"
           >
-            {{ t('live.dismiss') }}
+            {{ t("live.dismiss") }}
           </button>
         </div>
       </div>
@@ -396,9 +499,11 @@ export default {
         >
           <Clock class="w-6 h-6" />
         </div>
-        <p class="text-gray-600 font-medium">{{ t('live.noUpcomingReminders') }}</p>
+        <p class="text-gray-600 font-medium">
+          {{ t("live.noUpcomingReminders") }}
+        </p>
         <p class="text-gray-400 text-sm">
-          {{ t('live.notified24Hours') }}
+          {{ t("live.notified24Hours") }}
         </p>
       </div>
     </div>
@@ -409,22 +514,22 @@ export default {
           <div class="flex items-center gap-2">
             <Bell class="w-5 h-5 text-emerald-600" />
             <h3 class="font-bold text-lg text-gray-900">
-              {{ t('live.notifications') }}
+              {{ t("live.notifications") }}
             </h3>
             <span
               class="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full"
-              >10 {{ t('live.new') }}</span
+              >10 {{ t("live.new") }}</span
             >
           </div>
           <p class="text-sm text-gray-500 mt-1">
-            {{ t('live.liveUpdates') }}
+            {{ t("live.liveUpdates") }}
           </p>
         </div>
         <button
           @click="markAllRead"
           class="text-xs font-medium text-gray-600 border border-gray-300 rounded px-3 py-1 hover:bg-gray-50 transition-colors"
         >
-          {{ t('live.markAllRead') }}
+          {{ t("live.markAllRead") }}
         </button>
       </div>
 
@@ -485,26 +590,36 @@ export default {
           </div>
         </div>
 
-        <div
-          class="bg-sky-50 rounded-xl p-3 border border-sky-100 mb-3 flex items-center justify-between"
-        >
-          <div class="flex items-center gap-3">
-            <component :is="loc.weather.icon" class="w-5 h-5 text-sky-600" />
-            <div>
-              <p class="text-xs text-sky-800 font-bold">{{ t('live.weather') }}</p>
-              <p class="text-sm text-gray-700">{{ loc.weather.condition }}</p>
+        <div class="bg-sky-50 rounded-xl p-3 border border-sky-100 mb-3">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <component :is="loc.weather.icon" class="w-5 h-5 text-sky-600" />
+              <div>
+                <p class="text-xs text-sky-800 font-bold">
+                  {{ t("live.weather") }}
+                </p>
+                <p class="text-sm text-gray-700">{{ loc.weather.condition }}</p>
+                <p
+                  v-if="loc.weather.windSpeed"
+                  class="text-[10px] text-gray-500"
+                >
+                  <Wind class="w-3 h-3 inline mr-0.5" />
+                  {{ loc.weather.windSpeed }} km/h
+                </p>
+              </div>
             </div>
-          </div>
-          <div class="flex items-center gap-2">
-            <span
-              v-if="loc.weather.alert"
-              class="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded"
-            >
-              <AlertTriangle class="w-3 h-3 inline mr-0.5" /> {{ t('live.alert') }}
-            </span>
-            <span class="text-xl font-bold text-sky-600">{{
-              loc.weather.temp
-            }}</span>
+            <div class="flex items-center gap-2">
+              <span
+                v-if="loc.weather.alert"
+                class="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded"
+              >
+                <AlertTriangle class="w-3 h-3 inline mr-0.5" />
+                {{ t("live.alert") }}
+              </span>
+              <span class="text-xl font-bold text-sky-600">{{
+                loc.weather.temp
+              }}</span>
+            </div>
           </div>
         </div>
 
@@ -513,7 +628,7 @@ export default {
             <div
               class="flex items-center gap-2 text-xs font-bold text-amber-800"
             >
-              <User class="w-3.5 h-3.5" /> {{ t('live.touristAffluence') }}
+              <User class="w-3.5 h-3.5" /> {{ t("live.touristAffluence") }}
             </div>
             <div
               class="flex items-center gap-1 text-[10px] font-medium text-gray-500"
@@ -525,7 +640,13 @@ export default {
                   loc.crowd.trend === 'Up' ? 'text-red-500' : 'text-emerald-500'
                 "
               />
-              {{ loc.crowd.trend === 'Up' ? t('live.up') : loc.crowd.trend === 'Down' ? t('live.down') : t('live.stable') }}
+              {{
+                loc.crowd.trend === "Up"
+                  ? t("live.up")
+                  : loc.crowd.trend === "Down"
+                  ? t("live.down")
+                  : t("live.stable")
+              }}
             </div>
           </div>
 
@@ -540,7 +661,9 @@ export default {
           </div>
 
           <div class="flex justify-between text-[10px] font-bold mt-1">
-            <span :class="loc.crowd.color">{{ t(loc.crowd.levelKey || 'live.mediumDensity') }}</span>
+            <span :class="loc.crowd.color">{{
+              t(loc.crowd.levelKey || "live.mediumDensity")
+            }}</span>
             <span class="text-gray-400">{{ loc.crowd.value + 40 }}.9%</span>
           </div>
         </div>
@@ -553,7 +676,7 @@ export default {
             <CheckCircle class="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
             <div>
               <p class="text-xs font-bold text-emerald-800">
-                {{ t('live.alternativeSuggested') }}
+                {{ t("live.alternativeSuggested") }}
               </p>
               <p class="text-[10px] text-emerald-700 leading-tight mt-0.5">
                 {{ loc.alternative }}
