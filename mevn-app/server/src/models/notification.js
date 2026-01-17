@@ -9,8 +9,24 @@ const NotificationSchema = new mongoose.Schema({
 
   type: {
     type: String,
-    enum: ["Like", "WeatherAlert", "System", "TripReminder", "trafficAlert"],
+    enum: [
+      "Like",
+      "WeatherAlert",
+      "System",
+      "TripReminder",
+      "trafficAlert",
+      "weather",
+      "social",
+      "location",
+      "tourist",
+      "transport",
+    ],
     required: true,
+  },
+
+  city: {
+    type: String,
+    default: null,
   },
 
   message: {
@@ -18,10 +34,24 @@ const NotificationSchema = new mongoose.Schema({
     required: true,
   },
 
+  icon: {
+    type: String,
+    default: "Bell",
+  },
+
   // Link interno (es. "/trip/123" )
   referenceLink: {
     type: String,
     default: null,
+  },
+
+  // Weather-specific data
+  weatherData: {
+    condition: String,
+    temperature: Number,
+    weatherCode: Number,
+    windSpeed: Number,
+    alert: Boolean,
   },
 
   isRead: {
