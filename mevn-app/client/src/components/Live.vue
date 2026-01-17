@@ -143,7 +143,6 @@ export default {
           weather: {
             condition: "Loading...",
             temp: "--",
-            windSpeed: null,
             icon: "Cloud",
             alert: false,
           },
@@ -166,7 +165,6 @@ export default {
           weather: {
             condition: "Loading...",
             temp: "--",
-            windSpeed: null,
             icon: "Cloud",
             alert: false,
           },
@@ -189,7 +187,6 @@ export default {
           weather: {
             condition: "Loading...",
             temp: "--",
-            windSpeed: null,
             icon: "Cloud",
             alert: false,
           },
@@ -212,7 +209,6 @@ export default {
           weather: {
             condition: "Loading...",
             temp: "--",
-            windSpeed: null,
             icon: "Cloud",
             alert: false,
           },
@@ -241,7 +237,7 @@ export default {
 
     // Auto-refresh every 30 seconds
     this.refreshInterval = setInterval(() => {
-      console.log("Auto-refreshing weather and notifications...");
+      console.log("🔄 Auto-refreshing weather and notifications...");
       this.fetchNotifications();
       this.checkWeatherAndNotify();
     }, 30000); // 30 seconds
@@ -299,7 +295,7 @@ export default {
         const data = await response.json();
 
         if (data.success) {
-          console.log("Received notifications:", data.notifications.length);
+          console.log("📥 Received notifications:", data.notifications.length);
           this.notifications = data.notifications.map((n) => ({
             id: n._id,
             type: n.type,
@@ -310,7 +306,7 @@ export default {
             color: this.getNotificationColor(n.type),
             isRead: n.isRead,
           }));
-          console.log("Processed notifications:", this.notifications.length);
+          console.log("📋 Processed notifications:", this.notifications.length);
         }
       } catch (error) {
         console.error("Failed to fetch notifications:", error);
@@ -590,36 +586,29 @@ export default {
           </div>
         </div>
 
-        <div class="bg-sky-50 rounded-xl p-3 border border-sky-100 mb-3">
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-3">
-              <component :is="loc.weather.icon" class="w-5 h-5 text-sky-600" />
-              <div>
-                <p class="text-xs text-sky-800 font-bold">
-                  {{ t("live.weather") }}
-                </p>
-                <p class="text-sm text-gray-700">{{ loc.weather.condition }}</p>
-                <p
-                  v-if="loc.weather.windSpeed"
-                  class="text-[10px] text-gray-500"
-                >
-                  <Wind class="w-3 h-3 inline mr-0.5" />
-                  {{ loc.weather.windSpeed }} km/h
-                </p>
-              </div>
+        <div
+          class="bg-sky-50 rounded-xl p-3 border border-sky-100 mb-3 flex items-center justify-between"
+        >
+          <div class="flex items-center gap-3">
+            <component :is="loc.weather.icon" class="w-5 h-5 text-sky-600" />
+            <div>
+              <p class="text-xs text-sky-800 font-bold">
+                {{ t("live.weather") }}
+              </p>
+              <p class="text-sm text-gray-700">{{ loc.weather.condition }}</p>
             </div>
-            <div class="flex items-center gap-2">
-              <span
-                v-if="loc.weather.alert"
-                class="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded"
-              >
-                <AlertTriangle class="w-3 h-3 inline mr-0.5" />
-                {{ t("live.alert") }}
-              </span>
-              <span class="text-xl font-bold text-sky-600">{{
-                loc.weather.temp
-              }}</span>
-            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <span
+              v-if="loc.weather.alert"
+              class="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded"
+            >
+              <AlertTriangle class="w-3 h-3 inline mr-0.5" />
+              {{ t("live.alert") }}
+            </span>
+            <span class="text-xl font-bold text-sky-600">{{
+              loc.weather.temp
+            }}</span>
           </div>
         </div>
 
