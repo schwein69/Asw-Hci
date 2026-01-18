@@ -32,56 +32,8 @@ const categories = [
   { key: "feedback.generalFeedback", emoji: "💬" },
 ];
 
-const communityFeedback = ref([
-  {
-    id: 1,
-    title: "Carbon offset marketplace",
-    status: "Implemented",
-    user: "Emma L.",
-    time: "2 weeks ago",
-    rating: 5,
-    text: "It would be great to have a built-in marketplace to purchase carbon offsets.",
-    upvotes: 42,
-    category: "Feature Request",
-    icon: "Lightbulb",
-  },
-  {
-    id: 2,
-    title: "Add bike-sharing integration",
-    status: "Reviewing",
-    user: "Sarah M.",
-    time: "2 days ago",
-    rating: 5,
-    text: "Would love to see real-time bike-sharing availability integrated into the map!",
-    upvotes: 23,
-    category: "Feature Request",
-    icon: "Lightbulb",
-  },
-  {
-    id: 3,
-    title: "Map zoom issue on mobile",
-    status: "Reviewing",
-    user: "Michael K.",
-    time: "1 week ago",
-    rating: 4,
-    text: "The 3D map zoom functionality is not working properly on iOS devices.",
-    upvotes: 15,
-    category: "Bug Report",
-    icon: "Bug",
-  },
-  {
-    id: 4,
-    title: "Better filtering options",
-    status: "New",
-    user: "Carlos R.",
-    time: "3 days ago",
-    rating: 4,
-    text: "Add more filtering options for eco-certifications and dietary requirements.",
-    upvotes: 8,
-    category: "Improvement",
-    icon: "Zap",
-  },
-]);
+const communityFeedback = ref([]);
+const isLoading = ref(false);
 
 // Icon mapping for dynamic components
 const iconComponents = {
@@ -100,26 +52,163 @@ const handleLanguageChange = (event) => {
   language.value = event.detail.language;
 };
 
-const submitFeedback = () => {
+const getUserId = () => {
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  return user._id || user.id;
+};
+
+// Fetch community feedback from backend
+const fetchCommunityFeedback = async () => {
+  isLoading.value = true;
+  try {
+    const response = await fetch("http://localhost:3000/api/feedback?limit=20");
+    const data = await response.json();
+
+    if (data.success) {
+      // Update stats
+      averageRating.value = data.stats.averageRating;
+      totalFeedback.value = data.stats.totalFeedback;
+      implementationRate.value = data.stats.implementationRate;
+
+      // Map feedbacks to display format
+      communityFeedback.value = data.feedbacks.map((f) => ({
+        id: f._id,
+        title: f.subject,
+        status: f.status,
+        user: f.userName,
+        time: getTimeAgo(f.createdAt),
+        rating: f.rating,
+        text: f.message,
+        upvotes: f.upvotes,
+        category: getCategoryDisplay(f.category),
+        icon: getCategoryIcon(f.category),
+        hasUpvoted: false, // Will be updated if user is logged in
+      }));
+
+      console.log("✅ Loaded feedback:", communityFeedback.value.length);
+    }
+  } catch (error) {
+    console.error("Failed to fetch feedback:", error);
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+// Helper to get time ago string
+const getTimeAgo = (timestamp) => {
+  const now = new Date();
+  const date = new Date(timestamp);
+  const diffMs = now - date;
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+  const diffWeeks = Math.floor(diffDays / 7);
+
+  if (diffMins < 60) return `${diffMins} minutes ago`;
+  if (diffHours < 24) return `${diffHours} hours ago`;
+  if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? "s" : ""} ago`;
+  return `${diffWeeks} week${diffWeeks > 1 ? "s" : ""} ago`;
+};
+
+// Get category display name
+const getCategoryDisplay = (categoryKey) => {
+  const map = {
+    "feedback.featureRequest": "Feature Request",
+    "feedback.bugReport": "Bug Report",
+    "feedback.improvement": "Improvement",
+    "feedback.generalFeedback": "General Feedback",
+  };
+  return map[categoryKey] || "General Feedback";
+};
+
+// Get category icon
+const getCategoryIcon = (categoryKey) => {
+  const map = {
+    "feedback.featureRequest": "Lightbulb",
+    "feedback.bugReport": "Bug",
+    "feedback.improvement": "Zap",
+    "feedback.generalFeedback": "Lightbulb",
+  };
+  return map[categoryKey] || "Lightbulb";
+};
+
+const submitFeedback = async () => {
   if (!userRating.value || !selectedCategory.value) {
     alert(t.value("feedback.pleaseSelectCategory"));
     return;
   }
+
+  const userId = getUserId();
+  if (!userId) {
+    alert("Please login to submit feedback");
+    return;
+  }
+
   isSubmitting.value = true;
-  setTimeout(() => {
-    alert(t.value("feedback.thankYouSubmitted"));
+  try {
+    const response = await fetch("http://localhost:3000/api/feedback", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        userId,
+        category: selectedCategory.value,
+        subject: subject.value || "Feedback",
+        message: message.value,
+        rating: userRating.value,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (data.success) {
+      alert(t.value("feedback.thankYouSubmitted"));
+      // Reset form
+      userRating.value = 0;
+      selectedCategory.value = "";
+      subject.value = "";
+      message.value = "";
+      // Reload feedback list
+      fetchCommunityFeedback();
+    } else {
+      alert(data.message || "Failed to submit feedback");
+    }
+  } catch (error) {
+    console.error("Failed to submit feedback:", error);
+    alert("Failed to submit feedback. Please try again.");
+  } finally {
     isSubmitting.value = false;
-    userRating.value = 0;
-    selectedCategory.value = "";
-    subject.value = "";
-    message.value = "";
-  }, 1000);
+  }
 };
 
-const handleUpvote = (id) => {
-  const item = communityFeedback.value.find((i) => i.id === id);
-  if (item) {
-    item.upvotes++;
+const handleUpvote = async (id) => {
+  const userId = getUserId();
+  if (!userId) {
+    alert("Please login to upvote");
+    return;
+  }
+
+  try {
+    const response = await fetch(
+      `http://localhost:3000/api/feedback/${id}/upvote`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId }),
+      }
+    );
+
+    const data = await response.json();
+
+    if (data.success) {
+      // Update local state
+      const item = communityFeedback.value.find((i) => i.id === id);
+      if (item) {
+        item.upvotes = data.feedback.upvotes;
+        item.hasUpvoted = data.feedback.hasUpvoted;
+      }
+    }
+  } catch (error) {
+    console.error("Failed to upvote:", error);
   }
 };
 
@@ -174,6 +263,7 @@ const translateTime = (timeStr) => {
 // Lifecycle hooks
 onMounted(() => {
   window.addEventListener("languageChanged", handleLanguageChange);
+  fetchCommunityFeedback(); // Load feedback on mount
 });
 
 onBeforeUnmount(() => {
