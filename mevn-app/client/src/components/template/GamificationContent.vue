@@ -11,6 +11,7 @@ import {
   Heart,
   Bike,
   Target,
+  Crown,
 } from "lucide-vue-next";
 import { t as translate } from "../../utils/translations.js";
 
@@ -162,8 +163,8 @@ const t = (key) => translate(key, props.language);
       </div>
       <div class="space-y-3">
         <div
-          v-for="user in leaderboard"
-          :key="user.rank"
+          v-for="(user, index) in leaderboard"
+          :key="user.id"
           class="flex items-center justify-between p-3 rounded-xl transition-colors border"
           :class="
             user.isMe
@@ -172,7 +173,12 @@ const t = (key) => translate(key, props.language);
           "
         >
           <div class="flex items-center gap-4">
-            <div class="w-8 text-center font-bold text-lg">{{ user.icon }}</div>
+            <div class="w-8 text-center font-bold text-lg">
+              <Crown
+                v-if="index === 0"
+                class="w-6 h-6 text-yellow-500 fill-yellow-500"
+              />
+            </div>
             <div
               class="font-semibold"
               :class="user.isMe ? 'text-emerald-800' : 'text-gray-700'"

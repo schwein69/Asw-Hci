@@ -55,5 +55,5 @@ export const useTripStore = defineStore("trip", () => {
     currentTrip.value = { id: null, name: "", routes: [] };
   }
 
-  return { currentTrip, setTripToEdit, clearTrip };
+  return { currentTrip, setTripToEdit, clearTrip, saveTrip };
 });
