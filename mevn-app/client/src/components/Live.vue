@@ -298,7 +298,9 @@ export default {
 
         if (data.success) {
           console.log("📥 Received notifications:", data.notifications.length);
-          this.notifications = data.notifications.map((n) => ({
+
+          // Map notifications
+          const allNotifications = data.notifications.map((n) => ({
             id: n._id,
             type: n.type,
             city: n.city || "N/A",
@@ -307,8 +309,48 @@ export default {
             icon: n.icon || "Bell",
             color: this.getNotificationColor(n.type),
             isRead: n.isRead,
+            createdAt: new Date(n.createdAt),
           }));
-          console.log("📋 Processed notifications:", this.notifications.length);
+
+          // Deduplicate: Keep only latest notification per city+type
+          const seen = new Map();
+          const deduplicated = [];
+
+          for (const notif of allNotifications) {
+            const key = `${notif.city}-${notif.type}`;
+            if (!seen.has(key)) {
+              seen.set(key, true);
+              deduplicated.push(notif);
+            }
+          }
+
+          // Mix notification types for more natural appearance
+          const byType = {};
+          deduplicated.forEach((n) => {
+            if (!byType[n.type]) byType[n.type] = [];
+            byType[n.type].push(n);
+          });
+
+          // Interleave different types
+          const mixed = [];
+          const types = Object.keys(byType);
+          let maxLength = Math.max(
+            ...Object.values(byType).map((arr) => arr.length)
+          );
+
+          for (let i = 0; i < maxLength; i++) {
+            types.forEach((type) => {
+              if (byType[type][i]) {
+                mixed.push(byType[type][i]);
+              }
+            });
+          }
+
+          this.notifications = mixed;
+          console.log(
+            "📋 Processed notifications (deduplicated & mixed):",
+            this.notifications.length
+          );
         }
       } catch (error) {
         console.error("Failed to fetch notifications:", error);
@@ -618,7 +660,10 @@ export default {
           </div>
 
           <div class="flex items-center pr-2">
-            <div class="w-2 h-2 rounded-full" :class="getNotificationDotColor(item.type)"></div>
+            <div
+              class="w-2 h-2 rounded-full"
+              :class="getNotificationDotColor(item.type)"
+            ></div>
           </div>
         </div>
       </div>

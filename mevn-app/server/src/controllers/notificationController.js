@@ -284,16 +284,16 @@ export const checkCrowdAndNotify = async (req, res) => {
 
     // Create notifications for high crowd alerts (only if not already exists in last hour)
     const newNotifications = [];
-    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+    const sixHoursAgo = new Date(Date.now() - 6 * 60 * 60 * 1000);
 
     for (const crowd of crowdResults) {
       if (shouldCreateCrowdAlert(crowd.density)) {
-        // Check if similar notification already exists in last hour
+        // Check if similar notification already exists in last 6 hours
         const existingNotification = await Notification.findOne({
           recipient: userId,
           type: "tourist",
           city: crowd.location,
-          createdAt: { $gte: oneHourAgo },
+          createdAt: { $gte: sixHoursAgo },
         });
 
         // Only create if doesn't exist
