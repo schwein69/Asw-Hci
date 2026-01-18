@@ -1,4 +1,5 @@
-<script>
+<script setup>
+import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 import {
   Star,
   TrendingUp,
@@ -11,236 +12,173 @@ import {
 } from "lucide-vue-next";
 import { getLanguage, t as translate } from "../utils/translations.js";
 
-export default {
-  name: "Feedback",
-  components: {
-    Star,
-    TrendingUp,
-    Send,
-    MessageSquare,
-    ThumbsUp,
-    Lightbulb,
-    Bug,
-    Zap,
-  },
-  data() {
-    return {
-      language: getLanguage(),
-      // --- Stats Data ---
-      averageRating: 4.5,
-      totalFeedback: 4,
-      implementationRate: "25%",
+// Reactive state
+const language = ref(getLanguage());
+const averageRating = ref(4.5);
+const totalFeedback = ref(4);
+const implementationRate = ref("25%");
 
-      // --- Form Data ---
-      userRating: 0,
-      selectedCategory: "",
-      subject: "",
-      message: "",
+// Form data
+const userRating = ref(0);
+const selectedCategory = ref("");
+const subject = ref("");
+const message = ref("");
+const isSubmitting = ref(false);
 
-      categories: [
-        { key: "feedback.featureRequest", emoji: "💡" },
-        { key: "feedback.bugReport", emoji: "🐛" },
-        { key: "feedback.improvement", emoji: "⚡" },
-        { key: "feedback.generalFeedback", emoji: "💬" },
-      ],
-      isSubmitting: false,
+const categories = [
+  { key: "feedback.featureRequest", emoji: "💡" },
+  { key: "feedback.bugReport", emoji: "🐛" },
+  { key: "feedback.improvement", emoji: "⚡" },
+  { key: "feedback.generalFeedback", emoji: "💬" },
+];
 
-      // --- Community Feedback Data ---
-      communityFeedback: [
-        {
-          id: 1,
-          title: "Carbon offset marketplace",
-          status: "Implemented",
-          user: "Emma L.",
-          time: "2 weeks ago",
-          rating: 5,
-          text: "It would be great to have a built-in marketplace to purchase carbon offsets.",
-          upvotes: 42,
-          category: "Feature Request",
-          icon: "Lightbulb",
-        },
-        {
-          id: 2,
-          title: "Add bike-sharing integration",
-          status: "Reviewing",
-          user: "Sarah M.",
-          time: "2 days ago",
-          rating: 5,
-          text: "Would love to see real-time bike-sharing availability integrated into the map!",
-          upvotes: 23,
-          category: "Feature Request",
-          icon: "Lightbulb",
-        },
-        {
-          id: 3,
-          title: "Map zoom issue on mobile",
-          status: "Reviewing",
-          user: "Michael K.",
-          time: "1 week ago",
-          rating: 4,
-          text: "The 3D map zoom functionality is not working properly on iOS devices.",
-          upvotes: 15,
-          category: "Bug Report",
-          icon: "Bug",
-        },
-        {
-          id: 4,
-          title: "Better filtering options",
-          status: "New",
-          user: "Carlos R.",
-          time: "3 days ago",
-          rating: 4,
-          text: "Add more filtering options for eco-certifications and dietary requirements.",
-          upvotes: 8,
-          category: "Improvement",
-          icon: "Zap",
-        },
-      ],
-    };
+const communityFeedback = ref([
+  {
+    id: 1,
+    title: "Carbon offset marketplace",
+    status: "Implemented",
+    user: "Emma L.",
+    time: "2 weeks ago",
+    rating: 5,
+    text: "It would be great to have a built-in marketplace to purchase carbon offsets.",
+    upvotes: 42,
+    category: "Feature Request",
+    icon: "Lightbulb",
   },
-  methods: {
-    submitFeedback() {
-      if (!this.userRating || !this.selectedCategory) {
-        alert("Please select a category and a rating.");
-        return;
-      }
-      this.isSubmitting = true;
-      setTimeout(() => {
-        alert("Thank you! Your feedback has been submitted.");
-        this.isSubmitting = false;
-        this.userRating = 0;
-        this.selectedCategory = "";
-        this.subject = "";
-        this.message = "";
-      }, 1000);
-    },
-    handleUpvote(id) {
-      const item = this.communityFeedback.find((i) => i.id === id);
-      if (item) {
-        item.upvotes++;
-      }
-    },
-    // REVERTED: Status colors stay the same in dark mode because cards are white
-    getStatusColor(status) {
-      switch (status) {
-        case "Implemented":
-          return "bg-emerald-100 text-emerald-700 border-emerald-200";
-        case "Reviewing":
-          return "bg-amber-100 text-amber-700 border-amber-200";
-        case "New":
-          return "bg-blue-100 text-blue-700 border-blue-200";
-        default:
-          return "bg-gray-100 text-gray-700 border-gray-200";
-      }
-    },
-    translateStatus(status) {
-      const statusMap = {
-        'Implemented': this.t('feedback.implemented'),
-        'Reviewing': this.t('feedback.reviewing'),
-        'New': this.t('feedback.new')
-      };
-      return statusMap[status] || status;
-    },
-    translateCategory(category) {
-      const categoryMap = {
-        'Feature Request': this.t('feedback.featureRequest'),
-        'Bug Report': this.t('feedback.bugReport'),
-        'Improvement': this.t('feedback.improvement'),
-        'General Feedback': this.t('feedback.generalFeedback')
-      };
-      return categoryMap[category] || category;
-    },
-    translateTime(timeStr) {
-      if (timeStr.includes('week')) {
-        const num = timeStr.match(/\d+/)?.[0] || '1';
-        return num === '1' ? this.t('feedback.weekAgo') : `${num} ${this.t('feedback.weeksAgo')}`;
-      }
-      if (timeStr.includes('day')) {
-        const num = timeStr.match(/\d+/)?.[0] || '1';
-        return num === '1' ? this.t('feedback.dayAgo') : `${num} ${this.t('feedback.daysAgo')}`;
-      }
-      return timeStr;
-    },
+  {
+    id: 2,
+    title: "Add bike-sharing integration",
+    status: "Reviewing",
+    user: "Sarah M.",
+    time: "2 days ago",
+    rating: 5,
+    text: "Would love to see real-time bike-sharing availability integrated into the map!",
+    upvotes: 23,
+    category: "Feature Request",
+    icon: "Lightbulb",
   },
-  computed: {
-    t() {
-      return (key) => translate(key, this.language);
-    },
+  {
+    id: 3,
+    title: "Map zoom issue on mobile",
+    status: "Reviewing",
+    user: "Michael K.",
+    time: "1 week ago",
+    rating: 4,
+    text: "The 3D map zoom functionality is not working properly on iOS devices.",
+    upvotes: 15,
+    category: "Bug Report",
+    icon: "Bug",
   },
-  mounted() {
-    window.addEventListener('languageChanged', this.handleLanguageChange);
+  {
+    id: 4,
+    title: "Better filtering options",
+    status: "New",
+    user: "Carlos R.",
+    time: "3 days ago",
+    rating: 4,
+    text: "Add more filtering options for eco-certifications and dietary requirements.",
+    upvotes: 8,
+    category: "Improvement",
+    icon: "Zap",
   },
-  beforeUnmount() {
-    window.removeEventListener('languageChanged', this.handleLanguageChange);
-  },
-  methods: {
-    handleLanguageChange(event) {
-      this.language = event.detail.language;
-    },
-    submitFeedback() {
-      if (!this.userRating || !this.selectedCategory) {
-        alert(this.t('feedback.pleaseSelectCategory'));
-        return;
-      }
-      this.isSubmitting = true;
-      setTimeout(() => {
-        alert(this.t('feedback.thankYouSubmitted'));
-        this.isSubmitting = false;
-        this.userRating = 0;
-        this.selectedCategory = "";
-        this.subject = "";
-        this.message = "";
-      }, 1000);
-    },
-    handleUpvote(id) {
-      const item = this.communityFeedback.find((i) => i.id === id);
-      if (item) {
-        item.upvotes++;
-      }
-    },
-    // REVERTED: Status colors stay the same in dark mode because cards are white
-    getStatusColor(status) {
-      switch (status) {
-        case "Implemented":
-          return "bg-emerald-100 text-emerald-700 border-emerald-200";
-        case "Reviewing":
-          return "bg-amber-100 text-amber-700 border-amber-200";
-        case "New":
-          return "bg-blue-100 text-blue-700 border-blue-200";
-        default:
-          return "bg-gray-100 text-gray-700 border-gray-200";
-      }
-    },
-    translateStatus(status) {
-      const statusMap = {
-        'Implemented': this.t('feedback.implemented'),
-        'Reviewing': this.t('feedback.reviewing'),
-        'New': this.t('feedback.new')
-      };
-      return statusMap[status] || status;
-    },
-    translateCategory(category) {
-      const categoryMap = {
-        'Feature Request': this.t('feedback.featureRequest'),
-        'Bug Report': this.t('feedback.bugReport'),
-        'Improvement': this.t('feedback.improvement'),
-        'General Feedback': this.t('feedback.generalFeedback')
-      };
-      return categoryMap[category] || category;
-    },
-    translateTime(timeStr) {
-      if (timeStr.includes('week')) {
-        const num = timeStr.match(/\d+/)?.[0] || '1';
-        return num === '1' ? this.t('feedback.weekAgo') : `${num} ${this.t('feedback.weeksAgo')}`;
-      }
-      if (timeStr.includes('day')) {
-        const num = timeStr.match(/\d+/)?.[0] || '1';
-        return num === '1' ? this.t('feedback.dayAgo') : `${num} ${this.t('feedback.daysAgo')}`;
-      }
-      return timeStr;
-    },
-  },
+]);
+
+// Icon mapping for dynamic components
+const iconComponents = {
+  Lightbulb,
+  Bug,
+  Zap,
 };
+
+// Computed properties
+const t = computed(() => {
+  return (key) => translate(key, language.value);
+});
+
+// Methods
+const handleLanguageChange = (event) => {
+  language.value = event.detail.language;
+};
+
+const submitFeedback = () => {
+  if (!userRating.value || !selectedCategory.value) {
+    alert(t.value("feedback.pleaseSelectCategory"));
+    return;
+  }
+  isSubmitting.value = true;
+  setTimeout(() => {
+    alert(t.value("feedback.thankYouSubmitted"));
+    isSubmitting.value = false;
+    userRating.value = 0;
+    selectedCategory.value = "";
+    subject.value = "";
+    message.value = "";
+  }, 1000);
+};
+
+const handleUpvote = (id) => {
+  const item = communityFeedback.value.find((i) => i.id === id);
+  if (item) {
+    item.upvotes++;
+  }
+};
+
+const getStatusColor = (status) => {
+  switch (status) {
+    case "Implemented":
+      return "bg-emerald-100 text-emerald-700 border-emerald-200";
+    case "Reviewing":
+      return "bg-amber-100 text-amber-700 border-amber-200";
+    case "New":
+      return "bg-blue-100 text-blue-700 border-blue-200";
+    default:
+      return "bg-gray-100 text-gray-700 border-gray-200";
+  }
+};
+
+const translateStatus = (status) => {
+  const statusMap = {
+    Implemented: t.value("feedback.implemented"),
+    Reviewing: t.value("feedback.reviewing"),
+    New: t.value("feedback.new"),
+  };
+  return statusMap[status] || status;
+};
+
+const translateCategory = (category) => {
+  const categoryMap = {
+    "Feature Request": t.value("feedback.featureRequest"),
+    "Bug Report": t.value("feedback.bugReport"),
+    Improvement: t.value("feedback.improvement"),
+    "General Feedback": t.value("feedback.generalFeedback"),
+  };
+  return categoryMap[category] || category;
+};
+
+const translateTime = (timeStr) => {
+  if (timeStr.includes("week")) {
+    const num = timeStr.match(/\d+/)?.[0] || "1";
+    return num === "1"
+      ? t.value("feedback.weekAgo")
+      : `${num} ${t.value("feedback.weeksAgo")}`;
+  }
+  if (timeStr.includes("day")) {
+    const num = timeStr.match(/\d+/)?.[0] || "1";
+    return num === "1"
+      ? t.value("feedback.dayAgo")
+      : `${num} ${t.value("feedback.daysAgo")}`;
+  }
+  return timeStr;
+};
+
+// Lifecycle hooks
+onMounted(() => {
+  window.addEventListener("languageChanged", handleLanguageChange);
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener("languageChanged", handleLanguageChange);
+});
 </script>
 
 <template>
@@ -249,7 +187,9 @@ export default {
   >
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
       <div class="bg-white p-4 rounded-xl border border-green-200 shadow-sm">
-        <p class="text-gray-500 text-sm mb-1">{{ t('feedback.averageUserRating') }}</p>
+        <p class="text-gray-500 text-sm mb-1">
+          {{ t("feedback.averageUserRating") }}
+        </p>
         <div class="flex items-center gap-2">
           <Star class="w-5 h-5 text-yellow-500 fill-current" />
           <span class="text-2xl font-bold text-gray-800"
@@ -259,7 +199,9 @@ export default {
       </div>
 
       <div class="bg-white p-4 rounded-xl border border-green-200 shadow-sm">
-        <p class="text-gray-500 text-sm mb-1">{{ t('feedback.totalFeedback') }}</p>
+        <p class="text-gray-500 text-sm mb-1">
+          {{ t("feedback.totalFeedback") }}
+        </p>
         <div class="flex items-center gap-2">
           <span class="text-2xl font-bold text-gray-800">{{
             totalFeedback
@@ -268,7 +210,9 @@ export default {
       </div>
 
       <div class="bg-white p-4 rounded-xl border border-green-200 shadow-sm">
-        <p class="text-gray-500 text-sm mb-1">{{ t('feedback.implementationRate') }}</p>
+        <p class="text-gray-500 text-sm mb-1">
+          {{ t("feedback.implementationRate") }}
+        </p>
         <div class="flex items-center gap-2">
           <TrendingUp class="w-5 h-5 text-success" />
           <span class="text-2xl font-bold text-gray-800">{{
@@ -283,16 +227,20 @@ export default {
         <div class="text-emerald-600">
           <MessageSquare class="w-5 h-5" />
         </div>
-        <h3 class="text-lg font-bold text-gray-800">{{ t('feedback.submitFeedback') }}</h3>
+        <h3 class="text-lg font-bold text-gray-800">
+          {{ t("feedback.submitFeedback") }}
+        </h3>
       </div>
       <p class="text-sm text-gray-500 mb-6">
-        {{ t('feedback.helpUsImprove') }}
+        {{ t("feedback.helpUsImprove") }}
       </p>
 
       <form @submit.prevent="submitFeedback" class="space-y-4">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div class="space-y-1">
-            <label class="text-xs font-bold text-gray-700 ml-1">{{ t('feedback.category') }}</label>
+            <label class="text-xs font-bold text-gray-700 ml-1">{{
+              t("feedback.category")
+            }}</label>
             <div class="relative">
               <select
                 v-model="selectedCategory"
@@ -301,14 +249,16 @@ export default {
                   selectedCategory === '' ? 'text-gray-900' : 'text-gray-900'
                 "
               >
-                <option value="" disabled selected>{{ t('feedback.selectCategory') }}</option>
+                <option value="" disabled selected>
+                  {{ t("feedback.selectCategory") }}
+                </option>
                 <option
                   v-for="cat in categories"
                   :key="cat.key"
                   :value="cat.key"
                   class="text-gray-900"
                 >
-                  {{ cat.emoji }} {{ t(cat.key) }}
+                  {{ t(cat.key) }}
                 </option>
               </select>
               <div
@@ -324,9 +274,9 @@ export default {
           </div>
 
           <div class="space-y-1">
-            <label class="text-xs font-bold text-gray-700 ml-1"
-              >{{ t('feedback.yourRating') }}</label
-            >
+            <label class="text-xs font-bold text-gray-700 ml-1">{{
+              t("feedback.yourRating")
+            }}</label>
             <div class="flex gap-2 pt-2">
               <button
                 type="button"
@@ -349,7 +299,9 @@ export default {
         </div>
 
         <div class="space-y-1">
-          <label class="text-xs font-bold text-gray-700 ml-1">{{ t('feedback.subject') }}</label>
+          <label class="text-xs font-bold text-gray-700 ml-1">{{
+            t("feedback.subject")
+          }}</label>
           <input
             v-model="subject"
             type="text"
@@ -359,7 +311,9 @@ export default {
         </div>
 
         <div class="space-y-1">
-          <label class="text-xs font-bold text-gray-700 ml-1">{{ t('feedback.message') }}</label>
+          <label class="text-xs font-bold text-gray-700 ml-1">{{
+            t("feedback.message")
+          }}</label>
           <textarea
             v-model="message"
             rows="4"
@@ -375,16 +329,22 @@ export default {
           :class="{ 'opacity-70 cursor-not-allowed': isSubmitting }"
         >
           <Send class="w-4 h-4" />
-          {{ isSubmitting ? t('feedback.submitting') : t('feedback.submitFeedbackButton') }}
+          {{
+            isSubmitting
+              ? t("feedback.submitting")
+              : t("feedback.submitFeedbackButton")
+          }}
         </button>
       </form>
     </div>
 
     <div class="bg-white p-6 rounded-2xl border border-green-200 shadow-sm">
       <div class="mb-6">
-        <h3 class="text-lg font-bold text-gray-800">{{ t('feedback.communityFeedback') }}</h3>
+        <h3 class="text-lg font-bold text-gray-800">
+          {{ t("feedback.communityFeedback") }}
+        </h3>
         <p class="text-sm text-gray-500">
-          {{ t('feedback.browseAndVote') }}
+          {{ t("feedback.browseAndVote") }}
         </p>
       </div>
 
@@ -403,7 +363,7 @@ export default {
                   : 'bg-yellow-50 text-yellow-600 border-yellow-100'
               "
             >
-              <component :is="item.icon" class="w-5 h-5" />
+              <component :is="iconComponents[item.icon]" class="w-5 h-5" />
             </div>
 
             <div class="flex-1">
@@ -448,7 +408,7 @@ export default {
               class="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-emerald-200 text-emerald-700 hover:bg-emerald-50 transition-colors text-sm font-medium"
             >
               <ThumbsUp class="w-4 h-4" />
-              {{ t('feedback.upvote') }} ({{ item.upvotes }})
+              {{ t("feedback.upvote") }} ({{ item.upvotes }})
             </button>
             <span
               class="text-xs font-semibold text-emerald-700 border border-emerald-200 px-3 py-1 rounded-full bg-white shadow-sm"
