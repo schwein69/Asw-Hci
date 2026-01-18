@@ -290,6 +290,7 @@ export default {
     // Fetch upcoming trip (within 24 hours)
     async fetchUpcomingTrip() {
       const userId = this.getUserId();
+      console.log("🔍 Fetching trips for userId:", userId);
       if (!userId) return;
 
       try {
@@ -297,25 +298,33 @@ export default {
           `http://localhost:3000/api/trips/upcoming/${userId}`
         );
         const trips = await response.json();
+        console.log("📦 Received trips:", trips);
 
         if (trips && trips.length > 0) {
           const upcomingTrip = trips[0];
           const segment = upcomingTrip.itinerary[0];
-          
+
           // Calculate hours until departure
           const now = new Date();
           const departureTime = new Date(segment.startTime);
-          const hoursUntil = Math.round((departureTime - now) / (1000 * 60 * 60));
-          
+          const hoursUntil = Math.round(
+            (departureTime - now) / (1000 * 60 * 60)
+          );
+
           this.trip = {
             id: upcomingTrip._id,
             title: upcomingTrip.title,
             status: `Departure in ${hoursUntil} hours`,
             from: segment.fromLocation.name,
             to: segment.toLocation.name,
-            type: segment.transportMode.charAt(0).toUpperCase() + segment.transportMode.slice(1),
+            type:
+              segment.transportMode.charAt(0).toUpperCase() +
+              segment.transportMode.slice(1),
             date: new Date(segment.startTime).toLocaleDateString(),
-            time: new Date(segment.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            time: new Date(segment.startTime).toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            }),
           };
           this.hasUpcomingTrip = true;
           console.log("✈️ Upcoming trip loaded:", this.trip);
