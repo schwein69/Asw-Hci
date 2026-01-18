@@ -97,6 +97,10 @@ const TripSchema = new mongoose.Schema({
     default: {},
   }, // Esempio: { "plane": 1500, "train": 300, "walk": 5 }, serve per calcolare i charts
 
+  // TIMING DEL VIAGGIO
+  startTime: { type: Date }, // Start time of the entire trip
+  endTime: { type: Date }, // End time of the entire trip
+
   // L'ITINERARIO
   // L'ordine nell'array determina la sequenza del viaggio
   itinerary: [ItinerarySegmentSchema],
