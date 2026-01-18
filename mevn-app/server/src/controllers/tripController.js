@@ -8,7 +8,9 @@ export const getUserTrips = async (req, res) => {
     res.status(200).json(trips);
   } catch (error) {
     console.error("Error fetching user trips:", error);
-    res.status(500).json({ message: "Failed to fetch trips", error: error.message });
+    res
+      .status(500)
+      .json({ message: "Failed to fetch trips", error: error.message });
   }
 };
 
@@ -19,6 +21,10 @@ export const getUpcomingTrips = async (req, res) => {
     const now = new Date();
     const next24Hours = new Date(now.getTime() + 24 * 60 * 60 * 1000);
 
+    console.log("🔍 Searching upcoming trips for user:", userId);
+    console.log("📅 Now:", now.toISOString());
+    console.log("📅 Next 24h:", next24Hours.toISOString());
+
     const trips = await Trip.find({
       user: userId,
       status: "ongoing",
@@ -28,10 +34,22 @@ export const getUpcomingTrips = async (req, res) => {
       },
     }).sort({ startTime: 1 });
 
+    console.log("✅ Found trips:", trips.length);
+    if (trips.length > 0) {
+      trips.forEach((trip) => {
+        console.log(`  - ${trip.title}: ${trip.startTime.toISOString()}`);
+      });
+    }
+
     res.status(200).json(trips);
   } catch (error) {
     console.error("Error fetching upcoming trips:", error);
-    res.status(500).json({ message: "Failed to fetch upcoming trips", error: error.message });
+    res
+      .status(500)
+      .json({
+        message: "Failed to fetch upcoming trips",
+        error: error.message,
+      });
   }
 };
 
@@ -47,7 +65,9 @@ export const getActiveTrips = async (req, res) => {
     res.status(200).json(trips);
   } catch (error) {
     console.error("Error fetching active trips:", error);
-    res.status(500).json({ message: "Failed to fetch active trips", error: error.message });
+    res
+      .status(500)
+      .json({ message: "Failed to fetch active trips", error: error.message });
   }
 };
 
@@ -63,7 +83,12 @@ export const getCompletedTrips = async (req, res) => {
     res.status(200).json(trips);
   } catch (error) {
     console.error("Error fetching completed trips:", error);
-    res.status(500).json({ message: "Failed to fetch completed trips", error: error.message });
+    res
+      .status(500)
+      .json({
+        message: "Failed to fetch completed trips",
+        error: error.message,
+      });
   }
 };
 
@@ -80,7 +105,9 @@ export const getTripById = async (req, res) => {
     res.status(200).json(trip);
   } catch (error) {
     console.error("Error fetching trip:", error);
-    res.status(500).json({ message: "Failed to fetch trip", error: error.message });
+    res
+      .status(500)
+      .json({ message: "Failed to fetch trip", error: error.message });
   }
 };
 
@@ -88,7 +115,7 @@ export const getTripById = async (req, res) => {
 export const createTrip = async (req, res) => {
   try {
     const tripData = req.body;
-    
+
     // Calculate totals from itinerary
     let totalDurationHours = 0;
     let totalDistanceKm = 0;
@@ -132,7 +159,9 @@ export const createTrip = async (req, res) => {
     res.status(201).json(savedTrip);
   } catch (error) {
     console.error("Error creating trip:", error);
-    res.status(500).json({ message: "Failed to create trip", error: error.message });
+    res
+      .status(500)
+      .json({ message: "Failed to create trip", error: error.message });
   }
 };
 
@@ -172,7 +201,9 @@ export const updateTrip = async (req, res) => {
       updateData.totalPrice = totalPrice;
       updateData.totalCo2Emission = totalCo2Emission;
       updateData.co2Saved = co2Saved;
-      updateData.transportModeBreakdown = Object.fromEntries(transportModeBreakdown);
+      updateData.transportModeBreakdown = Object.fromEntries(
+        transportModeBreakdown
+      );
     }
 
     const updatedTrip = await Trip.findByIdAndUpdate(tripId, updateData, {
@@ -187,7 +218,9 @@ export const updateTrip = async (req, res) => {
     res.status(200).json(updatedTrip);
   } catch (error) {
     console.error("Error updating trip:", error);
-    res.status(500).json({ message: "Failed to update trip", error: error.message });
+    res
+      .status(500)
+      .json({ message: "Failed to update trip", error: error.message });
   }
 };
 
@@ -201,10 +234,14 @@ export const deleteTrip = async (req, res) => {
       return res.status(404).json({ message: "Trip not found" });
     }
 
-    res.status(200).json({ message: "Trip deleted successfully", trip: deletedTrip });
+    res
+      .status(200)
+      .json({ message: "Trip deleted successfully", trip: deletedTrip });
   } catch (error) {
     console.error("Error deleting trip:", error);
-    res.status(500).json({ message: "Failed to delete trip", error: error.message });
+    res
+      .status(500)
+      .json({ message: "Failed to delete trip", error: error.message });
   }
 };
 
@@ -225,8 +262,11 @@ export const markTripCompleted = async (req, res) => {
     res.status(200).json(trip);
   } catch (error) {
     console.error("Error marking trip as completed:", error);
-    res.status(500).json({ message: "Failed to mark trip as completed", error: error.message });
+    res
+      .status(500)
+      .json({
+        message: "Failed to mark trip as completed",
+        error: error.message,
+      });
   }
 };
-
-
