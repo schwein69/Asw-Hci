@@ -55,6 +55,7 @@ export default {
       language: getLanguage(),
       hasUpcomingTrip: false,
       trip: null,
+      activeFilter: "all", // Filter state: all, weather, tourist, social, location
       notifications: [
         {
           id: 1,
@@ -227,6 +228,28 @@ export default {
     t() {
       return (key) => translate(key, this.language);
     },
+    filteredNotifications() {
+      // Filter by type if not "all"
+      if (this.activeFilter === "all") {
+        return this.notifications;
+      }
+      return this.notifications.filter((n) => n.type === this.activeFilter);
+    },
+    notificationCounts() {
+      const counts = {
+        all: this.notifications.length,
+        weather: 0,
+        tourist: 0,
+        social: 0,
+        location: 0,
+      };
+      this.notifications.forEach((n) => {
+        if (counts[n.type] !== undefined) {
+          counts[n.type]++;
+        }
+      });
+      return counts;
+    },
   },
   mounted() {
     this.fetchUpcomingTrip();
@@ -255,6 +278,9 @@ export default {
   methods: {
     handleLanguageChange(event) {
       this.language = event.detail.language;
+    },
+    setFilter(filter) {
+      this.activeFilter = filter;
     },
     dismissReminder() {
       this.hasUpcomingTrip = false;
@@ -345,13 +371,46 @@ export default {
 
       try {
         const response = await fetch(
-          `http://localhost:3000/api/notifications/${userId}?limit=20`
+          `http://localhost:3000/api/notifications/${userId}?limit=30`
         );
         const data = await response.json();
 
         if (data.success) {
           console.log("📥 Received notifications:", data.notifications.length);
-          this.notifications = data.notifications.map((n) => ({
+
+          // Create a balanced mix of notification types
+          const byType = {
+            weather: [],
+            tourist: [],
+            social: [],
+            location: [],
+            transport: [],
+          };
+
+          // Group notifications by type
+          data.notifications.forEach((n) => {
+            const type = n.type;
+            if (byType[type]) {
+              byType[type].push(n);
+            }
+          });
+
+          // Interleave notifications (alternate between types) for realistic mix
+          const balanced = [];
+          const maxPerType = 3;
+          const types = Object.keys(byType).filter(
+            (type) => byType[type].length > 0
+          );
+
+          for (let i = 0; i < maxPerType; i++) {
+            types.forEach((type) => {
+              if (byType[type][i]) {
+                balanced.push(byType[type][i]);
+              }
+            });
+          }
+
+          this.notifications = balanced.map((n) => ({
             id: n._id,
             type: n.type,
             city: n.city || "N/A",
@@ -360,8 +419,14 @@ export default {
             icon: n.icon || "Bell",
             color: this.getNotificationColor(n.type),
             isRead: n.isRead,
+            timestamp: new Date(n.createdAt).getTime(),
           }));
+
           console.log("📋 Processed notifications:", this.notifications.length);
+          console.log(
+            "🔍 First 3 notifications:",
+            this.notifications.slice(0, 3)
+          );
         }
       } catch (error) {
         console.error("Failed to fetch notifications:", error);
@@ -627,12 +692,75 @@ export default {
             </h3>
             <span
               class="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full"
-              >10 {{ t("live.new") }}</span
+              >{{ notificationCounts.all }} {{ t("live.new") }}</span
             >
           </div>
           <p class="text-sm text-gray-500 mt-1">
             {{ t("live.liveUpdates") }}
           </p>
+
+          <!-- Filter Buttons -->
+          <div class="flex flex-wrap gap-2 mt-3">
+            <button
+              @click="setFilter('all')"
+              :class="
+                activeFilter === 'all'
+                  ? 'bg-emerald-600 text-white'
+                  : 'bg-white text-gray-700 border border-gray-300'
+              "
+              class="px-3 py-1 rounded-lg text-xs font-medium transition-colors hover:shadow-sm"
+            >
+              All ({{ notificationCounts.all }})
+            </button>
+            <button
+              @click="setFilter('weather')"
+              :class="
+                activeFilter === 'weather'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-white text-gray-700 border border-gray-300'
+              "
+              class="px-3 py-1 rounded-lg text-xs font-medium transition-colors hover:shadow-sm flex items-center gap-1"
+            >
+              <Cloud class="w-3 h-3" />
+              Weather ({{ notificationCounts.weather }})
+            </button>
+            <button
+              @click="setFilter('tourist')"
+              :class="
+                activeFilter === 'tourist'
+                  ? 'bg-yellow-600 text-white'
+                  : 'bg-white text-gray-700 border border-gray-300'
+              "
+              class="px-3 py-1 rounded-lg text-xs font-medium transition-colors hover:shadow-sm flex items-center gap-1"
+            >
+              <User class="w-3 h-3" />
+              Tourist ({{ notificationCounts.tourist }})
+            </button>
+            <button
+              @click="setFilter('social')"
+              :class="
+                activeFilter === 'social'
+                  ? 'bg-purple-600 text-white'
+                  : 'bg-white text-gray-700 border border-gray-300'
+              "
+              class="px-3 py-1 rounded-lg text-xs font-medium transition-colors hover:shadow-sm flex items-center gap-1"
+            >
+              <Bell class="w-3 h-3" />
+              Social ({{ notificationCounts.social }})
+            </button>
+            <button
+              @click="setFilter('location')"
+              :class="
+                activeFilter === 'location'
+                  ? 'bg-emerald-600 text-white'
+                  : 'bg-white text-gray-700 border border-gray-300'
+              "
+              class="px-3 py-1 rounded-lg text-xs font-medium transition-colors hover:shadow-sm flex items-center gap-1"
+            >
+              <MapPin class="w-3 h-3" />
+              Location ({{ notificationCounts.location }})
+            </button>
+          </div>
         </div>
         <button
           @click="markAllRead"
@@ -644,7 +772,7 @@ export default {
 
       <div class="space-y-3">
         <div
-          v-for="item in notifications"
+          v-for="item in filteredNotifications"
           :key="item.id"
           class="flex items-center justify-between p-3 rounded-xl border border-emerald-100 bg-emerald-50/30 hover:bg-emerald-50 transition-colors cursor-pointer group"
         >
