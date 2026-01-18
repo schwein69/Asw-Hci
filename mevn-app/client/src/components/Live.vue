@@ -1,4 +1,5 @@
-<script>
+<script setup>
+import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 import {
   Clock,
   Bell,
@@ -23,543 +24,544 @@ import {
 import { getLanguage, t as translate } from "../utils/translations.js";
 import { useRouter } from "vue-router";
 
-export default {
-  name: "Live",
-  setup() {
-    const router = useRouter();
-    return { router };
-  },
-  components: {
-    Clock,
-    Bell,
-    MapPin,
-    Calendar,
-    TrainFront,
-    AlertTriangle,
-    Info,
-    Cloud,
-    User,
-    CheckCircle,
-    TrendingUp,
-    TrendingDown,
-    Minus,
-    Sun,
-    CloudRain,
-    Wind,
-    CloudSun,
-    Snowflake,
-    CloudLightning,
-  },
-  data() {
-    return {
-      language: getLanguage(),
-      hasUpcomingTrip: false,
-      trip: null,
-      activeFilter: "all", // Filter state: all, weather, tourist, social, location
-      notifications: [
-        {
-          id: 1,
-          type: "social",
-          city: "Berlin",
-          time: "3:55:49 PM",
-          message: "New interaction on your post",
-          icon: "Bell",
-          color: "bg-purple-100 text-purple-600",
-        },
-        {
-          id: 2,
-          type: "weather",
-          city: "Amsterdam",
-          time: "3:53:58 PM",
-          message: "Weather conditions updated",
-          icon: "Cloud",
-          color: "bg-blue-100 text-blue-600",
-        },
-        {
-          id: 3,
-          type: "social",
-          city: "Berlin",
-          time: "3:52:58 PM",
-          message: "New interaction on your post",
-          icon: "Bell",
-          color: "bg-purple-100 text-purple-600",
-        },
-        {
-          id: 4,
-          type: "weather",
-          city: "Amsterdam",
-          time: "3:35:58 PM",
-          message: "Weather conditions updated",
-          icon: "Cloud",
-          color: "bg-blue-100 text-blue-600",
-        },
-        {
-          id: 5,
-          type: "weather",
-          city: "Barcelona",
-          time: "3:30:58 PM",
-          message: "Weather conditions updated",
-          icon: "Cloud",
-          color: "bg-blue-100 text-blue-600",
-        },
-        {
-          id: 6,
-          type: "location",
-          city: "Copenhagen",
-          time: "3:27:58 PM",
-          message: "New eco-friendly location recommended",
-          icon: "MapPin",
-          color: "bg-emerald-100 text-emerald-600",
-        },
-        {
-          id: 7,
-          type: "user",
-          city: "Copenhagen",
-          time: "12:33:29 PM",
-          message: "Tourist density changed",
-          icon: "User",
-          color: "bg-yellow-100 text-yellow-600",
-        },
-        {
-          id: 8,
-          type: "location",
-          city: "Copenhagen",
-          time: "12:32:59 PM",
-          message: "New eco-friendly location recommended",
-          icon: "MapPin",
-          color: "bg-emerald-100 text-emerald-600",
-        },
-      ],
+// Router
+const router = useRouter();
 
-      locations: [
-        {
-          id: 1,
-          name: "Amsterdam",
-          lat: 52.3676,
-          lon: 4.9041,
-          live: true,
-          weather: {
-            condition: "Loading...",
-            temp: "--",
-            icon: "Cloud",
-            alert: false,
-          },
-          crowd: {
-            levelKey: "live.lowDensity",
-            value: 45,
-            trend: "Up",
-            trendIcon: "TrendingUp",
-            color: "text-emerald-600",
-            barColor: "bg-emerald-300",
-          },
-          alternative: null,
-        },
-        {
-          id: 2,
-          name: "Barcelona",
-          lat: 41.3851,
-          lon: 2.1734,
-          live: true,
-          weather: {
-            condition: "Loading...",
-            temp: "--",
-            icon: "Cloud",
-            alert: false,
-          },
-          crowd: {
-            levelKey: "live.highDensity",
-            value: 81,
-            trend: "Stable",
-            trendIcon: "Minus",
-            color: "text-red-500",
-            barColor: "bg-red-300",
-          },
-          alternative: "Visit during off-peak hours (early morning or evening)",
-        },
-        {
-          id: 3,
-          name: "Copenhagen",
-          lat: 55.6761,
-          lon: 12.5683,
-          live: true,
-          weather: {
-            condition: "Loading...",
-            temp: "--",
-            icon: "Cloud",
-            alert: false,
-          },
-          crowd: {
-            levelKey: "live.mediumDensity",
-            value: 56,
-            trend: "Up",
-            trendIcon: "TrendingUp",
-            color: "text-orange-500",
-            barColor: "bg-orange-300",
-          },
-          alternative: "Consider indoor activities or postpone visit",
-        },
-        {
-          id: 4,
-          name: "Berlin",
-          lat: 52.52,
-          lon: 13.405,
-          live: true,
-          weather: {
-            condition: "Loading...",
-            temp: "--",
-            icon: "Cloud",
-            alert: false,
-          },
-          crowd: {
-            levelKey: "live.mediumDensity",
-            value: 61,
-            trend: "Down",
-            trendIcon: "TrendingDown",
-            color: "text-orange-500",
-            barColor: "bg-orange-300",
-          },
-          alternative: null,
-        },
-      ],
-      refreshInterval: null, // For auto-refresh
-    };
+// Reactive state
+const language = ref(getLanguage());
+const hasUpcomingTrip = ref(false);
+const trip = ref(null);
+const activeFilter = ref("all"); // Filter state: all, weather, tourist, social, location
+const refreshInterval = ref(null); // For auto-refresh
+
+const notifications = ref([
+  {
+    id: 1,
+    type: "social",
+    city: "Berlin",
+    time: "3:55:49 PM",
+    message: "New interaction on your post",
+    icon: "Bell",
+    color: "bg-purple-100 text-purple-600",
   },
-  computed: {
-    t() {
-      return (key) => translate(key, this.language);
+  {
+    id: 2,
+    type: "weather",
+    city: "Amsterdam",
+    time: "3:53:58 PM",
+    message: "Weather conditions updated",
+    icon: "Cloud",
+    color: "bg-blue-100 text-blue-600",
+  },
+  {
+    id: 3,
+    type: "social",
+    city: "Berlin",
+    time: "3:52:58 PM",
+    message: "New interaction on your post",
+    icon: "Bell",
+    color: "bg-purple-100 text-purple-600",
+  },
+  {
+    id: 4,
+    type: "weather",
+    city: "Amsterdam",
+    time: "3:35:58 PM",
+    message: "Weather conditions updated",
+    icon: "Cloud",
+    color: "bg-blue-100 text-blue-600",
+  },
+  {
+    id: 5,
+    type: "weather",
+    city: "Barcelona",
+    time: "3:30:58 PM",
+    message: "Weather conditions updated",
+    icon: "Cloud",
+    color: "bg-blue-100 text-blue-600",
+  },
+  {
+    id: 6,
+    type: "location",
+    city: "Copenhagen",
+    time: "3:27:58 PM",
+    message: "New eco-friendly location recommended",
+    icon: "MapPin",
+    color: "bg-emerald-100 text-emerald-600",
+  },
+  {
+    id: 7,
+    type: "user",
+    city: "Copenhagen",
+    time: "12:33:29 PM",
+    message: "Tourist density changed",
+    icon: "User",
+    color: "bg-yellow-100 text-yellow-600",
+  },
+  {
+    id: 8,
+    type: "location",
+    city: "Copenhagen",
+    time: "12:32:59 PM",
+    message: "New eco-friendly location recommended",
+    icon: "MapPin",
+    color: "bg-emerald-100 text-emerald-600",
+  },
+]);
+
+const locations = ref([
+  {
+    id: 1,
+    name: "Amsterdam",
+    lat: 52.3676,
+    lon: 4.9041,
+    live: true,
+    weather: {
+      condition: "Loading...",
+      temp: "--",
+      icon: "Cloud",
+      alert: false,
     },
-    filteredNotifications() {
-      // Filter by type if not "all"
-      if (this.activeFilter === "all") {
-        return this.notifications;
-      }
-      return this.notifications.filter((n) => n.type === this.activeFilter);
+    crowd: {
+      levelKey: "live.lowDensity",
+      value: 45,
+      trend: "Up",
+      trendIcon: "TrendingUp",
+      color: "text-emerald-600",
+      barColor: "bg-emerald-300",
     },
-    notificationCounts() {
-      const counts = {
-        all: this.notifications.length,
-        weather: 0,
-        tourist: 0,
-        social: 0,
-        location: 0,
+    alternative: null,
+  },
+  {
+    id: 2,
+    name: "Barcelona",
+    lat: 41.3851,
+    lon: 2.1734,
+    live: true,
+    weather: {
+      condition: "Loading...",
+      temp: "--",
+      icon: "Cloud",
+      alert: false,
+    },
+    crowd: {
+      levelKey: "live.highDensity",
+      value: 81,
+      trend: "Stable",
+      trendIcon: "Minus",
+      color: "text-red-500",
+      barColor: "bg-red-300",
+    },
+    alternative: "Visit during off-peak hours (early morning or evening)",
+  },
+  {
+    id: 3,
+    name: "Copenhagen",
+    lat: 55.6761,
+    lon: 12.5683,
+    live: true,
+    weather: {
+      condition: "Loading...",
+      temp: "--",
+      icon: "Cloud",
+      alert: false,
+    },
+    crowd: {
+      levelKey: "live.mediumDensity",
+      value: 56,
+      trend: "Up",
+      trendIcon: "TrendingUp",
+      color: "text-orange-500",
+      barColor: "bg-orange-300",
+    },
+    alternative: "Consider indoor activities or postpone visit",
+  },
+  {
+    id: 4,
+    name: "Berlin",
+    lat: 52.52,
+    lon: 13.405,
+    live: true,
+    weather: {
+      condition: "Loading...",
+      temp: "--",
+      icon: "Cloud",
+      alert: false,
+    },
+    crowd: {
+      levelKey: "live.mediumDensity",
+      value: 61,
+      trend: "Down",
+      trendIcon: "TrendingDown",
+      color: "text-orange-500",
+      barColor: "bg-orange-300",
+    },
+    alternative: null,
+  },
+]);
+
+// Icon mapping for dynamic components
+const iconComponents = {
+  Bell,
+  Cloud,
+  MapPin,
+  User,
+  TrendingUp,
+  TrendingDown,
+  Minus,
+  Sun,
+  CloudRain,
+  Wind,
+  CloudSun,
+  Snowflake,
+  CloudLightning,
+};
+
+// Computed properties
+const t = computed(() => {
+  return (key) => translate(key, language.value);
+});
+
+const filteredNotifications = computed(() => {
+  // Filter by type if not "all"
+  if (activeFilter.value === "all") {
+    return notifications.value;
+  }
+  return notifications.value.filter((n) => n.type === activeFilter.value);
+});
+
+const notificationCounts = computed(() => {
+  const counts = {
+    all: notifications.value.length,
+    weather: 0,
+    tourist: 0,
+    social: 0,
+    location: 0,
+  };
+  notifications.value.forEach((n) => {
+    if (counts[n.type] !== undefined) {
+      counts[n.type]++;
+    }
+  });
+  return counts;
+});
+
+// Methods
+const handleLanguageChange = (event) => {
+  language.value = event.detail.language;
+};
+
+const setFilter = (filter) => {
+  activeFilter.value = filter;
+};
+
+const dismissReminder = () => {
+  hasUpcomingTrip.value = false;
+};
+
+const viewTripDetails = () => {
+  router.push("/world");
+};
+
+const markAllRead = async () => {
+  const userId = getUserId();
+  if (!userId) return;
+
+  try {
+    const response = await fetch(
+      `http://localhost:3000/api/notifications/mark-all-read/${userId}`,
+      { method: "PUT" }
+    );
+
+    if (response.ok) {
+      notifications.value = notifications.value.map((n) => ({
+        ...n,
+        isRead: true,
+      }));
+      alert("All notifications marked as read!");
+    }
+  } catch (error) {
+    console.error("Failed to mark all as read:", error);
+  }
+};
+
+const getUserId = () => {
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  return user._id || user.id;
+};
+
+// Fetch upcoming trip (within 24 hours)
+const fetchUpcomingTrip = async () => {
+  const userId = getUserId();
+  console.log("🔍 Fetching trips for userId:", userId);
+  if (!userId) return;
+
+  try {
+    const response = await fetch(
+      `http://localhost:3000/api/trips/upcoming/${userId}`
+    );
+    const trips = await response.json();
+    console.log("📦 Received trips:", trips);
+
+    if (trips && trips.length > 0) {
+      const upcomingTrip = trips[0];
+      const segment = upcomingTrip.itinerary[0];
+
+      // Calculate hours until departure
+      const now = new Date();
+      const departureTime = new Date(segment.startTime);
+      const hoursUntil = Math.round((departureTime - now) / (1000 * 60 * 60));
+
+      trip.value = {
+        id: upcomingTrip._id,
+        title: upcomingTrip.title,
+        status: `Departure in ${hoursUntil} hours`,
+        from: segment.fromLocation.name,
+        to: segment.toLocation.name,
+        type:
+          segment.transportMode.charAt(0).toUpperCase() +
+          segment.transportMode.slice(1),
+        date: new Date(segment.startTime).toLocaleDateString(),
+        time: new Date(segment.startTime).toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
       };
-      this.notifications.forEach((n) => {
-        if (counts[n.type] !== undefined) {
-          counts[n.type]++;
+      hasUpcomingTrip.value = true;
+      console.log("✈️ Upcoming trip loaded:", trip.value);
+    } else {
+      hasUpcomingTrip.value = false;
+      trip.value = null;
+      console.log("📭 No upcoming trips found");
+    }
+  } catch (error) {
+    console.error("Failed to fetch upcoming trip:", error);
+    hasUpcomingTrip.value = false;
+  }
+};
+
+// Fetch notifications from backend
+const fetchNotifications = async () => {
+  const userId = getUserId();
+  if (!userId) return;
+
+  try {
+    const response = await fetch(
+      `http://localhost:3000/api/notifications/${userId}?limit=30`
+    );
+    const data = await response.json();
+
+    if (data.success) {
+      console.log("📥 Received notifications:", data.notifications.length);
+
+      // Create a balanced mix of notification types
+      const byType = {
+        weather: [],
+        tourist: [],
+        social: [],
+        location: [],
+        transport: [],
+      };
+
+      // Group notifications by type
+      data.notifications.forEach((n) => {
+        const type = n.type;
+        if (byType[type]) {
+          byType[type].push(n);
         }
       });
-      return counts;
-    },
-  },
-  mounted() {
-    this.fetchUpcomingTrip();
-    this.fetchNotifications();
-    this.checkWeatherAndNotify();
-    this.checkCrowdAndNotify();
 
-    // Auto-refresh every 30 seconds
-    this.refreshInterval = setInterval(() => {
-      console.log("🔄 Auto-refreshing weather, crowd, and notifications...");
-      this.fetchUpcomingTrip();
-      this.fetchNotifications();
-      this.checkWeatherAndNotify();
-      this.checkCrowdAndNotify();
-    }, 30000); // 30 seconds
+      // Interleave notifications (alternate between types) for realistic mix
+      const balanced = [];
+      const maxPerType = 3;
+      const types = Object.keys(byType).filter(
+        (type) => byType[type].length > 0
+      );
 
-    window.addEventListener("languageChanged", this.handleLanguageChange);
-  },
-  beforeUnmount() {
-    // Clear interval when leaving page
-    if (this.refreshInterval) {
-      clearInterval(this.refreshInterval);
+      for (let i = 0; i < maxPerType; i++) {
+        types.forEach((type) => {
+          if (byType[type][i]) {
+            balanced.push(byType[type][i]);
+          }
+        });
+      }
+
+      notifications.value = balanced.map((n) => ({
+        id: n._id,
+        type: n.type,
+        city: n.city || "N/A",
+        time: new Date(n.createdAt).toLocaleTimeString(),
+        message: n.message,
+        icon: n.icon || "Bell",
+        color: getNotificationColor(n.type),
+        isRead: n.isRead,
+        timestamp: new Date(n.createdAt).getTime(),
+      }));
+
+      console.log("📋 Processed notifications:", notifications.value.length);
+      console.log("🔍 First 3 notifications:", notifications.value.slice(0, 3));
     }
-    window.removeEventListener("languageChanged", this.handleLanguageChange);
-  },
-  methods: {
-    handleLanguageChange(event) {
-      this.language = event.detail.language;
-    },
-    setFilter(filter) {
-      this.activeFilter = filter;
-    },
-    dismissReminder() {
-      this.hasUpcomingTrip = false;
-    },
-    viewTripDetails() {
-      this.router.push("/world");
-    },
-    async markAllRead() {
-      const userId = this.getUserId();
-      if (!userId) return;
-
-      try {
-        const response = await fetch(
-          `http://localhost:3000/api/notifications/mark-all-read/${userId}`,
-          { method: "PUT" }
-        );
-
-        if (response.ok) {
-          this.notifications = this.notifications.map((n) => ({
-            ...n,
-            isRead: true,
-          }));
-          alert("All notifications marked as read!");
-        }
-      } catch (error) {
-        console.error("Failed to mark all as read:", error);
-      }
-    },
-    getUserId() {
-      const user = JSON.parse(localStorage.getItem("user") || "{}");
-      return user._id || user.id;
-    },
-    // Fetch upcoming trip (within 24 hours)
-    async fetchUpcomingTrip() {
-      const userId = this.getUserId();
-      console.log("🔍 Fetching trips for userId:", userId);
-      if (!userId) return;
-
-      try {
-        const response = await fetch(
-          `http://localhost:3000/api/trips/upcoming/${userId}`
-        );
-        const trips = await response.json();
-        console.log("📦 Received trips:", trips);
-
-        if (trips && trips.length > 0) {
-          const upcomingTrip = trips[0];
-          const segment = upcomingTrip.itinerary[0];
-
-          // Calculate hours until departure
-          const now = new Date();
-          const departureTime = new Date(segment.startTime);
-          const hoursUntil = Math.round(
-            (departureTime - now) / (1000 * 60 * 60)
-          );
-
-          this.trip = {
-            id: upcomingTrip._id,
-            title: upcomingTrip.title,
-            status: `Departure in ${hoursUntil} hours`,
-            from: segment.fromLocation.name,
-            to: segment.toLocation.name,
-            type:
-              segment.transportMode.charAt(0).toUpperCase() +
-              segment.transportMode.slice(1),
-            date: new Date(segment.startTime).toLocaleDateString(),
-            time: new Date(segment.startTime).toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit",
-            }),
-          };
-          this.hasUpcomingTrip = true;
-          console.log("✈️ Upcoming trip loaded:", this.trip);
-        } else {
-          this.hasUpcomingTrip = false;
-          this.trip = null;
-          console.log("📭 No upcoming trips found");
-        }
-      } catch (error) {
-        console.error("Failed to fetch upcoming trip:", error);
-        this.hasUpcomingTrip = false;
-      }
-    },
-    // Fetch notifications from backend
-    async fetchNotifications() {
-      const userId = this.getUserId();
-      if (!userId) return;
-
-      try {
-        const response = await fetch(
-          `http://localhost:3000/api/notifications/${userId}?limit=30`
-        );
-        const data = await response.json();
-
-        if (data.success) {
-          console.log("📥 Received notifications:", data.notifications.length);
-
-          // Create a balanced mix of notification types
-          const byType = {
-            weather: [],
-            tourist: [],
-            social: [],
-            location: [],
-            transport: [],
-          };
-
-          // Group notifications by type
-          data.notifications.forEach((n) => {
-            const type = n.type;
-            if (byType[type]) {
-              byType[type].push(n);
-            }
-          });
-
-          // Interleave notifications (alternate between types) for realistic mix
-          const balanced = [];
-          const maxPerType = 3;
-          const types = Object.keys(byType).filter(
-            (type) => byType[type].length > 0
-          );
-
-          for (let i = 0; i < maxPerType; i++) {
-            types.forEach((type) => {
-              if (byType[type][i]) {
-                balanced.push(byType[type][i]);
-              }
-            });
-          }
-
-          this.notifications = balanced.map((n) => ({
-            id: n._id,
-            type: n.type,
-            city: n.city || "N/A",
-            time: new Date(n.createdAt).toLocaleTimeString(),
-            message: n.message,
-            icon: n.icon || "Bell",
-            color: this.getNotificationColor(n.type),
-            isRead: n.isRead,
-            timestamp: new Date(n.createdAt).getTime(),
-          }));
-
-          console.log("📋 Processed notifications:", this.notifications.length);
-          console.log(
-            "🔍 First 3 notifications:",
-            this.notifications.slice(0, 3)
-          );
-        }
-      } catch (error) {
-        console.error("Failed to fetch notifications:", error);
-      }
-    },
-    // Check weather and create notifications
-    async checkWeatherAndNotify() {
-      const userId = this.getUserId();
-      if (!userId) return;
-
-      const locations = this.locations.map((loc) => ({
-        name: loc.name,
-        lat: loc.lat,
-        lon: loc.lon,
-      }));
-
-      try {
-        const response = await fetch(
-          `http://localhost:3000/api/notifications/weather/${userId}`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ locations }),
-          }
-        );
-
-        const data = await response.json();
-
-        if (data.success && data.weatherData) {
-          // Update locations with weather data
-          data.weatherData.forEach((weather) => {
-            const loc = this.locations.find((l) => l.name === weather.city);
-            if (loc && !weather.error) {
-              loc.weather.temp = `${weather.temperature}°C`;
-              loc.weather.condition = weather.condition;
-              loc.weather.windSpeed = weather.windSpeed || null;
-              loc.weather.icon = weather.icon;
-              loc.weather.alert = weather.alert;
-            }
-          });
-
-          // Refresh notifications if new alerts were created
-          if (data.alertsCreated > 0) {
-            this.fetchNotifications();
-          }
-        }
-      } catch (error) {
-        console.error("Failed to check weather:", error);
-      }
-    },
-    // Check crowd density and create notifications
-    async checkCrowdAndNotify() {
-      const userId = this.getUserId();
-      if (!userId) return;
-
-      const locations = this.locations.map((loc) => ({
-        name: loc.name,
-        lat: loc.lat,
-        lon: loc.lon,
-      }));
-
-      try {
-        const response = await fetch(
-          `http://localhost:3000/api/notifications/crowd/${userId}`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ locations }),
-          }
-        );
-
-        const data = await response.json();
-
-        if (data.success && data.crowdData) {
-          // Update locations with crowd data
-          data.crowdData.forEach((crowd) => {
-            const loc = this.locations.find((l) => l.name === crowd.location);
-            if (loc) {
-              loc.crowd.value = crowd.density;
-              loc.crowd.levelKey = crowd.levelKey;
-              loc.crowd.trend = crowd.trend;
-              loc.crowd.trendIcon = crowd.icon;
-              loc.crowd.color = crowd.color;
-              loc.crowd.barColor = crowd.barColor;
-              loc.alternative = crowd.alternative;
-            }
-          });
-
-          // Refresh notifications if new alerts were created
-          if (data.alertsCreated > 0) {
-            this.fetchNotifications();
-          }
-        }
-      } catch (error) {
-        console.error("Failed to check crowd density:", error);
-      }
-    },
-    getNotificationColor(type) {
-      const colors = {
-        weather: "bg-blue-100 text-blue-600",
-        social: "bg-purple-100 text-purple-600",
-        location: "bg-emerald-100 text-emerald-600",
-        tourist: "bg-yellow-100 text-yellow-600",
-        transport: "bg-orange-100 text-orange-600",
-      };
-      return colors[type] || "bg-gray-100 text-gray-600";
-    },
-    getNotificationDotColor(type) {
-      const colors = {
-        weather: "bg-blue-500",
-        tourist: "bg-red-500",
-        transport: "bg-orange-500",
-        social: "bg-purple-500",
-        location: "bg-emerald-500",
-      };
-      return colors[type] || "bg-emerald-500";
-    },
-    // changing codes to icons ---
-    getWeatherInfo(code) {
-      if (code === 0) return { text: "Sunny", icon: "Sun", alert: false };
-      if (code <= 3)
-        return { text: "Partly Cloudy", icon: "CloudSun", alert: false };
-      if (code <= 48) return { text: "Foggy", icon: "Cloud", alert: true };
-      if (code <= 67) return { text: "Rainy", icon: "CloudRain", alert: true };
-      if (code <= 77) return { text: "Snowy", icon: "Snowflake", alert: true };
-      if (code <= 82)
-        return { text: "Showers", icon: "CloudRain", alert: true };
-      if (code <= 99)
-        return { text: "Stormy", icon: "CloudLightning", alert: true };
-      return { text: "Unknown", icon: "Cloud", alert: false };
-    },
-  },
+  } catch (error) {
+    console.error("Failed to fetch notifications:", error);
+  }
 };
+
+// Check weather and create notifications
+const checkWeatherAndNotify = async () => {
+  const userId = getUserId();
+  if (!userId) return;
+
+  const locs = locations.value.map((loc) => ({
+    name: loc.name,
+    lat: loc.lat,
+    lon: loc.lon,
+  }));
+
+  try {
+    const response = await fetch(
+      `http://localhost:3000/api/notifications/weather/${userId}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ locations: locs }),
+      }
+    );
+
+    const data = await response.json();
+
+    if (data.success && data.weatherData) {
+      // Update locations with weather data
+      data.weatherData.forEach((weather) => {
+        const loc = locations.value.find((l) => l.name === weather.city);
+        if (loc && !weather.error) {
+          loc.weather.temp = `${weather.temperature}°C`;
+          loc.weather.condition = weather.condition;
+          loc.weather.windSpeed = weather.windSpeed || null;
+          loc.weather.icon = weather.icon;
+          loc.weather.alert = weather.alert;
+        }
+      });
+
+      // Refresh notifications if new alerts were created
+      if (data.alertsCreated > 0) {
+        fetchNotifications();
+      }
+    }
+  } catch (error) {
+    console.error("Failed to check weather:", error);
+  }
+};
+
+// Check crowd density and create notifications
+const checkCrowdAndNotify = async () => {
+  const userId = getUserId();
+  if (!userId) return;
+
+  const locs = locations.value.map((loc) => ({
+    name: loc.name,
+    lat: loc.lat,
+    lon: loc.lon,
+  }));
+
+  try {
+    const response = await fetch(
+      `http://localhost:3000/api/notifications/crowd/${userId}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ locations: locs }),
+      }
+    );
+
+    const data = await response.json();
+
+    if (data.success && data.crowdData) {
+      // Update locations with crowd data
+      data.crowdData.forEach((crowd) => {
+        const loc = locations.value.find((l) => l.name === crowd.location);
+        if (loc) {
+          loc.crowd.value = crowd.density;
+          loc.crowd.levelKey = crowd.levelKey;
+          loc.crowd.trend = crowd.trend;
+          loc.crowd.trendIcon = crowd.icon;
+          loc.crowd.color = crowd.color;
+          loc.crowd.barColor = crowd.barColor;
+          loc.alternative = crowd.alternative;
+        }
+      });
+
+      // Refresh notifications if new alerts were created
+      if (data.alertsCreated > 0) {
+        fetchNotifications();
+      }
+    }
+  } catch (error) {
+    console.error("Failed to check crowd density:", error);
+  }
+};
+
+const getNotificationColor = (type) => {
+  const colors = {
+    weather: "bg-blue-100 text-blue-600",
+    social: "bg-purple-100 text-purple-600",
+    location: "bg-emerald-100 text-emerald-600",
+    tourist: "bg-yellow-100 text-yellow-600",
+    transport: "bg-orange-100 text-orange-600",
+  };
+  return colors[type] || "bg-gray-100 text-gray-600";
+};
+
+const getNotificationDotColor = (type) => {
+  const colors = {
+    weather: "bg-blue-500",
+    tourist: "bg-red-500",
+    transport: "bg-orange-500",
+    social: "bg-purple-500",
+    location: "bg-emerald-500",
+  };
+  return colors[type] || "bg-emerald-500";
+};
+
+// changing codes to icons ---
+const getWeatherInfo = (code) => {
+  if (code === 0) return { text: "Sunny", icon: "Sun", alert: false };
+  if (code <= 3)
+    return { text: "Partly Cloudy", icon: "CloudSun", alert: false };
+  if (code <= 48) return { text: "Foggy", icon: "Cloud", alert: true };
+  if (code <= 67) return { text: "Rainy", icon: "CloudRain", alert: true };
+  if (code <= 77) return { text: "Snowy", icon: "Snowflake", alert: true };
+  if (code <= 82) return { text: "Showers", icon: "CloudRain", alert: true };
+  if (code <= 99)
+    return { text: "Stormy", icon: "CloudLightning", alert: true };
+  return { text: "Unknown", icon: "Cloud", alert: false };
+};
+
+// Lifecycle hooks
+onMounted(() => {
+  fetchUpcomingTrip();
+  fetchNotifications();
+  checkWeatherAndNotify();
+  checkCrowdAndNotify();
+
+  // Auto-refresh every 30 seconds
+  refreshInterval.value = setInterval(() => {
+    console.log("🔄 Auto-refreshing weather, crowd, and notifications...");
+    fetchUpcomingTrip();
+    fetchNotifications();
+    checkWeatherAndNotify();
+    checkCrowdAndNotify();
+  }, 30000); // 30 seconds
+
+  window.addEventListener("languageChanged", handleLanguageChange);
+});
+
+onBeforeUnmount(() => {
+  // Clear interval when leaving page
+  if (refreshInterval.value) {
+    clearInterval(refreshInterval.value);
+  }
+  window.removeEventListener("languageChanged", handleLanguageChange);
+});
 </script>
 
 <template>
@@ -781,7 +783,7 @@ export default {
               class="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
               :class="item.color"
             >
-              <component :is="item.icon" class="w-5 h-5" />
+              <component :is="iconComponents[item.icon]" class="w-5 h-5" />
             </div>
 
             <div>
@@ -834,7 +836,10 @@ export default {
           class="bg-sky-50 rounded-xl p-3 border border-sky-100 mb-3 flex items-center justify-between"
         >
           <div class="flex items-center gap-3">
-            <component :is="loc.weather.icon" class="w-5 h-5 text-sky-600" />
+            <component
+              :is="iconComponents[loc.weather.icon]"
+              class="w-5 h-5 text-sky-600"
+            />
             <div>
               <p class="text-xs text-sky-800 font-bold">
                 {{ t("live.weather") }}
@@ -867,7 +872,7 @@ export default {
               class="flex items-center gap-1 text-[10px] font-medium text-gray-500"
             >
               <component
-                :is="loc.crowd.trendIcon"
+                :is="iconComponents[loc.crowd.trendIcon]"
                 class="w-3 h-3"
                 :class="
                   loc.crowd.trend === 'Up' ? 'text-red-500' : 'text-emerald-500'
