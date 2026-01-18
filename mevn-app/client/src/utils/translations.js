@@ -614,7 +614,8 @@ const translations = {
       zeroTrips: "Viaggi Zero CO₂",
       zeroTripsBanner: "A piedi, in bici o in veicoli elettrici",
       totalCo2Saved: "CO₂ Totale Risparmiato",
-      greenMiles: "Distanza Verde",
+      greenDistance: "Distanza Verde",
+      totalDistance: "Distanza Totale",
       ecoScore: "Punteggio Eco",
       monthlyGoal: "Obiettivo Mensile",
       monthlyOverview: "Panoramica Mensile",
@@ -1086,7 +1087,7 @@ export const getLanguage = () => {
 export const setLanguage = (lang) => {
   localStorage.setItem("language", lang);
   window.dispatchEvent(
-    new CustomEvent("languageChanged", { detail: { language: lang } })
+    new CustomEvent("languageChanged", { detail: { language: lang } }),
   );
 };
 
