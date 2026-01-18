@@ -4,6 +4,11 @@ import {
   fetchMultipleLocationsWeather,
   shouldCreateWeatherAlert,
 } from "../services/weatherService.js";
+import {
+  calculateMultipleLocationsCrowd,
+  shouldCreateCrowdAlert,
+  generateCrowdAlertMessage,
+} from "../services/crowdService.js";
 
 /**
  * GET /api/notifications/:userId
@@ -250,6 +255,80 @@ export const deleteNotification = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Failed to delete notification",
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * POST /api/notifications/crowd/:userId
+ * Calculate crowd density for user's locations and create alert notifications if needed
+ */
+export const checkCrowdAndNotify = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { locations, weatherDataMap } = req.body; // locations array, weatherDataMap object
+
+    if (!locations || !Array.isArray(locations)) {
+      return res.status(400).json({
+        success: false,
+        message: "locations array is required",
+      });
+    }
+
+    // Calculate crowd density for all locations
+    const crowdResults = calculateMultipleLocationsCrowd(
+      locations,
+      weatherDataMap || {}
+    );
+
+    // Create notifications for high crowd alerts (only if not already exists in last hour)
+    const newNotifications = [];
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+
+    for (const crowd of crowdResults) {
+      if (shouldCreateCrowdAlert(crowd.density)) {
+        // Check if similar notification already exists in last hour
+        const existingNotification = await Notification.findOne({
+          recipient: userId,
+          type: "tourist",
+          city: crowd.location,
+          createdAt: { $gte: oneHourAgo },
+        });
+
+        // Only create if doesn't exist
+        if (!existingNotification) {
+          const notification = new Notification({
+            recipient: userId,
+            type: "tourist",
+            city: crowd.location,
+            message: generateCrowdAlertMessage(crowd.location, crowd.density),
+            icon: "Users",
+            crowdData: {
+              density: crowd.density,
+              level: crowd.level,
+              trend: crowd.trend,
+              alternative: crowd.alternative,
+            },
+          });
+
+          await notification.save();
+          newNotifications.push(notification);
+        }
+      }
+    }
+
+    res.status(200).json({
+      success: true,
+      crowdData: crowdResults,
+      newNotifications,
+      alertsCreated: newNotifications.length,
+    });
+  } catch (error) {
+    console.error("Error checking crowd density:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to check crowd density",
       error: error.message,
     });
   }
