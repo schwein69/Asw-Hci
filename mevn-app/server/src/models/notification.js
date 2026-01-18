@@ -54,6 +54,14 @@ const NotificationSchema = new mongoose.Schema({
     alert: Boolean,
   },
 
+  // Crowd-specific data
+  crowdData: {
+    density: Number,
+    level: String,
+    trend: String,
+    alternative: String,
+  },
+
   isRead: {
     type: Boolean,
     default: false,
