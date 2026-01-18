@@ -234,12 +234,14 @@ export default {
   mounted() {
     this.fetchNotifications();
     this.checkWeatherAndNotify();
+    this.checkCrowdAndNotify();
 
     // Auto-refresh every 30 seconds
     this.refreshInterval = setInterval(() => {
-      console.log("🔄 Auto-refreshing weather and notifications...");
+      console.log("🔄 Auto-refreshing weather, crowd, and notifications...");
       this.fetchNotifications();
       this.checkWeatherAndNotify();
+      this.checkCrowdAndNotify();
     }, 30000); // 30 seconds
 
     window.addEventListener("languageChanged", this.handleLanguageChange);
@@ -357,6 +359,53 @@ export default {
         console.error("Failed to check weather:", error);
       }
     },
+    // Check crowd density and create notifications
+    async checkCrowdAndNotify() {
+      const userId = this.getUserId();
+      if (!userId) return;
+
+      const locations = this.locations.map((loc) => ({
+        name: loc.name,
+        lat: loc.lat,
+        lon: loc.lon,
+      }));
+
+      try {
+        const response = await fetch(
+          `http://localhost:3000/api/notifications/crowd/${userId}`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ locations }),
+          }
+        );
+
+        const data = await response.json();
+
+        if (data.success && data.crowdData) {
+          // Update locations with crowd data
+          data.crowdData.forEach((crowd) => {
+            const loc = this.locations.find((l) => l.name === crowd.location);
+            if (loc) {
+              loc.crowd.value = crowd.density;
+              loc.crowd.levelKey = crowd.levelKey;
+              loc.crowd.trend = crowd.trend;
+              loc.crowd.trendIcon = crowd.icon;
+              loc.crowd.color = crowd.color;
+              loc.crowd.barColor = crowd.barColor;
+              loc.alternative = crowd.alternative;
+            }
+          });
+
+          // Refresh notifications if new alerts were created
+          if (data.alertsCreated > 0) {
+            this.fetchNotifications();
+          }
+        }
+      } catch (error) {
+        console.error("Failed to check crowd density:", error);
+      }
+    },
     getNotificationColor(type) {
       const colors = {
         weather: "bg-blue-100 text-blue-600",
@@ -366,6 +415,16 @@ export default {
         transport: "bg-orange-100 text-orange-600",
       };
       return colors[type] || "bg-gray-100 text-gray-600";
+    },
+    getNotificationDotColor(type) {
+      const colors = {
+        weather: "bg-blue-500",
+        tourist: "bg-red-500",
+        transport: "bg-orange-500",
+        social: "bg-purple-500",
+        location: "bg-emerald-500",
+      };
+      return colors[type] || "bg-emerald-500";
     },
     // changing codes to icons ---
     getWeatherInfo(code) {
@@ -559,7 +618,7 @@ export default {
           </div>
 
           <div class="flex items-center pr-2">
-            <div class="w-2 h-2 rounded-full bg-emerald-500"></div>
+            <div class="w-2 h-2 rounded-full" :class="getNotificationDotColor(item.type)"></div>
           </div>
         </div>
       </div>
