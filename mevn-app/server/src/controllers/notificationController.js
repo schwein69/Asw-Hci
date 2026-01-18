@@ -171,26 +171,40 @@ export const checkWeatherAndNotify = async (req, res) => {
     // Fetch weather for all locations
     const weatherResults = await fetchMultipleLocationsWeather(locations);
 
-    // Create notifications for weather alerts
+    // Create notifications for weather alerts (only if not already exists in last hour)
     const newNotifications = [];
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+
     for (const weather of weatherResults) {
       if (!weather.error && shouldCreateWeatherAlert(weather)) {
-        const notification = new Notification({
+        // Check if similar notification already exists in last hour
+        const existingNotification = await Notification.findOne({
           recipient: userId,
           type: "weather",
           city: weather.city,
-          message: `Weather alert in ${weather.city}: ${weather.condition}`,
-          icon: "Cloud",
-          weatherData: {
-            condition: weather.condition,
-            temperature: weather.temperature,
-            weatherCode: weather.weatherCode,
-            alert: weather.alert,
-          },
+          "weatherData.weatherCode": weather.weatherCode,
+          createdAt: { $gte: oneHourAgo },
         });
 
-        await notification.save();
-        newNotifications.push(notification);
+        // Only create if doesn't exist
+        if (!existingNotification) {
+          const notification = new Notification({
+            recipient: userId,
+            type: "weather",
+            city: weather.city,
+            message: `Weather alert in ${weather.city}: ${weather.condition}`,
+            icon: "Cloud",
+            weatherData: {
+              condition: weather.condition,
+              temperature: weather.temperature,
+              weatherCode: weather.weatherCode,
+              alert: weather.alert,
+            },
+          });
+
+          await notification.save();
+          newNotifications.push(notification);
+        }
       }
     }
 
