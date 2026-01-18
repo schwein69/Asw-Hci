@@ -21,9 +21,14 @@ import {
   CloudLightning, // Added for storm
 } from "lucide-vue-next";
 import { getLanguage, t as translate } from "../utils/translations.js";
+import { useRouter } from "vue-router";
 
 export default {
   name: "Live",
+  setup() {
+    const router = useRouter();
+    return { router };
+  },
   components: {
     Clock,
     Bell,
@@ -48,16 +53,8 @@ export default {
   data() {
     return {
       language: getLanguage(),
-      hasUpcomingTrip: true,
-      trip: {
-        title: "European Adventure",
-        status: "Departure in 24 hours",
-        from: "Paris",
-        to: "Berlin",
-        type: "Train",
-        date: "12/17/2025",
-        time: "08:30 AM",
-      },
+      hasUpcomingTrip: false,
+      trip: null,
       notifications: [
         {
           id: 1,
@@ -232,6 +229,7 @@ export default {
     },
   },
   mounted() {
+    this.fetchUpcomingTrip();
     this.fetchNotifications();
     this.checkWeatherAndNotify();
     this.checkCrowdAndNotify();
@@ -239,6 +237,7 @@ export default {
     // Auto-refresh every 30 seconds
     this.refreshInterval = setInterval(() => {
       console.log("🔄 Auto-refreshing weather, crowd, and notifications...");
+      this.fetchUpcomingTrip();
       this.fetchNotifications();
       this.checkWeatherAndNotify();
       this.checkCrowdAndNotify();
@@ -259,6 +258,9 @@ export default {
     },
     dismissReminder() {
       this.hasUpcomingTrip = false;
+    },
+    viewTripDetails() {
+      this.router.push("/world");
     },
     async markAllRead() {
       const userId = this.getUserId();
@@ -284,6 +286,48 @@ export default {
     getUserId() {
       const user = JSON.parse(localStorage.getItem("user") || "{}");
       return user._id || user.id;
+    },
+    // Fetch upcoming trip (within 24 hours)
+    async fetchUpcomingTrip() {
+      const userId = this.getUserId();
+      if (!userId) return;
+
+      try {
+        const response = await fetch(
+          `http://localhost:3000/api/trips/upcoming/${userId}`
+        );
+        const trips = await response.json();
+
+        if (trips && trips.length > 0) {
+          const upcomingTrip = trips[0];
+          const segment = upcomingTrip.itinerary[0];
+          
+          // Calculate hours until departure
+          const now = new Date();
+          const departureTime = new Date(segment.startTime);
+          const hoursUntil = Math.round((departureTime - now) / (1000 * 60 * 60));
+          
+          this.trip = {
+            id: upcomingTrip._id,
+            title: upcomingTrip.title,
+            status: `Departure in ${hoursUntil} hours`,
+            from: segment.fromLocation.name,
+            to: segment.toLocation.name,
+            type: segment.transportMode.charAt(0).toUpperCase() + segment.transportMode.slice(1),
+            date: new Date(segment.startTime).toLocaleDateString(),
+            time: new Date(segment.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          };
+          this.hasUpcomingTrip = true;
+          console.log("✈️ Upcoming trip loaded:", this.trip);
+        } else {
+          this.hasUpcomingTrip = false;
+          this.trip = null;
+          console.log("📭 No upcoming trips found");
+        }
+      } catch (error) {
+        console.error("Failed to fetch upcoming trip:", error);
+        this.hasUpcomingTrip = false;
+      }
     },
     // Fetch notifications from backend
     async fetchNotifications() {
@@ -532,6 +576,7 @@ export default {
 
         <div class="flex gap-3">
           <button
+            @click="viewTripDetails"
             class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-lg transition-colors flex justify-center items-center gap-2"
           >
             <Info class="w-4 h-4" /> {{ t("live.viewTripDetails") }}
@@ -618,7 +663,10 @@ export default {
           </div>
 
           <div class="flex items-center pr-2">
-            <div class="w-2 h-2 rounded-full" :class="getNotificationDotColor(item.type)"></div>
+            <div
+              class="w-2 h-2 rounded-full"
+              :class="getNotificationDotColor(item.type)"
+            ></div>
           </div>
         </div>
       </div>
