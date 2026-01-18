@@ -19,9 +19,12 @@ import {
   User,
 } from "lucide-vue-next";
 import { getLanguage, t as translate } from "../utils/translations.js";
+import { useRouter } from "vue-router";
+import { useRewardsStore } from "../data/rewardsStore.js";
 
+const rewardsStore = useRewardsStore();
+const router = useRouter();
 const language = ref(getLanguage());
-
 const t = computed(() => (key) => translate(key, language.value));
 
 const handleLanguageChange = (event) => {
@@ -79,7 +82,7 @@ watch(
   () => isAddModalOpen.value || isDetailOpen.value,
   (isOpen) => {
     document.body.style.overflow = isOpen ? "hidden" : "";
-  }
+  },
 );
 
 const getLeafCount = (likes) => {
@@ -151,12 +154,13 @@ const generateMockData = (count) => {
       score: 85 + Math.floor(Math.random() * 15),
       tags: ["Organic", "Local", "Zero Waste"],
       user: {
+        id: 1 + Math.floor(Math.random() * 9000),
         name: "Sarah M.",
         avatar: `https://i.pravatar.cc/150?u=${Math.random()}`,
       },
       likes: likes,
       shares: 40 + Math.floor(Math.random() * 200),
-      saved: Math.random() > 0.8, // Randomly save some items for demo
+      saved: false,
     };
   });
 };
@@ -238,16 +242,18 @@ const submitRecommendation = () => {
   }, 1500);
 };
 
-function openProfile(userName) {
-  alert(`Opening profile for ${userName}...`);
-}
+const goToUserProfile = (userId) => {
+  rewardsStore.setTargetUser(userId);
+  router.push("/Rewards");
+};
+
 onMounted(() => {
   loadMorePlaces();
   observer.value = new IntersectionObserver(
     (entries) => {
       if (entries[0].isIntersecting) loadMorePlaces();
     },
-    { root: null, threshold: 0.1 }
+    { root: null, threshold: 0.1 },
   );
   if (bottomSentinel.value) observer.value.observe(bottomSentinel.value);
 });
@@ -699,7 +705,10 @@ onUnmounted(() => {
           >
             <div class="flex items-center gap-3">
               <div class="avatar placeholder">
-                <div class="bg-neutral text-neutral-content rounded-full w-10">
+                <div
+                  class="bg-neutral text-neutral-content rounded-full w-10 cursor-pointer"
+                  @click.stop="goToUserProfile(selectedPlace.user.id)"
+                >
                   <img :src="selectedPlace.user.avatar" />
                 </div>
               </div>
