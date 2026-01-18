@@ -4,6 +4,7 @@ import planRoutes from "./planRouter.js";
 import userRoutes from "./userRouter.js";
 import notificationRoutes from "./notificationRouter.js";
 import tripRoutes from "./tripRouter.js";
+import feedbackRoutes from "./feedbackRouter.js";
 
 const router = express.Router();
 
@@ -12,5 +13,6 @@ router.use("/plan", planRoutes);
 router.use("/users", userRoutes);
 router.use("/notifications", notificationRoutes);
 router.use("/trips", tripRoutes);
+router.use("/feedback", feedbackRoutes);
 
 export default router;
