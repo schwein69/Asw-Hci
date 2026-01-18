@@ -232,7 +232,7 @@ const filteredNotifications = computed(() => {
   if (notificationFilter.value === "all") {
     return notifications.value;
   }
-  return notifications.value.filter(n => n.type === notificationFilter.value);
+  return notifications.value.filter((n) => n.type === notificationFilter.value);
 });
 
 const setFilter = (type) => {
@@ -648,7 +648,7 @@ onBeforeUnmount(() => {
             'px-3 py-1.5 rounded-lg text-xs font-medium transition-colors',
             notificationFilter === 'all'
               ? 'bg-emerald-600 text-white'
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200',
           ]"
         >
           All ({{ notifications.length }})
@@ -659,10 +659,12 @@ onBeforeUnmount(() => {
             'px-3 py-1.5 rounded-lg text-xs font-medium transition-colors',
             notificationFilter === 'weather'
               ? 'bg-blue-600 text-white'
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200',
           ]"
         >
-          ☁️ Weather ({{ notifications.filter(n => n.type === 'weather').length }})
+          ☁️ Weather ({{
+            notifications.filter((n) => n.type === "weather").length
+          }})
         </button>
         <button
           @click="setFilter('tourist')"
@@ -670,10 +672,12 @@ onBeforeUnmount(() => {
             'px-3 py-1.5 rounded-lg text-xs font-medium transition-colors',
             notificationFilter === 'tourist'
               ? 'bg-red-600 text-white'
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200',
           ]"
         >
-          ⚠️ Tourist ({{ notifications.filter(n => n.type === 'tourist').length }})
+          ⚠️ Tourist ({{
+            notifications.filter((n) => n.type === "tourist").length
+          }})
         </button>
         <button
           @click="setFilter('social')"
@@ -681,10 +685,12 @@ onBeforeUnmount(() => {
             'px-3 py-1.5 rounded-lg text-xs font-medium transition-colors',
             notificationFilter === 'social'
               ? 'bg-purple-600 text-white'
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200',
           ]"
         >
-          💬 Social ({{ notifications.filter(n => n.type === 'social').length }})
+          💬 Social ({{
+            notifications.filter((n) => n.type === "social").length
+          }})
         </button>
         <button
           @click="setFilter('location')"
@@ -692,10 +698,12 @@ onBeforeUnmount(() => {
             'px-3 py-1.5 rounded-lg text-xs font-medium transition-colors',
             notificationFilter === 'location'
               ? 'bg-emerald-600 text-white'
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200',
           ]"
         >
-          📍 Location ({{ notifications.filter(n => n.type === 'location').length }})
+          📍 Location ({{
+            notifications.filter((n) => n.type === "location").length
+          }})
         </button>
       </div>
 
