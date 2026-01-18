@@ -35,69 +35,69 @@ const trip = ref({
   time: "08:30 AM",
 });
 const notifications = ref([
-        {
-          id: 1,
-          type: "social",
-          city: "Berlin",
-          time: "3:55:49 PM",
-          message: "New interaction on your post",
-          icon: "Bell",
-          color: "bg-purple-100 text-purple-600",
-        },
-        {
-          id: 2,
-          type: "weather",
-          city: "Amsterdam",
-          time: "3:53:58 PM",
-          message: "Weather conditions updated",
-          icon: "Cloud",
-          color: "bg-blue-100 text-blue-600",
-        },
-        {
-          id: 3,
-          type: "social",
-          city: "Berlin",
-          time: "3:52:58 PM",
-          message: "New interaction on your post",
-          icon: "Bell",
-          color: "bg-purple-100 text-purple-600",
-        },
-        {
-          id: 4,
-          type: "weather",
-          city: "Amsterdam",
-          time: "3:35:58 PM",
-          message: "Weather conditions updated",
-          icon: "Cloud",
-          color: "bg-blue-100 text-blue-600",
-        },
-        {
-          id: 5,
-          type: "weather",
-          city: "Barcelona",
-          time: "3:30:58 PM",
-          message: "Weather conditions updated",
-          icon: "Cloud",
-          color: "bg-blue-100 text-blue-600",
-        },
-        {
-          id: 6,
-          type: "location",
-          city: "Copenhagen",
-          time: "3:27:58 PM",
-          message: "New eco-friendly location recommended",
-          icon: "MapPin",
-          color: "bg-emerald-100 text-emerald-600",
-        },
-        {
-          id: 7,
-          type: "user",
-          city: "Copenhagen",
-          time: "12:33:29 PM",
-          message: "Tourist density changed",
-          icon: "User",
-          color: "bg-yellow-100 text-yellow-600",
-        },
+  {
+    id: 1,
+    type: "social",
+    city: "Berlin",
+    time: "3:55:49 PM",
+    message: "New interaction on your post",
+    icon: "Bell",
+    color: "bg-purple-100 text-purple-600",
+  },
+  {
+    id: 2,
+    type: "weather",
+    city: "Amsterdam",
+    time: "3:53:58 PM",
+    message: "Weather conditions updated",
+    icon: "Cloud",
+    color: "bg-blue-100 text-blue-600",
+  },
+  {
+    id: 3,
+    type: "social",
+    city: "Berlin",
+    time: "3:52:58 PM",
+    message: "New interaction on your post",
+    icon: "Bell",
+    color: "bg-purple-100 text-purple-600",
+  },
+  {
+    id: 4,
+    type: "weather",
+    city: "Amsterdam",
+    time: "3:35:58 PM",
+    message: "Weather conditions updated",
+    icon: "Cloud",
+    color: "bg-blue-100 text-blue-600",
+  },
+  {
+    id: 5,
+    type: "weather",
+    city: "Barcelona",
+    time: "3:30:58 PM",
+    message: "Weather conditions updated",
+    icon: "Cloud",
+    color: "bg-blue-100 text-blue-600",
+  },
+  {
+    id: 6,
+    type: "location",
+    city: "Copenhagen",
+    time: "3:27:58 PM",
+    message: "New eco-friendly location recommended",
+    icon: "MapPin",
+    color: "bg-emerald-100 text-emerald-600",
+  },
+  {
+    id: 7,
+    type: "user",
+    city: "Copenhagen",
+    time: "12:33:29 PM",
+    message: "Tourist density changed",
+    icon: "User",
+    color: "bg-yellow-100 text-yellow-600",
+  },
   {
     id: 8,
     type: "location",
@@ -110,92 +110,92 @@ const notifications = ref([
 ]);
 
 const locations = ref([
-        {
-          id: 1,
-          name: "Amsterdam",
-          lat: 52.3676,
-          lon: 4.9041,
-          live: true,
-          weather: {
-            condition: "Loading...",
-            temp: "--",
-            icon: "Cloud",
-            alert: false,
-          },
-          crowd: {
-            levelKey: "live.lowDensity",
-            value: 45,
-            trend: "Up",
-            trendIcon: "TrendingUp",
-            color: "text-emerald-600",
-            barColor: "bg-emerald-300",
-          },
-          alternative: null,
-        },
-        {
-          id: 2,
-          name: "Barcelona",
-          lat: 41.3851,
-          lon: 2.1734,
-          live: true,
-          weather: {
-            condition: "Loading...",
-            temp: "--",
-            icon: "Cloud",
-            alert: false,
-          },
-          crowd: {
-            levelKey: "live.highDensity",
-            value: 81,
-            trend: "Stable",
-            trendIcon: "Minus",
-            color: "text-red-500",
-            barColor: "bg-red-300",
-          },
-          alternative: "Visit during off-peak hours (early morning or evening)",
-        },
-        {
-          id: 3,
-          name: "Copenhagen",
-          lat: 55.6761,
-          lon: 12.5683,
-          live: true,
-          weather: {
-            condition: "Loading...",
-            temp: "--",
-            icon: "Cloud",
-            alert: false,
-          },
-          crowd: {
-            levelKey: "live.mediumDensity",
-            value: 56,
-            trend: "Up",
-            trendIcon: "TrendingUp",
-            color: "text-orange-500",
-            barColor: "bg-orange-300",
-          },
-          alternative: "Consider indoor activities or postpone visit",
-        },
-        {
-          id: 4,
-          name: "Berlin",
-          lat: 52.52,
-          lon: 13.405,
-          live: true,
-          weather: {
-            condition: "Loading...",
-            temp: "--",
-            icon: "Cloud",
-            alert: false,
-          },
-          crowd: {
-            levelKey: "live.mediumDensity",
-            value: 61,
-            trend: "Down",
-            trendIcon: "TrendingDown",
-            color: "text-orange-500",
-            barColor: "bg-orange-300",
-          },
+  {
+    id: 1,
+    name: "Amsterdam",
+    lat: 52.3676,
+    lon: 4.9041,
+    live: true,
+    weather: {
+      condition: "Loading...",
+      temp: "--",
+      icon: "Cloud",
+      alert: false,
+    },
+    crowd: {
+      levelKey: "live.lowDensity",
+      value: 45,
+      trend: "Up",
+      trendIcon: "TrendingUp",
+      color: "text-emerald-600",
+      barColor: "bg-emerald-300",
+    },
+    alternative: null,
+  },
+  {
+    id: 2,
+    name: "Barcelona",
+    lat: 41.3851,
+    lon: 2.1734,
+    live: true,
+    weather: {
+      condition: "Loading...",
+      temp: "--",
+      icon: "Cloud",
+      alert: false,
+    },
+    crowd: {
+      levelKey: "live.highDensity",
+      value: 81,
+      trend: "Stable",
+      trendIcon: "Minus",
+      color: "text-red-500",
+      barColor: "bg-red-300",
+    },
+    alternative: "Visit during off-peak hours (early morning or evening)",
+  },
+  {
+    id: 3,
+    name: "Copenhagen",
+    lat: 55.6761,
+    lon: 12.5683,
+    live: true,
+    weather: {
+      condition: "Loading...",
+      temp: "--",
+      icon: "Cloud",
+      alert: false,
+    },
+    crowd: {
+      levelKey: "live.mediumDensity",
+      value: 56,
+      trend: "Up",
+      trendIcon: "TrendingUp",
+      color: "text-orange-500",
+      barColor: "bg-orange-300",
+    },
+    alternative: "Consider indoor activities or postpone visit",
+  },
+  {
+    id: 4,
+    name: "Berlin",
+    lat: 52.52,
+    lon: 13.405,
+    live: true,
+    weather: {
+      condition: "Loading...",
+      temp: "--",
+      icon: "Cloud",
+      alert: false,
+    },
+    crowd: {
+      levelKey: "live.mediumDensity",
+      value: 61,
+      trend: "Down",
+      trendIcon: "TrendingDown",
+      color: "text-orange-500",
+      barColor: "bg-orange-300",
+    },
     alternative: null,
   },
 ]);
@@ -225,6 +225,19 @@ const iconComponents = {
 };
 
 const t = computed(() => (key) => translate(key, language.value));
+
+const notificationFilter = ref("all"); // all, weather, tourist, social, location, transport
+
+const filteredNotifications = computed(() => {
+  if (notificationFilter.value === "all") {
+    return notifications.value;
+  }
+  return notifications.value.filter(n => n.type === notificationFilter.value);
+});
+
+const setFilter = (type) => {
+  notificationFilter.value = type;
+};
 
 const handleLanguageChange = (event) => {
   language.value = event.detail.language;
@@ -448,12 +461,14 @@ const getNotificationDotColor = (type) => {
 
 const getWeatherInfo = (code) => {
   if (code === 0) return { text: "Sunny", icon: "Sun", alert: false };
-  if (code <= 3) return { text: "Partly Cloudy", icon: "CloudSun", alert: false };
+  if (code <= 3)
+    return { text: "Partly Cloudy", icon: "CloudSun", alert: false };
   if (code <= 48) return { text: "Foggy", icon: "Cloud", alert: true };
   if (code <= 67) return { text: "Rainy", icon: "CloudRain", alert: true };
   if (code <= 77) return { text: "Snowy", icon: "Snowflake", alert: true };
   if (code <= 82) return { text: "Showers", icon: "CloudRain", alert: true };
-  if (code <= 99) return { text: "Stormy", icon: "CloudLightning", alert: true };
+  if (code <= 99)
+    return { text: "Stormy", icon: "CloudLightning", alert: true };
   return { text: "Unknown", icon: "Cloud", alert: false };
 };
 
@@ -625,9 +640,68 @@ onBeforeUnmount(() => {
         </button>
       </div>
 
+      <!-- Filter Buttons -->
+      <div class="flex gap-2 mb-4 flex-wrap">
+        <button
+          @click="setFilter('all')"
+          :class="[
+            'px-3 py-1.5 rounded-lg text-xs font-medium transition-colors',
+            notificationFilter === 'all'
+              ? 'bg-emerald-600 text-white'
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+          ]"
+        >
+          All ({{ notifications.length }})
+        </button>
+        <button
+          @click="setFilter('weather')"
+          :class="[
+            'px-3 py-1.5 rounded-lg text-xs font-medium transition-colors',
+            notificationFilter === 'weather'
+              ? 'bg-blue-600 text-white'
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+          ]"
+        >
+          ☁️ Weather ({{ notifications.filter(n => n.type === 'weather').length }})
+        </button>
+        <button
+          @click="setFilter('tourist')"
+          :class="[
+            'px-3 py-1.5 rounded-lg text-xs font-medium transition-colors',
+            notificationFilter === 'tourist'
+              ? 'bg-red-600 text-white'
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+          ]"
+        >
+          ⚠️ Tourist ({{ notifications.filter(n => n.type === 'tourist').length }})
+        </button>
+        <button
+          @click="setFilter('social')"
+          :class="[
+            'px-3 py-1.5 rounded-lg text-xs font-medium transition-colors',
+            notificationFilter === 'social'
+              ? 'bg-purple-600 text-white'
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+          ]"
+        >
+          💬 Social ({{ notifications.filter(n => n.type === 'social').length }})
+        </button>
+        <button
+          @click="setFilter('location')"
+          :class="[
+            'px-3 py-1.5 rounded-lg text-xs font-medium transition-colors',
+            notificationFilter === 'location'
+              ? 'bg-emerald-600 text-white'
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+          ]"
+        >
+          📍 Location ({{ notifications.filter(n => n.type === 'location').length }})
+        </button>
+      </div>
+
       <div class="space-y-3">
         <div
-          v-for="item in notifications"
+          v-for="item in filteredNotifications"
           :key="item.id"
           class="flex items-center justify-between p-3 rounded-xl border border-emerald-100 bg-emerald-50/30 hover:bg-emerald-50 transition-colors cursor-pointer group"
         >
@@ -689,7 +763,10 @@ onBeforeUnmount(() => {
           class="bg-sky-50 rounded-xl p-3 border border-sky-100 mb-3 flex items-center justify-between"
         >
           <div class="flex items-center gap-3">
-            <component :is="iconComponents[loc.weather.icon]" class="w-5 h-5 text-sky-600" />
+            <component
+              :is="iconComponents[loc.weather.icon]"
+              class="w-5 h-5 text-sky-600"
+            />
             <div>
               <p class="text-xs text-sky-800 font-bold">
                 {{ t("live.weather") }}
