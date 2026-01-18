@@ -5,6 +5,7 @@ import {
   markAsRead,
   markAllAsRead,
   checkWeatherAndNotify,
+  checkCrowdAndNotify,
   deleteNotification,
 } from "../controllers/notificationController.js";
 
@@ -24,6 +25,9 @@ router.put("/mark-all-read/:userId", markAllAsRead);
 
 // Check weather and create notifications
 router.post("/weather/:userId", checkWeatherAndNotify);
+
+// Check crowd density and create notifications
+router.post("/crowd/:userId", checkCrowdAndNotify);
 
 // Delete a notification
 router.delete("/:id", deleteNotification);
