@@ -38,153 +38,80 @@ const handleLanguageChange = (event) => {
   language.value = event.detail.language;
 };
 
+// --- USER ID HELPER ---
+const getUserId = () => {
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  return user._id || user.id;
+};
+
 // --- DATA ---
-const trips = ref([
-  {
-    id: 101,
-    name: "Grand European Tour",
-    routes: [
-      {
-        id: 1,
-        from: "Paris",
-        to: "Amsterdam",
-        type: "Train",
-        transportName: "TGV",
-        transportCode: "TG9452",
-        date: "04/08/2026",
-        depTime: "10:30 AM",
-        arrTime: "01:45 PM",
-        duration: "3h 15m",
-        distance: 430,
-        co2: 14,
-        cost: 95,
-        startCoords: [2.3522, 48.8566],
-        endCoords: [4.9041, 52.3676],
-        completed: true,
-        seat: "42A",
-        gate: null,
-        class: "1st",
-      },
-      {
-        id: 2,
-        from: "Amsterdam",
-        to: "Berlin",
-        type: "Car",
-        transportName: "Rental",
-        transportCode: "Tesla M3",
-        date: "06/08/2026",
-        depTime: "03:00 PM",
-        arrTime: "09:30 PM",
-        duration: "6h 30m",
-        distance: 655,
-        co2: 45,
-        cost: 120,
-        startCoords: [4.9041, 52.3676],
-        endCoords: [13.405, 52.52],
-        completed: false,
-        seat: "Driver",
-        gate: null,
-        class: "Standard",
-      },
-    ],
-  },
-  {
-    id: 102,
-    name: "Eastern Connection",
-    routes: [
-      {
-        id: 3,
-        from: "Berlin",
-        to: "Prague",
-        type: "Bus",
-        transportName: "FlixBus",
-        transportCode: "FLX100",
-        date: "18/08/2026",
-        depTime: "10:00 AM",
-        arrTime: "02:30 PM",
-        duration: "4h 30m",
-        distance: 350,
-        co2: 12,
-        cost: 35,
-        startCoords: [13.405, 52.52],
-        endCoords: [14.4378, 50.0755],
-        completed: false,
-        seat: "12",
-        gate: null,
-        class: "Eco",
-      },
-      {
-        id: 4,
-        from: "Prague",
-        to: "Vienna",
-        type: "Train",
-        transportName: "Railjet",
-        transportCode: "RJ79",
-        date: "25/08/2026",
-        depTime: "03:30 PM",
-        arrTime: "07:30 PM",
-        duration: "4h 00m",
-        distance: 330,
-        co2: 16,
-        cost: 75,
-        startCoords: [14.4378, 50.0755],
-        endCoords: [16.3738, 48.2082],
-        completed: false,
-        seat: "22F",
-        gate: null,
-        class: "Business",
-      },
-    ],
-  },
-  {
-    id: 103,
-    name: "Italian Summer",
-    routes: [
-      {
-        id: 7,
-        from: "Venice",
-        to: "Ferrara",
-        type: "Bicycle",
-        transportName: "My Bike",
-        transportCode: "BIKE01",
-        date: "18/09/2026",
-        depTime: "08:00 AM",
-        arrTime: "01:15 PM",
-        duration: "5h 15m",
-        distance: 110,
-        co2: 0,
-        cost: 0,
-        startCoords: [12.3155, 45.4408],
-        endCoords: [11.6198, 44.8381],
-        completed: false,
-        seat: null,
-        gate: null,
-        class: "Sport",
-      },
-      {
-        id: 8,
-        from: "Ferrara",
-        to: "Rome",
-        type: "Train",
-        transportName: "Italo",
-        transportCode: "IT892",
-        date: "22/09/2026",
-        depTime: "02:00 PM",
-        arrTime: "05:35 PM",
-        duration: "3h 35m",
-        distance: 380,
-        co2: 15,
-        cost: 60,
-        startCoords: [11.6198, 44.8381],
-        endCoords: [12.4964, 41.9028],
-        completed: false,
-        seat: "12A",
-        gate: null,
-        class: "Prima",
-      },
-    ],
-  },
-]);
+const trips = ref([]);
+
+// --- FETCH ACTIVE TRIPS FROM BACKEND ---
+const fetchActiveTrips = async () => {
+  const userId = getUserId();
+  if (!userId) {
+    console.log("⚠️ No userId found in localStorage");
+    return;
+  }
+
+  try {
+    console.log("🔍 Fetching active trips for userId:", userId);
+    const response = await fetch(
+      `http://localhost:3000/api/trips/active/${userId}`
+    );
+    const activeTrips = await response.json();
+    console.log("📦 Received active trips:", activeTrips);
+
+    if (activeTrips && activeTrips.length > 0) {
+      // Transform backend data to World.vue format
+      trips.value = activeTrips.map((trip) => ({
+        id: trip._id,
+        name: trip.title,
+        routes: trip.itinerary.map((segment, index) => ({
+          id: `${trip._id}-${index}`,
+          from: segment.fromLocation.name,
+          to: segment.toLocation.name,
+          type:
+            segment.transportMode.charAt(0).toUpperCase() +
+            segment.transportMode.slice(1),
+          transportName:
+            segment.transportMode.charAt(0).toUpperCase() +
+            segment.transportMode.slice(1),
+          transportCode: segment.transportNumber || "N/A",
+          date: new Date(segment.startTime).toLocaleDateString(),
+          depTime: new Date(segment.startTime).toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+          arrTime: new Date(segment.endTime).toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+          duration: `${Math.round(segment.estimatedDurationMinutes / 60)}h ${
+            segment.estimatedDurationMinutes % 60
+          }m`,
+          distance: segment.distanceKm,
+          co2: segment.co2Emission || 0,
+          cost: segment.price,
+          startCoords: segment.fromLocation.coordinates,
+          endCoords: segment.toLocation.coordinates,
+          completed: false,
+          seat: segment.seatNumber || null,
+          gate: segment.gate || null,
+          class: segment.class || null,
+        })),
+      }));
+      console.log("✅ Transformed trips:", trips.value);
+    } else {
+      console.log("📭 No active trips found");
+      trips.value = [];
+    }
+  } catch (error) {
+    console.error("❌ Failed to fetch active trips:", error);
+    trips.value = [];
+  }
+};
 
 // --- HELPER FUNCTIONS ---
 
@@ -315,6 +242,7 @@ function modifyTrip(tripId) {
 onMounted(() => {
   language.value = getLanguage();
   window.addEventListener("languageChanged", handleLanguageChange);
+  fetchActiveTrips(); // Load active trips from backend
 });
 
 onUnmounted(() => {
