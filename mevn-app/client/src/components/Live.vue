@@ -1,4 +1,5 @@
-<script>
+<script setup>
+import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 import {
   Clock,
   Bell,
@@ -17,48 +18,23 @@ import {
   CloudRain,
   Wind,
   CloudSun,
-  Snowflake, // Added for snow
-  CloudLightning, // Added for storm
+  Snowflake,
+  CloudLightning,
 } from "lucide-vue-next";
 import { getLanguage, t as translate } from "../utils/translations.js";
 
-export default {
-  name: "Live",
-  components: {
-    Clock,
-    Bell,
-    MapPin,
-    Calendar,
-    TrainFront,
-    AlertTriangle,
-    Info,
-    Cloud,
-    User,
-    CheckCircle,
-    TrendingUp,
-    TrendingDown,
-    Minus,
-    Sun,
-    CloudRain,
-    Wind,
-    CloudSun,
-    Snowflake,
-    CloudLightning,
-  },
-  data() {
-    return {
-      language: getLanguage(),
-      hasUpcomingTrip: true,
-      trip: {
-        title: "European Adventure",
-        status: "Departure in 24 hours",
-        from: "Paris",
-        to: "Berlin",
-        type: "Train",
-        date: "12/17/2025",
-        time: "08:30 AM",
-      },
-      notifications: [
+const language = ref(getLanguage());
+const hasUpcomingTrip = ref(true);
+const trip = ref({
+  title: "European Adventure",
+  status: "Departure in 24 hours",
+  from: "Paris",
+  to: "Berlin",
+  type: "Train",
+  date: "12/17/2025",
+  time: "08:30 AM",
+});
+const notifications = ref([
         {
           id: 1,
           type: "social",
@@ -122,18 +98,18 @@ export default {
           icon: "User",
           color: "bg-yellow-100 text-yellow-600",
         },
-        {
-          id: 8,
-          type: "location",
-          city: "Copenhagen",
-          time: "12:32:59 PM",
-          message: "New eco-friendly location recommended",
-          icon: "MapPin",
-          color: "bg-emerald-100 text-emerald-600",
-        },
-      ],
+  {
+    id: 8,
+    type: "location",
+    city: "Copenhagen",
+    time: "12:32:59 PM",
+    message: "New eco-friendly location recommended",
+    icon: "MapPin",
+    color: "bg-emerald-100 text-emerald-600",
+  },
+]);
 
-      locations: [
+const locations = ref([
         {
           id: 1,
           name: "Amsterdam",
@@ -220,270 +196,289 @@ export default {
             color: "text-orange-500",
             barColor: "bg-orange-300",
           },
-          alternative: null,
-        },
-      ],
-      refreshInterval: null, // For auto-refresh
-    };
+    alternative: null,
   },
-  computed: {
-    t() {
-      return (key) => translate(key, this.language);
-    },
-  },
-  mounted() {
-    this.fetchNotifications();
-    this.checkWeatherAndNotify();
-    this.checkCrowdAndNotify();
+]);
+const refreshInterval = ref(null);
 
-    // Auto-refresh every 30 seconds
-    this.refreshInterval = setInterval(() => {
-      console.log("🔄 Auto-refreshing weather, crowd, and notifications...");
-      this.fetchNotifications();
-      this.checkWeatherAndNotify();
-      this.checkCrowdAndNotify();
-    }, 30000); // 30 seconds
-
-    window.addEventListener("languageChanged", this.handleLanguageChange);
-  },
-  beforeUnmount() {
-    // Clear interval when leaving page
-    if (this.refreshInterval) {
-      clearInterval(this.refreshInterval);
-    }
-    window.removeEventListener("languageChanged", this.handleLanguageChange);
-  },
-  methods: {
-    handleLanguageChange(event) {
-      this.language = event.detail.language;
-    },
-    dismissReminder() {
-      this.hasUpcomingTrip = false;
-    },
-    async markAllRead() {
-      const userId = this.getUserId();
-      if (!userId) return;
-
-      try {
-        const response = await fetch(
-          `http://localhost:3000/api/notifications/mark-all-read/${userId}`,
-          { method: "PUT" }
-        );
-
-        if (response.ok) {
-          this.notifications = this.notifications.map((n) => ({
-            ...n,
-            isRead: true,
-          }));
-          alert("All notifications marked as read!");
-        }
-      } catch (error) {
-        console.error("Failed to mark all as read:", error);
-      }
-    },
-    getUserId() {
-      const user = JSON.parse(localStorage.getItem("user") || "{}");
-      return user._id || user.id;
-    },
-    // Fetch notifications from backend
-    async fetchNotifications() {
-      const userId = this.getUserId();
-      if (!userId) return;
-
-      try {
-        const response = await fetch(
-          `http://localhost:3000/api/notifications/${userId}?limit=20`
-        );
-        const data = await response.json();
-
-        if (data.success) {
-          console.log("📥 Received notifications:", data.notifications.length);
-
-          // Map notifications
-          const allNotifications = data.notifications.map((n) => ({
-            id: n._id,
-            type: n.type,
-            city: n.city || "N/A",
-            time: new Date(n.createdAt).toLocaleTimeString(),
-            message: n.message,
-            icon: n.icon || "Bell",
-            color: this.getNotificationColor(n.type),
-            isRead: n.isRead,
-            createdAt: new Date(n.createdAt),
-          }));
-
-          // Deduplicate: Keep only latest notification per city+type
-          const seen = new Map();
-          const deduplicated = [];
-
-          for (const notif of allNotifications) {
-            const key = `${notif.city}-${notif.type}`;
-            if (!seen.has(key)) {
-              seen.set(key, true);
-              deduplicated.push(notif);
-            }
-          }
-
-          // Mix notification types for more natural appearance
-          const byType = {};
-          deduplicated.forEach((n) => {
-            if (!byType[n.type]) byType[n.type] = [];
-            byType[n.type].push(n);
-          });
-
-          // Interleave different types
-          const mixed = [];
-          const types = Object.keys(byType);
-          let maxLength = Math.max(
-            ...Object.values(byType).map((arr) => arr.length)
-          );
-
-          for (let i = 0; i < maxLength; i++) {
-            types.forEach((type) => {
-              if (byType[type][i]) {
-                mixed.push(byType[type][i]);
-              }
-            });
-          }
-
-          this.notifications = mixed;
-          console.log(
-            "📋 Processed notifications (deduplicated & mixed):",
-            this.notifications.length
-          );
-        }
-      } catch (error) {
-        console.error("Failed to fetch notifications:", error);
-      }
-    },
-    // Check weather and create notifications
-    async checkWeatherAndNotify() {
-      const userId = this.getUserId();
-      if (!userId) return;
-
-      const locations = this.locations.map((loc) => ({
-        name: loc.name,
-        lat: loc.lat,
-        lon: loc.lon,
-      }));
-
-      try {
-        const response = await fetch(
-          `http://localhost:3000/api/notifications/weather/${userId}`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ locations }),
-          }
-        );
-
-        const data = await response.json();
-
-        if (data.success && data.weatherData) {
-          // Update locations with weather data
-          data.weatherData.forEach((weather) => {
-            const loc = this.locations.find((l) => l.name === weather.city);
-            if (loc && !weather.error) {
-              loc.weather.temp = `${weather.temperature}°C`;
-              loc.weather.condition = weather.condition;
-              loc.weather.windSpeed = weather.windSpeed || null;
-              loc.weather.icon = weather.icon;
-              loc.weather.alert = weather.alert;
-            }
-          });
-
-          // Refresh notifications if new alerts were created
-          if (data.alertsCreated > 0) {
-            this.fetchNotifications();
-          }
-        }
-      } catch (error) {
-        console.error("Failed to check weather:", error);
-      }
-    },
-    // Check crowd density and create notifications
-    async checkCrowdAndNotify() {
-      const userId = this.getUserId();
-      if (!userId) return;
-
-      const locations = this.locations.map((loc) => ({
-        name: loc.name,
-        lat: loc.lat,
-        lon: loc.lon,
-      }));
-
-      try {
-        const response = await fetch(
-          `http://localhost:3000/api/notifications/crowd/${userId}`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ locations }),
-          }
-        );
-
-        const data = await response.json();
-
-        if (data.success && data.crowdData) {
-          // Update locations with crowd data
-          data.crowdData.forEach((crowd) => {
-            const loc = this.locations.find((l) => l.name === crowd.location);
-            if (loc) {
-              loc.crowd.value = crowd.density;
-              loc.crowd.levelKey = crowd.levelKey;
-              loc.crowd.trend = crowd.trend;
-              loc.crowd.trendIcon = crowd.icon;
-              loc.crowd.color = crowd.color;
-              loc.crowd.barColor = crowd.barColor;
-              loc.alternative = crowd.alternative;
-            }
-          });
-
-          // Refresh notifications if new alerts were created
-          if (data.alertsCreated > 0) {
-            this.fetchNotifications();
-          }
-        }
-      } catch (error) {
-        console.error("Failed to check crowd density:", error);
-      }
-    },
-    getNotificationColor(type) {
-      const colors = {
-        weather: "bg-blue-100 text-blue-600",
-        social: "bg-purple-100 text-purple-600",
-        location: "bg-emerald-100 text-emerald-600",
-        tourist: "bg-yellow-100 text-yellow-600",
-        transport: "bg-orange-100 text-orange-600",
-      };
-      return colors[type] || "bg-gray-100 text-gray-600";
-    },
-    getNotificationDotColor(type) {
-      const colors = {
-        weather: "bg-blue-500",
-        tourist: "bg-red-500",
-        transport: "bg-orange-500",
-        social: "bg-purple-500",
-        location: "bg-emerald-500",
-      };
-      return colors[type] || "bg-emerald-500";
-    },
-    // changing codes to icons ---
-    getWeatherInfo(code) {
-      if (code === 0) return { text: "Sunny", icon: "Sun", alert: false };
-      if (code <= 3)
-        return { text: "Partly Cloudy", icon: "CloudSun", alert: false };
-      if (code <= 48) return { text: "Foggy", icon: "Cloud", alert: true };
-      if (code <= 67) return { text: "Rainy", icon: "CloudRain", alert: true };
-      if (code <= 77) return { text: "Snowy", icon: "Snowflake", alert: true };
-      if (code <= 82)
-        return { text: "Showers", icon: "CloudRain", alert: true };
-      if (code <= 99)
-        return { text: "Stormy", icon: "CloudLightning", alert: true };
-      return { text: "Unknown", icon: "Cloud", alert: false };
-    },
-  },
+// Component map for dynamic icon rendering
+const iconComponents = {
+  Clock,
+  Bell,
+  MapPin,
+  Calendar,
+  TrainFront,
+  AlertTriangle,
+  Info,
+  Cloud,
+  User,
+  CheckCircle,
+  TrendingUp,
+  TrendingDown,
+  Minus,
+  Sun,
+  CloudRain,
+  Wind,
+  CloudSun,
+  Snowflake,
+  CloudLightning,
 };
+
+const t = computed(() => (key) => translate(key, language.value));
+
+const handleLanguageChange = (event) => {
+  language.value = event.detail.language;
+};
+
+const dismissReminder = () => {
+  hasUpcomingTrip.value = false;
+};
+
+const getUserId = () => {
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  return user._id || user.id;
+};
+
+const markAllRead = async () => {
+  const userId = getUserId();
+  if (!userId) return;
+
+  try {
+    const response = await fetch(
+      `http://localhost:3000/api/notifications/mark-all-read/${userId}`,
+      { method: "PUT" }
+    );
+
+    if (response.ok) {
+      notifications.value = notifications.value.map((n) => ({
+        ...n,
+        isRead: true,
+      }));
+      alert("All notifications marked as read!");
+    }
+  } catch (error) {
+    console.error("Failed to mark all as read:", error);
+  }
+};
+
+const fetchNotifications = async () => {
+  const userId = getUserId();
+  if (!userId) return;
+
+  try {
+    const response = await fetch(
+      `http://localhost:3000/api/notifications/${userId}?limit=20`
+    );
+    const data = await response.json();
+
+    if (data.success) {
+      console.log("📥 Received notifications:", data.notifications.length);
+
+      // Map notifications
+      const allNotifications = data.notifications.map((n) => ({
+        id: n._id,
+        type: n.type,
+        city: n.city || "N/A",
+        time: new Date(n.createdAt).toLocaleTimeString(),
+        message: n.message,
+        icon: n.icon || "Bell",
+        color: getNotificationColor(n.type),
+        isRead: n.isRead,
+        createdAt: new Date(n.createdAt),
+      }));
+
+      // Deduplicate: Keep only latest notification per city+type
+      const seen = new Map();
+      const deduplicated = [];
+
+      for (const notif of allNotifications) {
+        const key = `${notif.city}-${notif.type}`;
+        if (!seen.has(key)) {
+          seen.set(key, true);
+          deduplicated.push(notif);
+        }
+      }
+
+      // Mix notification types for more natural appearance
+      const byType = {};
+      deduplicated.forEach((n) => {
+        if (!byType[n.type]) byType[n.type] = [];
+        byType[n.type].push(n);
+      });
+
+      // Interleave different types
+      const mixed = [];
+      const types = Object.keys(byType);
+      let maxLength = Math.max(
+        ...Object.values(byType).map((arr) => arr.length)
+      );
+
+      for (let i = 0; i < maxLength; i++) {
+        types.forEach((type) => {
+          if (byType[type][i]) {
+            mixed.push(byType[type][i]);
+          }
+        });
+      }
+
+      notifications.value = mixed;
+      console.log(
+        "📋 Processed notifications (deduplicated & mixed):",
+        notifications.value.length
+      );
+    }
+  } catch (error) {
+    console.error("Failed to fetch notifications:", error);
+  }
+};
+
+const checkWeatherAndNotify = async () => {
+  const userId = getUserId();
+  if (!userId) return;
+
+  const locs = locations.value.map((loc) => ({
+    name: loc.name,
+    lat: loc.lat,
+    lon: loc.lon,
+  }));
+
+  try {
+    const response = await fetch(
+      `http://localhost:3000/api/notifications/weather/${userId}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ locations: locs }),
+      }
+    );
+
+    const data = await response.json();
+
+    if (data.success && data.weatherData) {
+      // Update locations with weather data
+      data.weatherData.forEach((weather) => {
+        const loc = locations.value.find((l) => l.name === weather.city);
+        if (loc && !weather.error) {
+          loc.weather.temp = `${weather.temperature}°C`;
+          loc.weather.condition = weather.condition;
+          loc.weather.windSpeed = weather.windSpeed || null;
+          loc.weather.icon = weather.icon;
+          loc.weather.alert = weather.alert;
+        }
+      });
+
+      // Refresh notifications if new alerts were created
+      if (data.alertsCreated > 0) {
+        fetchNotifications();
+      }
+    }
+  } catch (error) {
+    console.error("Failed to check weather:", error);
+  }
+};
+
+const checkCrowdAndNotify = async () => {
+  const userId = getUserId();
+  if (!userId) return;
+
+  const locs = locations.value.map((loc) => ({
+    name: loc.name,
+    lat: loc.lat,
+    lon: loc.lon,
+  }));
+
+  try {
+    const response = await fetch(
+      `http://localhost:3000/api/notifications/crowd/${userId}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ locations: locs }),
+      }
+    );
+
+    const data = await response.json();
+
+    if (data.success && data.crowdData) {
+      // Update locations with crowd data
+      data.crowdData.forEach((crowd) => {
+        const loc = locations.value.find((l) => l.name === crowd.location);
+        if (loc) {
+          loc.crowd.value = crowd.density;
+          loc.crowd.levelKey = crowd.levelKey;
+          loc.crowd.trend = crowd.trend;
+          loc.crowd.trendIcon = crowd.icon;
+          loc.crowd.color = crowd.color;
+          loc.crowd.barColor = crowd.barColor;
+          loc.alternative = crowd.alternative;
+        }
+      });
+
+      // Refresh notifications if new alerts were created
+      if (data.alertsCreated > 0) {
+        fetchNotifications();
+      }
+    }
+  } catch (error) {
+    console.error("Failed to check crowd density:", error);
+  }
+};
+
+const getNotificationColor = (type) => {
+  const colors = {
+    weather: "bg-blue-100 text-blue-600",
+    social: "bg-purple-100 text-purple-600",
+    location: "bg-emerald-100 text-emerald-600",
+    tourist: "bg-yellow-100 text-yellow-600",
+    transport: "bg-orange-100 text-orange-600",
+  };
+  return colors[type] || "bg-gray-100 text-gray-600";
+};
+
+const getNotificationDotColor = (type) => {
+  const colors = {
+    weather: "bg-blue-500",
+    tourist: "bg-red-500",
+    transport: "bg-orange-500",
+    social: "bg-purple-500",
+    location: "bg-emerald-500",
+  };
+  return colors[type] || "bg-emerald-500";
+};
+
+const getWeatherInfo = (code) => {
+  if (code === 0) return { text: "Sunny", icon: "Sun", alert: false };
+  if (code <= 3) return { text: "Partly Cloudy", icon: "CloudSun", alert: false };
+  if (code <= 48) return { text: "Foggy", icon: "Cloud", alert: true };
+  if (code <= 67) return { text: "Rainy", icon: "CloudRain", alert: true };
+  if (code <= 77) return { text: "Snowy", icon: "Snowflake", alert: true };
+  if (code <= 82) return { text: "Showers", icon: "CloudRain", alert: true };
+  if (code <= 99) return { text: "Stormy", icon: "CloudLightning", alert: true };
+  return { text: "Unknown", icon: "Cloud", alert: false };
+};
+
+onMounted(() => {
+  fetchNotifications();
+  checkWeatherAndNotify();
+  checkCrowdAndNotify();
+
+  // Auto-refresh every 30 seconds
+  refreshInterval.value = setInterval(() => {
+    console.log("🔄 Auto-refreshing weather, crowd, and notifications...");
+    fetchNotifications();
+    checkWeatherAndNotify();
+    checkCrowdAndNotify();
+  }, 30000);
+
+  window.addEventListener("languageChanged", handleLanguageChange);
+});
+
+onBeforeUnmount(() => {
+  if (refreshInterval.value) {
+    clearInterval(refreshInterval.value);
+  }
+  window.removeEventListener("languageChanged", handleLanguageChange);
+});
 </script>
 
 <template>
@@ -641,7 +636,7 @@ export default {
               class="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
               :class="item.color"
             >
-              <component :is="item.icon" class="w-5 h-5" />
+              <component :is="iconComponents[item.icon]" class="w-5 h-5" />
             </div>
 
             <div>
@@ -694,7 +689,7 @@ export default {
           class="bg-sky-50 rounded-xl p-3 border border-sky-100 mb-3 flex items-center justify-between"
         >
           <div class="flex items-center gap-3">
-            <component :is="loc.weather.icon" class="w-5 h-5 text-sky-600" />
+            <component :is="iconComponents[loc.weather.icon]" class="w-5 h-5 text-sky-600" />
             <div>
               <p class="text-xs text-sky-800 font-bold">
                 {{ t("live.weather") }}
@@ -727,7 +722,7 @@ export default {
               class="flex items-center gap-1 text-[10px] font-medium text-gray-500"
             >
               <component
-                :is="loc.crowd.trendIcon"
+                :is="iconComponents[loc.crowd.trendIcon]"
                 class="w-3 h-3"
                 :class="
                   loc.crowd.trend === 'Up' ? 'text-red-500' : 'text-emerald-500'
