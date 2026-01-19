@@ -9,6 +9,11 @@ import {
   shouldCreateCrowdAlert,
   generateCrowdAlertMessage,
 } from "../services/crowdService.js";
+import {
+  emitNotification,
+  emitWeatherNotification,
+  emitCrowdNotification,
+} from "../socket/notificationSocket.js";
 
 /**
  * GET /api/notifications/:userId
@@ -80,6 +85,12 @@ export const createNotification = async (req, res) => {
     });
 
     await notification.save();
+
+    // Push notification via Socket.io
+    const io = req.app.get("io");
+    if (io) {
+      emitNotification(io, recipient, notification);
+    }
 
     res.status(201).json({
       success: true,
@@ -209,6 +220,12 @@ export const checkWeatherAndNotify = async (req, res) => {
 
           await notification.save();
           newNotifications.push(notification);
+
+          // Push weather notification via Socket.io
+          const io = req.app.get("io");
+          if (io) {
+            emitWeatherNotification(io, userId, notification);
+          }
         }
       }
     }
@@ -314,6 +331,12 @@ export const checkCrowdAndNotify = async (req, res) => {
 
           await notification.save();
           newNotifications.push(notification);
+
+          // Push crowd notification via Socket.io
+          const io = req.app.get("io");
+          if (io) {
+            emitCrowdNotification(io, userId, notification);
+          }
         }
       }
     }
