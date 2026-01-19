@@ -1,5 +1,7 @@
 import Feedback from "../models/feedback.js";
 import User from "../models/users.js";
+import Notification from "../models/notification.js";
+import { emitNotification } from "../socket/notificationSocket.js";
 
 // Create new feedback
 export const createFeedback = async (req, res) => {
@@ -141,6 +143,29 @@ export const upvoteFeedback = async (req, res) => {
       // Add upvote
       feedback.upvotedBy.push(userId);
       feedback.upvotes += 1;
+
+      // Create notification for feedback author (only when upvoting, not removing)
+      if (feedback.user.toString() !== userId) {
+        // Don't notify if user upvotes their own feedback
+        const notification = new Notification({
+          recipient: feedback.user,
+          type: "social",
+          message: `Someone liked your feedback: "${feedback.subject}"`,
+          icon: "Bell",
+        });
+
+        await notification.save();
+
+        // Push notification via Socket.io
+        const io = req.app.get("io");
+        if (io) {
+          emitNotification(io, feedback.user.toString(), notification);
+        }
+
+        console.log(
+          `Upvote notification sent to user ${feedback.user} for feedback: ${feedback.subject}`
+        );
+      }
     }
 
     await feedback.save();
