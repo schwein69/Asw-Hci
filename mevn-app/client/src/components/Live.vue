@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from "vue";
+import { io } from "socket.io-client";
 import {
   Clock,
   Bell,
@@ -27,12 +28,14 @@ import { useRouter } from "vue-router";
 // Router
 const router = useRouter();
 
+// Socket.io connection
+const socket = ref(null);
+
 // Reactive state
 const language = ref(getLanguage());
 const hasUpcomingTrip = ref(false);
 const trip = ref(null);
 const activeFilter = ref("all"); // Filter state: all, weather, tourist, social, location
-const refreshInterval = ref(null); // For auto-refresh
 
 const notifications = ref([
   {
@@ -536,30 +539,95 @@ const getWeatherInfo = (code) => {
   return { text: "Unknown", icon: "Cloud", alert: false };
 };
 
+// Setup Socket.io connection
+const setupSocket = () => {
+  const userId = getUserId();
+  if (!userId) return;
+
+  // Connect to Socket.io server
+  socket.value = io("http://localhost:3000");
+
+  socket.value.on("connect", () => {
+    console.log("Connected to Socket.io server:", socket.value.id);
+    // Join user's personal notification room
+    socket.value.emit("join:notifications", userId);
+  });
+
+  // Listen for new notifications
+  socket.value.on("notification:new", (notification) => {
+    console.log("Received notification:", notification);
+    addNotificationToList(notification);
+  });
+
+  // Listen for weather notifications
+  socket.value.on("notification:weather", (notification) => {
+    console.log("Received weather notification:", notification);
+    addNotificationToList(notification);
+  });
+
+  // Listen for crowd notifications
+  socket.value.on("notification:crowd", (notification) => {
+    console.log("Received crowd notification:", notification);
+    addNotificationToList(notification);
+  });
+
+  socket.value.on("disconnect", () => {
+    console.log("Disconnected from Socket.io server");
+  });
+
+  socket.value.on("connect_error", (error) => {
+    console.error("Socket connection error:", error);
+  });
+};
+
+// Add notification to list (helper for socket events)
+const addNotificationToList = (notification) => {
+  const newNotification = {
+    id: notification.id,
+    type: notification.type,
+    city: notification.city || "N/A",
+    time: new Date(notification.createdAt).toLocaleTimeString(),
+    message: notification.message,
+    icon: notification.icon || "Bell",
+    color: getNotificationColor(notification.type),
+    isRead: notification.isRead,
+    timestamp: new Date(notification.createdAt).getTime(),
+  };
+
+  // Add to beginning of array (most recent first)
+  notifications.value.unshift(newNotification);
+
+  // Keep only last 50 notifications
+  if (notifications.value.length > 50) {
+    notifications.value = notifications.value.slice(0, 50);
+  }
+
+  console.log("✅ Notification added to list:", newNotification.message);
+};
+
 // Lifecycle hooks
 onMounted(() => {
   fetchUpcomingTrip();
-  fetchNotifications();
+  fetchNotifications(); // Load notification history
   checkWeatherAndNotify();
   checkCrowdAndNotify();
 
-  // Auto-refresh every 30 seconds
-  refreshInterval.value = setInterval(() => {
-    console.log("🔄 Auto-refreshing weather, crowd, and notifications...");
-    fetchUpcomingTrip();
-    fetchNotifications();
-    checkWeatherAndNotify();
-    checkCrowdAndNotify();
-  }, 30000); // 30 seconds
+  // Setup Socket.io for real-time push notifications
+  setupSocket();
 
   window.addEventListener("languageChanged", handleLanguageChange);
 });
 
 onBeforeUnmount(() => {
-  // Clear interval when leaving page
-  if (refreshInterval.value) {
-    clearInterval(refreshInterval.value);
+  // Disconnect socket
+  if (socket.value) {
+    const userId = getUserId();
+    if (userId) {
+      socket.value.emit("leave:notifications", userId);
+    }
+    socket.value.disconnect();
   }
+
   window.removeEventListener("languageChanged", handleLanguageChange);
 });
 </script>
