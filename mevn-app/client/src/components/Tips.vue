@@ -73,7 +73,7 @@ const fetchData = async () => {
 
     // Update Knowledge Data
     knowledgeData.value = knowledgeRes.data;
-    console.log("Data fetched successfully", knowledgeData, dailyTips);
+    console.log("Data fetched successfully");
   } catch (err) {
     console.error("Error fetching tips:", err);
   }
@@ -81,12 +81,9 @@ const fetchData = async () => {
 onMounted(async () => {
   fetchData();
 });
-watch(knowledgeData, (newData) => {
-  console.log("Knowledge data updated:", newData);
-});
+
 const knowledgesTips = computed(() => {
   const data = knowledgeData.value || {};
-  console.log("Knowledge data used for tips:", data);
 
   return [
     {
