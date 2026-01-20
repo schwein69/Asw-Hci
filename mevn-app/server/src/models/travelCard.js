@@ -38,6 +38,10 @@ const TravelCardSchema = new mongoose.Schema({
   },
   // Array di ID per evitare voti doppi
   likes: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+  numberOfLikes: {
+    type: Number,
+    default: 0,
+  },
 
   status: {
     type: String,

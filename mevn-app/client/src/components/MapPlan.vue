@@ -149,7 +149,7 @@ onMounted(async () => {
     tripStore.currentTrip.routes.length > 0
   ) {
     savedSegments.value = JSON.parse(
-      JSON.stringify(tripStore.currentTrip.routes)
+      JSON.stringify(tripStore.currentTrip.routes),
     );
 
     const lastSeg = savedSegments.value[savedSegments.value.length - 1];
@@ -221,7 +221,7 @@ function handleMyLocation() {
           mapboxMapRef.value.flyTo(coords, 15);
         }
       },
-      (err) => console.warn("Location denied:", err)
+      (err) => console.warn("Location denied:", err),
     );
   }
 }
@@ -349,7 +349,7 @@ async function geminiEstimation(mode, distanceKm, fuelType) {
     if (mode === "Car") payload.fuel_type = fuelType;
     const response = await axios.post(
       "http://localhost:3000/api/plan/estimate",
-      payload
+      payload,
     );
     return response.data;
   } catch (err) {
@@ -361,7 +361,7 @@ async function geocodeText(searchText) {
   if (!searchText) return null;
   try {
     const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
-      searchText
+      searchText,
     )}.json?access_token=${accessToken}&limit=1`;
     const res = await fetch(url);
     const data = await res.json();
@@ -405,7 +405,7 @@ async function addSegment() {
       segment.toCoords,
       segment.toCoords,
       segment.type,
-      segment.id
+      segment.id,
     );
     if (toSearchBox.value) toSearchBox.value.value = "";
     newSegment.value.toName = "";
@@ -442,13 +442,13 @@ async function addSegment() {
   const rawDistance = turf.distance(
     newSegment.value.fromCoords,
     newSegment.value.toCoords,
-    { units: "kilometers" }
+    { units: "kilometers" },
   );
   const distanceKm = parseFloat(rawDistance.toFixed(2));
   const geminiData = await geminiEstimation(
     newSegment.value.type,
     distanceKm,
-    newSegment.value.fuelType
+    newSegment.value.fuelType,
   );
   const segmentId = Date.now();
   const nextStartName = newSegment.value.toName;
@@ -484,7 +484,7 @@ async function addSegment() {
     segment.fromCoords,
     segment.toCoords,
     segment.type,
-    segment.id
+    segment.id,
   );
   newSegment.value.fromName = nextStartName;
   newSegment.value.fromCoords = nextStartCoords;
@@ -511,7 +511,7 @@ async function openComparisonModal(index) {
   try {
     const response = await axios.post(
       "http://localhost:3000/api/plan/compare",
-      { distance_km: segment.distance }
+      { distance_km: segment.distance },
     );
     const allOptions = response.data;
     const alternatives = allOptions.filter((opt) => opt.mode !== segment.type);
@@ -535,7 +535,7 @@ async function confirmRouteSelection(selectionData) {
     segment.fromCoords,
     segment.toCoords,
     segment.type,
-    segment.id
+    segment.id,
   );
   comparisonModalOpen.value = false;
   targetSegmentIndex.value = null;
@@ -569,6 +569,7 @@ function removeSegment(index) {
   }
 }
 
+//TODO: Implementare salvataggio su DB
 function saveTripToDB() {
   alert("Trip Saved!");
 }
@@ -619,7 +620,7 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
       if (type === "Cycling") profile = "cycling";
       if (type === "Train" || type === "Bus") profile = "driving";
       const res = await fetch(
-        `https://api.mapbox.com/directions/v5/mapbox/${profile}/${startCoords[0]},${startCoords[1]};${endCoords[0]},${endCoords[1]}?steps=true&geometries=geojson&access_token=${accessToken}`
+        `https://api.mapbox.com/directions/v5/mapbox/${profile}/${startCoords[0]},${startCoords[1]};${endCoords[0]},${endCoords[1]}?steps=true&geometries=geojson&access_token=${accessToken}`,
       );
       const json = await res.json();
       if (json.routes?.[0]) routeGeoJSON = json.routes[0].geometry;

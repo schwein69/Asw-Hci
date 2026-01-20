@@ -1,7 +1,6 @@
 const express = require("express");
 const router = express.Router();
-
-// Simple placeholder routes for travelcards — replace handlers with real controllers
+import * as discoverController from "../controllers/travelCardsController.js";
 
 router.get("/", (req, res) => {
   res.send("Travelcards route working ✅");
