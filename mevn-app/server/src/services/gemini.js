@@ -29,6 +29,37 @@ export async function generateDailyTips() {
     return [];
   }
 }
+export async function generateKnowledgeTips() {
+  const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
+
+  const prompt = `
+    Generate 4 distinct, educational, and statistical sustainability facts corresponding to the specific categories below.
+    
+    Return ONLY a raw JSON object (no markdown, no backticks).
+    The object must have exactly these 4 keys with relevant content:
+    
+    1. "flightCo2": A specific statistic about CO2 emissions from flying (e.g., a specific route or general output).
+    2. "treeAbsorption": A comparison of how many trees are needed to offset common emissions or how much one tree absorbs.
+    3. "methodsVs": A percentage or factor comparison of travel methods, like walk, plane, train, Ev car, etcc... for the efficiency.
+    4. "accomodations": A statistic about energy/water savings in eco-certified accommodation, like bnb is better than 5 start hotel.
+
+    Keep each string under 30 words. Make them punchy and factual.
+  `;
+
+  try {
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text();
+
+    const cleanedText = text.replace(/```json|```/g, "").trim();
+
+    return JSON.parse(cleanedText);
+  } catch (error) {
+    console.error("Gemini API Error:", error);
+
+    return [];
+  }
+}
 export async function generateTravelItineraryEstimation(payload) {
   const model = genAI.getGenerativeModel({
     model: "gemini-2.5-flash-lite",

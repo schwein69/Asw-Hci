@@ -34,11 +34,11 @@ const handleLanguageChange = (event) => {
 };
 
 onMounted(() => {
-  window.addEventListener('languageChanged', handleLanguageChange);
+  window.addEventListener("languageChanged", handleLanguageChange);
 });
 
 onUnmounted(() => {
-  window.removeEventListener('languageChanged', handleLanguageChange);
+  window.removeEventListener("languageChanged", handleLanguageChange);
 });
 
 const iconMap = {
@@ -55,40 +55,62 @@ const iconMap = {
   Wind,
 };
 const dailyTips = ref([]);
-onMounted(async () => {
-  try {
-    const response = await axios.get("http://localhost:3000/api/tips/daily");
-    const tipsData = response.data;
-    dailyTips.value = tipsData;
-    for (const tip of dailyTips.value) {
-      tip.icon = iconMap[tip.icon];
-    }
-    console.log("Successfully fetched daily tips:", tipsData);
-  } catch (err) {
-    console.error("Error fetching daily tips:", err);
-  } finally {
-    console.log("Finished attempting to fetch daily tips.");
-  }
-});
+const knowledgeData = ref(null);
 
-const knowledgesTipsBase = computed(() => [
-  {
-    textKey: "tips.knowledgeTips.flightCo2",
-    icon: Plane,
-  },
-  {
-    textKey: "tips.knowledgeTips.treeAbsorption",
-    icon: Leaf,
-  },
-  {
-    textKey: "tips.knowledgeTips.trainVsPlane",
-    icon: Heart,
-  },
-  {
-    textKey: "tips.knowledgeTips.ecoHotels",
-    icon: BedDouble,
-  },
-]);
+const fetchData = async () => {
+  try {
+    // Run requests in parallel for faster loading
+    const [dailyRes, knowledgeRes] = await Promise.all([
+      axios.get("http://localhost:3000/api/tips/daily"),
+      axios.get("http://localhost:3000/api/tips/knowledge"),
+    ]);
+
+    // Update Daily Tips
+    dailyTips.value = dailyRes.data.map((tip) => ({
+      ...tip,
+      icon: iconMap[tip.icon] || Globe,
+    }));
+
+    // Update Knowledge Data
+    knowledgeData.value = knowledgeRes.data;
+    console.log("Data fetched successfully", knowledgeData, dailyTips);
+  } catch (err) {
+    console.error("Error fetching tips:", err);
+  }
+};
+onMounted(async () => {
+  fetchData();
+});
+watch(knowledgeData, (newData) => {
+  console.log("Knowledge data updated:", newData);
+});
+const knowledgesTips = computed(() => {
+  const data = knowledgeData.value || {};
+  console.log("Knowledge data used for tips:", data);
+
+  return [
+    {
+      key: "flightCo2",
+      text: data.flightCo2 || "Loading...",
+      icon: Plane,
+    },
+    {
+      key: "treeAbsorption",
+      text: data.treeAbsorption || "Loading...",
+      icon: Leaf,
+    },
+    {
+      key: "methodsVs",
+      text: data.methodsVs || "Loading...",
+      icon: Heart,
+    },
+    {
+      key: "accomodations",
+      text: data.accomodations || "Loading...",
+      icon: BedDouble,
+    },
+  ];
+});
 const transportGuidelinesBase = computed(() => [
   {
     titleKey: "tips.guidelines.transport.chooseTrain.title",
@@ -208,21 +230,21 @@ const activitiesGuidelinesBase = computed(() => [
   },
 ]);
 
-const transportGuidelines = reactive(transportGuidelinesBase.value.map(g => ({ ...g })));
-const accomodationGuidelines = reactive(accomodationGuidelinesBase.value.map(g => ({ ...g })));
-const foodGuidelines = reactive(foodGuidelinesBase.value.map(g => ({ ...g })));
-const shoppingGuidelines = reactive(shoppingGuidelinesBase.value.map(g => ({ ...g })));
-const activitiesGuidelines = reactive(activitiesGuidelinesBase.value.map(g => ({ ...g })));
-const knowledgesTips = reactive(knowledgesTipsBase.value.map(t => ({ ...t })));
-
-watch(() => language.value, () => {
-  transportGuidelines.splice(0, transportGuidelines.length, ...transportGuidelinesBase.value.map(g => ({ ...g })));
-  accomodationGuidelines.splice(0, accomodationGuidelines.length, ...accomodationGuidelinesBase.value.map(g => ({ ...g })));
-  foodGuidelines.splice(0, foodGuidelines.length, ...foodGuidelinesBase.value.map(g => ({ ...g })));
-  shoppingGuidelines.splice(0, shoppingGuidelines.length, ...shoppingGuidelinesBase.value.map(g => ({ ...g })));
-  activitiesGuidelines.splice(0, activitiesGuidelines.length, ...activitiesGuidelinesBase.value.map(g => ({ ...g })));
-  knowledgesTips.splice(0, knowledgesTips.length, ...knowledgesTipsBase.value.map(t => ({ ...t })));
-});
+const transportGuidelines = reactive(
+  transportGuidelinesBase.value.map((g) => ({ ...g })),
+);
+const accomodationGuidelines = reactive(
+  accomodationGuidelinesBase.value.map((g) => ({ ...g })),
+);
+const foodGuidelines = reactive(
+  foodGuidelinesBase.value.map((g) => ({ ...g })),
+);
+const shoppingGuidelines = reactive(
+  shoppingGuidelinesBase.value.map((g) => ({ ...g })),
+);
+const activitiesGuidelines = reactive(
+  activitiesGuidelinesBase.value.map((g) => ({ ...g })),
+);
 
 const toggleGeneric = (list, index) => {
   if (list && list[index]) {
@@ -236,10 +258,10 @@ const toggleGeneric = (list, index) => {
     <div class="bg-success rounded-xl shadow-lg p-6 mb-6">
       <div class="flex items-center gap-3 mb-2">
         <Lightbulb class="w-6 h-6" />
-        <h1 class="text-2xl font-bold">{{ t('tips.title') }}</h1>
+        <h1 class="text-2xl font-bold">{{ t("tips.title") }}</h1>
       </div>
       <p class="opacity-90 ml-9">
-        {{ t('tips.subtitle') }}
+        {{ t("tips.subtitle") }}
       </p>
     </div>
 
@@ -250,7 +272,7 @@ const toggleGeneric = (list, index) => {
     />
 
     <h3 class="text-xl font-semibold text-teal-900 mb-4 pl-1">
-      {{ t('tips.detailedGuidelines') }}
+      {{ t("tips.detailedGuidelines") }}
     </h3>
     <Guidelines
       :title="t('tips.transportation')"
@@ -287,7 +309,11 @@ const toggleGeneric = (list, index) => {
       @toggle-guideline="(index) => toggleGeneric(activitiesGuidelines, index)"
     />
 
-    <Explore :title="t('tips.didYouKnow')" :icon="Info" :daily-tips="knowledgesTips" />
+    <Explore
+      :title="t('tips.didYouKnow')"
+      :icon="Info"
+      :daily-tips="knowledgesTips"
+    />
   </div>
 </template>
 
