@@ -6,6 +6,7 @@ import {
   getNextTierInfo,
   calculateUserLevel,
   getPointsForNextLevel,
+  ACHIEVEMENT_DEFINITIONS,
 } from "../config/achievementDefinitions.js";
 
 /**
@@ -114,11 +115,54 @@ export async function updateAchievementProgress(
  * @returns {Array} Array of achievements with metadata
  */
 export async function getUserAchievements(userId) {
-  const achievements = await Achievement.find({ user: userId });
+  // Get all achievement types from definitions
+  const allAchievementTypes = Object.keys(ACHIEVEMENT_DEFINITIONS);
 
-  // Map achievements to include definition data and next tier info
-  const achievementsWithDetails = achievements.map((achievement) => {
-    const definition = getAchievementDefinition(achievement.achievementType);
+  // Fetch existing achievements from database
+  const existingAchievements = await Achievement.find({ user: userId });
+
+  // Create a map for quick lookup
+  const achievementMap = new Map(
+    existingAchievements.map((a) => [a.achievementType, a])
+  );
+
+  // Build complete list: include all types, even those with no progress
+  const achievementsWithDetails = allAchievementTypes.map((achievementType) => {
+    const achievement = achievementMap.get(achievementType);
+    const definition = getAchievementDefinition(achievementType);
+
+    // If achievement doesn't exist, create a virtual one with 0 progress
+    if (!achievement) {
+      const nextTier = getNextTierInfo(achievementType, 0);
+
+      return {
+        _id: null, // No database ID yet
+        user: userId,
+        achievementType,
+        currentProgress: 0,
+        currentTier: 0,
+        totalPointsEarned: 0,
+        tierHistory: [],
+        definition: {
+          name: definition.name,
+          description: definition.description,
+          icon: definition.icon,
+          color: definition.color,
+          category: definition.category,
+          unit: definition.unit,
+        },
+        nextTier: {
+          level: nextTier.level,
+          name: nextTier.name,
+          target: nextTier.target,
+          points: nextTier.points,
+          progressPercent: 0,
+        },
+        completed: false,
+      };
+    }
+
+    // Achievement exists - map with details
     const nextTier = getNextTierInfo(
       achievement.achievementType,
       achievement.currentTier
@@ -169,8 +213,8 @@ export async function getUserRewardsStats(userId) {
     (a) => a.currentTier > 0
   ).length;
 
-  // Total possible achievements (9 types)
-  const totalAchievements = 9;
+  // Total possible achievements (8 types)
+  const totalAchievements = 8;
 
   // Calculate streak info
   const streakDays = user.currentStreak || 0;
@@ -206,7 +250,7 @@ function calculateStreakHistory(user) {
   const activeDays = Math.min(user.currentStreak || 0, 7);
 
   for (let i = 0; i < activeDays; i++) {
-    history[6 - i] = true; // Fill from most recent day backwards
+    history[i] = true; // Fill from left to right (oldest to newest)
   }
 
   return history;
@@ -326,7 +370,4 @@ export async function updateUserStreak(userId) {
 
   user.lastTripDate = new Date();
   await user.save();
-
-  // Update streak_master achievement
-  await updateAchievementProgress(userId, "streak_master", user.currentStreak);
 }

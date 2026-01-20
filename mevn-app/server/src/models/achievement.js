@@ -42,7 +42,6 @@ const AchievementSchema = new mongoose.Schema(
         "carbon_saver", // CO2 saved
         "eco_explorer", // Countries visited
         "green_pioneer", // Carbon-neutral trips completed
-        "streak_master", // Consecutive days streak
         "trip_collector", // Total trips completed
       ],
     },

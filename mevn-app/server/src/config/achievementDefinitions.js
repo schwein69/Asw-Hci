@@ -124,22 +124,6 @@ export const ACHIEVEMENT_DEFINITIONS = {
     ],
   },
 
-  streak_master: {
-    name: "Streak Master",
-    description: "Maintain consecutive eco-travel days",
-    icon: "Target",
-    color: "text-yellow-600",
-    category: "consistency",
-    unit: "days",
-    tiers: [
-      { level: 1, name: "Bronze", target: 7, points: 75 },
-      { level: 2, name: "Silver", target: 30, points: 150 },
-      { level: 3, name: "Gold", target: 90, points: 300 },
-      { level: 4, name: "Platinum", target: 180, points: 500 },
-      { level: 5, name: "Diamond", target: 365, points: 1000 },
-    ],
-  },
-
   trip_collector: {
     name: "Trip Collector",
     description: "Complete eco-friendly trips",
