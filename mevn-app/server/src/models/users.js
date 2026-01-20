@@ -50,6 +50,11 @@ const UserSchema = new mongoose.Schema({
   totalCo2Saved: { type: Number, default: 0 },
   badges: [{ type: String }],
 
+  // Streak tracking
+  currentStreak: { type: Number, default: 0 }, // Consecutive days of eco-friendly trips
+  longestStreak: { type: Number, default: 0 },
+  lastTripDate: { type: Date }, // To calculate streak continuity
+
   // --- RELATIONS ---
   travelCards: [{ type: mongoose.Schema.Types.ObjectId, ref: "TravelCard" }],
   feedbacks: [{ type: mongoose.Schema.Types.ObjectId, ref: "Feedback" }],
