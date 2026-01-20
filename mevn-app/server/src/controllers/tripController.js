@@ -1,4 +1,9 @@
 import Trip from "../models/trip.js";
+import User from "../models/users.js";
+import {
+  updateAchievementProgress,
+  updateUserStreak,
+} from "../services/achievementService.js";
 
 // Get all trips for a user
 export const getUserTrips = async (req, res) => {
@@ -44,12 +49,10 @@ export const getUpcomingTrips = async (req, res) => {
     res.status(200).json(trips);
   } catch (error) {
     console.error("Error fetching upcoming trips:", error);
-    res
-      .status(500)
-      .json({
-        message: "Failed to fetch upcoming trips",
-        error: error.message,
-      });
+    res.status(500).json({
+      message: "Failed to fetch upcoming trips",
+      error: error.message,
+    });
   }
 };
 
@@ -83,12 +86,10 @@ export const getCompletedTrips = async (req, res) => {
     res.status(200).json(trips);
   } catch (error) {
     console.error("Error fetching completed trips:", error);
-    res
-      .status(500)
-      .json({
-        message: "Failed to fetch completed trips",
-        error: error.message,
-      });
+    res.status(500).json({
+      message: "Failed to fetch completed trips",
+      error: error.message,
+    });
   }
 };
 
@@ -259,14 +260,120 @@ export const markTripCompleted = async (req, res) => {
       return res.status(404).json({ message: "Trip not found" });
     }
 
-    res.status(200).json(trip);
+    // Update achievements based on trip data
+    const userId = trip.user.toString();
+    const unlockedAchievements = [];
+
+    try {
+      // Update transport-based achievements
+      if (trip.transportModeBreakdown) {
+        const breakdown = trip.transportModeBreakdown;
+
+        // Train kilometers
+        if (breakdown.get("train") || breakdown.train) {
+          const trainKm = breakdown.get("train") || breakdown.train || 0;
+          const result = await updateAchievementProgress(
+            userId,
+            "rail_rider",
+            trainKm
+          );
+          if (result?.unlockedTiers?.length > 0) {
+            unlockedAchievements.push(...result.unlockedTiers);
+          }
+        }
+
+        // Bike kilometers
+        if (breakdown.get("bike") || breakdown.bike) {
+          const bikeKm = breakdown.get("bike") || breakdown.bike || 0;
+          const result = await updateAchievementProgress(
+            userId,
+            "bike_champion",
+            bikeKm
+          );
+          if (result?.unlockedTiers?.length > 0) {
+            unlockedAchievements.push(...result.unlockedTiers);
+          }
+        }
+
+        // Walking kilometers
+        if (breakdown.get("walk") || breakdown.walk) {
+          const walkKm = breakdown.get("walk") || breakdown.walk || 0;
+          const result = await updateAchievementProgress(
+            userId,
+            "walking_warrior",
+            walkKm
+          );
+          if (result?.unlockedTiers?.length > 0) {
+            unlockedAchievements.push(...result.unlockedTiers);
+          }
+        }
+
+        // Bus kilometers
+        if (breakdown.get("bus") || breakdown.bus) {
+          const busKm = breakdown.get("bus") || breakdown.bus || 0;
+          const result = await updateAchievementProgress(
+            userId,
+            "bus_believer",
+            busKm
+          );
+          if (result?.unlockedTiers?.length > 0) {
+            unlockedAchievements.push(...result.unlockedTiers);
+          }
+        }
+      }
+
+      // Carbon saved achievement
+      if (trip.co2Saved > 0) {
+        const result = await updateAchievementProgress(
+          userId,
+          "carbon_saver",
+          trip.co2Saved
+        );
+        if (result?.unlockedTiers?.length > 0) {
+          unlockedAchievements.push(...result.unlockedTiers);
+        }
+
+        // Update user's total CO2 saved
+        await User.findByIdAndUpdate(userId, {
+          $inc: { totalCo2Saved: trip.co2Saved },
+        });
+      }
+
+      // Trip collector achievement (count completed trips)
+      const completedTripsResult = await updateAchievementProgress(
+        userId,
+        "trip_collector",
+        1
+      );
+      if (completedTripsResult?.unlockedTiers?.length > 0) {
+        unlockedAchievements.push(...completedTripsResult.unlockedTiers);
+      }
+
+      // Update streak
+      await updateUserStreak(userId);
+
+      console.log(
+        `Trip ${tripId} completed. Unlocked ${unlockedAchievements.length} achievement tiers.`
+      );
+      if (unlockedAchievements.length > 0) {
+        unlockedAchievements.forEach((tier) => {
+          console.log(`  ${tier.name} tier unlocked! +${tier.points} points`);
+        });
+      }
+    } catch (achievementError) {
+      console.error(" Error updating achievements:", achievementError);
+      // Don't fail the trip completion if achievement update fails
+    }
+
+    res.status(200).json({
+      trip,
+      unlockedAchievements, // Return to frontend for display
+    });
   } catch (error) {
     console.error("Error marking trip as completed:", error);
-    res
-      .status(500)
-      .json({
-        message: "Failed to mark trip as completed",
-        error: error.message,
-      });
+    res.status(500).json({
+      message: "Failed to mark trip as completed",
+      error: error.message,
+    });
   }
 };
