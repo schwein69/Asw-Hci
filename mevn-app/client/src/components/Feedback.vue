@@ -182,6 +182,14 @@ const submitFeedback = async () => {
     return;
   }
 
+  if (!isReportUser.value) {
+    const trimmedMessage = (message.value || "").trim();
+    if (trimmedMessage && trimmedMessage.length < 5) {
+      alert(t.value("feedback.messageTooShort"));
+      return;
+    }
+  }
+
   const userId = getUserId();
   if (!userId) {
     alert("Please login to submit feedback");
