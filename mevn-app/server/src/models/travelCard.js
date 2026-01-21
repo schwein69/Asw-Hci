@@ -48,8 +48,8 @@ const TravelCardSchema = new mongoose.Schema({
 
   status: {
     type: String,
-    enum: ["Approved", "Suspicious", "Rejected"],
-    default: "Approved",
+    enum: ["Pending", "Approved", "Suspicious", "Rejected"],
+    default: "Pending",
   },
   reports: [
     {

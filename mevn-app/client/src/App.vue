@@ -266,27 +266,28 @@ export default {
                 class="profile-menu fixed w-64 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 z-[9999] overflow-hidden"
                 :style="{ top: '80px', right: '24px' }"
               >
-              <!-- User Info Section -->
-              <div class="p-5 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-gray-700 dark:to-gray-800 border-b border-gray-200 dark:border-gray-700">
-                <div class="flex items-center gap-3 mb-3">
-                  <div class="w-12 h-12 bg-success rounded-full overflow-hidden flex items-center justify-center flex-shrink-0">
-                    <img
-                      v-if="profileImageUrl"
-                      :src="profileImageUrl"
-                      alt="Profile"
-                      class="w-full h-full object-cover"
-                    />
-                    <span v-else class="text-white font-semibold text-lg">
-                      {{ user?.username?.charAt(0).toUpperCase() || 'U' }}
-                    </span>
-                  </div>
-                  <div class="flex-1 min-w-0">
-                    <p class="text-sm font-semibold text-gray-900 dark:text-white truncate">
-                      {{ user?.username || 'User' }}
-                    </p>
-                    <p class="text-xs text-gray-500 dark:text-gray-400 truncate">
-                      {{ user?.email || 'No email' }}
-                    </p>
+                <!-- User Info Section -->
+                <div class="p-5 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-gray-700 dark:to-gray-800 border-b border-gray-200 dark:border-gray-700">
+                  <div class="flex items-center gap-3 mb-3">
+                    <div class="w-12 h-12 bg-success rounded-full overflow-hidden flex items-center justify-center flex-shrink-0">
+                      <img
+                        v-if="profileImageUrl"
+                        :src="profileImageUrl"
+                        alt="Profile"
+                        class="w-full h-full object-cover"
+                      />
+                      <span v-else class="text-white font-semibold text-lg">
+                        {{ user?.username?.charAt(0).toUpperCase() || 'U' }}
+                      </span>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <p class="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                        {{ user?.username || 'User' }}
+                      </p>
+                      <p class="text-xs text-gray-500 dark:text-gray-400 truncate">
+                        {{ user?.email || 'No email' }}
+                      </p>
+                    </div>
                   </div>
                 </div>
 

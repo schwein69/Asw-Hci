@@ -188,6 +188,15 @@ const toggleSave = async (place) => {
   }
 };
 const handleCardCreated = (newCard) => {
+  if (newCard.status !== "Approved") {
+    alert("Recommendation submitted for review.");
+    if (viewMode.value === "my-posts") {
+      fetchPlaces(true);
+    }
+    isAddModalOpen.value = false;
+    return;
+  }
+
   const defaultAvatar = "https://ui-avatars.com/api/?name=";
   places.value.unshift({
     id: newCard._id,
