@@ -1,33 +1,29 @@
-const express = require("express");
+import express from "express";
 const router = express.Router();
-import * as discoverController from "../controllers/travelCardsController.js";
+import * as travelCardsController from "../controllers/travelCardsController.js";
 
-router.get("/", (req, res) => {
-  res.send("Travelcards route working ✅");
-});
-router.get("/travelcards", (req, res) => {
-  res.json({ message: "List movies (placeholder)" });
-});
+// Create a new travel card
+router.post("/", travelCardsController.createTravelCard);
 
-router.get("/travelcards/:id", (req, res) => {
-  res.json({ message: `Get movie ${req.params.id} (placeholder)` });
-});
+// Get all travel cards (randomized feed)
+router.get("/discover", travelCardsController.getTravelCards);
 
-router.post("/travelcards", (req, res) => {
-  res
-    .status(201)
-    .json({ message: "Create movie (placeholder)", body: req.body });
-});
+// Get user's travel card by ID
+router.get("/myTravelCards", travelCardsController.getUserTravelCards);
 
-router.put("/travelcards/:id", (req, res) => {
-  res.json({
-    message: `Update movie ${req.params.id} (placeholder)`,
-    body: req.body,
-  });
-});
+// Get saved travel cards for a user
+router.get("/savedTravelCards", travelCardsController.getSavedTravelCards);
 
-router.delete("/travelcards/:id", (req, res) => {
-  res.json({ message: `Delete movie ${req.params.id} (placeholder)` });
-});
+// Update a travel card
+router.put("/:id", travelCardsController.updateTravelCard);
 
-module.exports = router;
+// Delete a travel card
+router.delete("/:id", travelCardsController.deleteTravelCard);
+
+// Like a travel card
+router.post("/:id/like", travelCardsController.toggleLikeCard);
+
+// Report a travel card
+router.post("/:cardId/report", travelCardsController.reportTravelCard);
+
+export default router;

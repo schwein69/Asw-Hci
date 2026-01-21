@@ -42,9 +42,10 @@ onUnmounted(() => {
 const places = ref([]);
 const loading = ref(false);
 const page = ref(1);
+const hasMore = ref(true); // Track if backend has more data
 const activeFilter = ref("All");
 const searchQuery = ref("");
-const viewMode = ref("all");
+const viewMode = ref("all"); // 'all', 'my-posts', 'saved'
 const observer = ref(null);
 const bottomSentinel = ref(null);
 

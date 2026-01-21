@@ -1,12 +1,15 @@
 import TravelCard from "../models/travelCard.js";
 import Notification from "../models/notification.js";
-import { emitNotification } from "../utils/socketUtils.js";
+import { emitNotification } from "../socket/notificationSocket.js";
 import { getCoordinatesFromAddress } from "../services/mapBox.js";
+import mongoose from "mongoose";
+
 // Add new travel card
-export const createTravelCard = async (userId, data) => {
+export const createTravelCard = async (req, res) => {
   try {
+    const data = req.body;
     const newCard = new TravelCard({
-      creator: userId,
+      creator: data.creator,
       title: data.title,
       description: data.description,
       images: data.images || [],
@@ -20,47 +23,135 @@ export const createTravelCard = async (userId, data) => {
     });
 
     const savedCard = await newCard.save();
-    return savedCard;
+    res.status(201).json(savedCard);
   } catch (error) {
-    throw new Error(`Error creating card: ${error.message}`);
+    res.status(500).json({ message: `Error creating card: ${error.message}` });
   }
 };
-// Get travel cards with pagination and random selection
-export const getTravelCards = async (page = 1, limit = 10) => {
+
+// Get ALL travel cards (Randomized Feed) excluding the current user's posts
+export const getTravelCards = async (req, res) => {
   try {
+    const userId = req.userId;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 6;
+
+    // Approved status AND not created by current user
+    const matchStage = {
+      status: "Approved",
+    };
+
+    // Exclude user's posts
+    if (userId) {
+      matchStage.creator = { $ne: new mongoose.Types.ObjectId(userId) };
+    }
+
     // Random Selection using aggregation Pipeline
     const cards = await TravelCard.aggregate([
-      { $match: { status: "Approved" } },
+      { $match: matchStage },
       { $sample: { size: limit } },
     ]);
 
     // Populate user details
     await TravelCard.populate(cards, {
       path: "creator",
-      select: "username profileImage",
+      select: "_id username profileImage",
     });
 
-    // Pagination Logic (For frontend infinite scroll handling)
-    const total = await TravelCard.countDocuments({ status: "Approved" });
+    // Pagination Logic
+    const total = await TravelCard.countDocuments(matchStage);
     const skippedSoFar = (page - 1) * limit;
 
-    return {
+    res.status(200).json({
       cards,
       currentPage: page,
       totalPages: Math.ceil(total / limit),
       hasMore: skippedSoFar + cards.length < total,
-    };
+    });
   } catch (error) {
-    throw new Error(`Error fetching cards: ${error.message}`);
+    res.status(500).json({ message: `Error fetching cards: ${error.message}` });
   }
 };
-// Update travel card
-export const updateTravelCard = async (cardId, userId, updateData) => {
+
+// Get only the current user's travel cards
+export const getUserTravelCards = async (req, res) => {
   try {
+    const userId = req.userId;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 6;
+    const skip = (page - 1) * limit;
+
+    const query = { creator: userId };
+    // Fetch cards created by this user
+    const cards = await TravelCard.find(query)
+      .populate("creator", "username profileImage")
+      .sort({ createdAt: -1 }) // Newest to Oldest
+      .skip(skip)
+      .limit(limit);
+
+    const total = await TravelCard.countDocuments(query);
+
+    res.status(200).json({
+      cards,
+      currentPage: page,
+      totalPages: Math.ceil(total / limit),
+      hasMore: skip + cards.length < total,
+    });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: `Error fetching user cards: ${error.message}` });
+  }
+};
+
+// Get cards that the user has Saved
+export const getSavedTravelCards = async (req, res) => {
+  try {
+    const userId = req.userId;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    // Find cards where the 'likes' array contains the userId
+    const query = {
+      likes: userId,
+      status: "Approved",
+    };
+
+    const cards = await TravelCard.find(query)
+      .populate("creator", "username profileImage")
+      .sort({ createdAt: -1 }) // Sorted by Card creation date
+      .skip(skip)
+      .limit(limit);
+
+    const total = await TravelCard.countDocuments(query);
+
+    res.status(200).json({
+      cards,
+      currentPage: page,
+      totalPages: Math.ceil(total / limit),
+      hasMore: skip + cards.length < total,
+    });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: `Error fetching liked cards: ${error.message}` });
+  }
+};
+
+// Update travel card
+export const updateTravelCard = async (req, res) => {
+  try {
+    const { cardId } = req.params;
+    const userId = req.userId;
+    const updateData = req.body;
+
     const card = await TravelCard.findOne({ _id: cardId, creator: userId });
 
     if (!card) {
-      throw new Error("Card not found or unauthorized");
+      return res
+        .status(404)
+        .json({ message: "Card not found or unauthorized" });
     }
 
     if (updateData.title) card.title = updateData.title;
@@ -70,44 +161,55 @@ export const updateTravelCard = async (cardId, userId, updateData) => {
     if (updateData.images) card.images = updateData.images;
 
     //  User changed the address
-    updateData.address && updateData.address !== card.location.address;
-    console.log("Address changed, fetching new coordinates...");
-    const [lng, lat] = await getCoordinatesFromAddress(updateData.address);
+    if (updateData.address && updateData.address !== card.location.address) {
+      console.log("Address changed, fetching new coordinates...");
+      const [lng, lat] = await getCoordinatesFromAddress(updateData.address);
 
-    card.location = {
-      type: "Point",
-      coordinates: [lng, lat],
-      address: updateData.address,
-    };
+      card.location = {
+        type: "Point",
+        coordinates: [lng, lat],
+        address: updateData.address,
+      };
+    }
 
     const updatedCard = await card.save();
-    return updatedCard;
+    res.status(200).json(updatedCard);
   } catch (error) {
-    throw new Error(`Error updating card: ${error.message}`);
+    res.status(500).json({ message: `Error updating card: ${error.message}` });
   }
 };
+
 // Delete travel card
-export const deleteTravelCard = async (cardId, userId) => {
+export const deleteTravelCard = async (req, res) => {
   try {
+    const { cardId } = req.params;
+    const userId = req.userId;
+
     const deletedCard = await TravelCard.findOneAndDelete({
       _id: cardId,
       creator: userId,
     });
 
     if (!deletedCard) {
-      throw new Error("Card not found or unauthorized");
+      return res
+        .status(404)
+        .json({ message: "Card not found or unauthorized" });
     }
 
-    return { message: "Card deleted successfully" };
+    res.status(200).json({ message: "Card deleted successfully" });
   } catch (error) {
-    throw new Error(`Error deleting card: ${error.message}`);
+    res.status(500).json({ message: `Error deleting card: ${error.message}` });
   }
 };
+
 // Toggle like/unlike travel card with socket io notification
-export const toggleLikeCard = async (cardId, userId) => {
+export const toggleLikeCard = async (req, res) => {
   try {
+    const { cardId } = req.params;
+    const userId = req.userId;
+
     const card = await TravelCard.findById(cardId);
-    if (!card) throw new Error("Card not found");
+    if (!card) return res.status(404).json({ message: "Card not found" });
 
     const isLiked = card.likes.includes(userId);
     const creatorId = card.creator.toString();
@@ -124,11 +226,11 @@ export const toggleLikeCard = async (cardId, userId) => {
         { new: true },
       );
 
-      return {
+      return res.status(200).json({
         message: "Unliked",
         active: false,
         likesCount: updatedCard.numberOfLikes,
-      };
+      });
     } else {
       // --- LIKE ---
       const updatedCard = await TravelCard.findByIdAndUpdate(
@@ -159,13 +261,63 @@ export const toggleLikeCard = async (cardId, userId) => {
         }
       }
 
-      return {
+      return res.status(200).json({
         message: "Liked",
         active: true,
         likesCount: updatedCard.numberOfLikes,
-      };
+      });
     }
   } catch (error) {
-    throw new Error(`Error toggling like: ${error.message}`);
+    res.status(500).json({ message: `Error toggling like: ${error.message}` });
+  }
+};
+// Report a travel card
+export const reportTravelCard = async (req, res) => {
+  try {
+    const { cardId } = req.params;
+    const userId = req.userId; // reporter's ID
+    const { reason } = req.body;
+
+    // Find the card
+    const card = await TravelCard.findById(cardId);
+    if (!card) {
+      return res.status(404).json({ message: "Card not found" });
+    }
+
+    // 2. Prevent Duplicate Reporting
+    const alreadyReported = card.reports.some(
+      (r) => r.user.toString() === userId,
+    );
+
+    if (alreadyReported) {
+      return res
+        .status(400)
+        .json({ message: "You have already reported this card" });
+    }
+
+    // Add Report & Increment Counter
+    card.reports.push({
+      user: userId,
+      reason: reason || "No reason provided",
+    });
+
+    // Increment your new counter
+    card.numberOfReports += 1;
+
+    //  If 5 people report it, mark it suspicious automatically
+    const REPORT_THRESHOLD = 5;
+
+    if (card.numberOfReports >= REPORT_THRESHOLD) {
+      card.status = "Suspicious";
+    }
+
+    await card.save();
+
+    res.status(200).json({
+      message: "Report submitted.",
+      currentReports: card.numberOfReports,
+    });
+  } catch (error) {
+    res.status(500).json({ message: `Error reporting card: ${error.message}` });
   }
 };

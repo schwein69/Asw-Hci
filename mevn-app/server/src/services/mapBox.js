@@ -21,3 +21,5 @@ const getCoordinatesFromAddress = async (address) => {
     throw new Error(`Geocoding failed: ${error.message}`);
   }
 };
+
+export { getCoordinatesFromAddress };
