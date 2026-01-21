@@ -54,7 +54,6 @@ const TravelCardSchema = new mongoose.Schema({
   reports: [
     {
       user: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-      reason: { type: String },
       createdAt: { type: Date, default: Date.now },
     },
   ],
