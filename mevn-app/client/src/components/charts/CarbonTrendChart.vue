@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from "vue";
+import { ref, computed, onMounted, onUnmounted, watch } from "vue";
 import { TrendingUp, Calendar } from "lucide-vue-next";
 import { Line } from "vue-chartjs";
 import {
@@ -27,15 +27,10 @@ ChartJS.register(
 );
 
 const language = ref(getLanguage());
-const selectedYear = ref("2026");
-
-// --- Fake Datasets
-const datasets = {
-  2023: [200, 130, 115, 100, 85, 75, 0, 105, 90, 100, 120, 145],
-  2024: [90, 115, 100, 404, 75, 65, 85, 95, 80, 90, 110, 130],
-  2025: [110, 105, 95, 85, 70, 60, 0, 85, 70, 80, 20, 115],
-  2026: [108, null, null, null, null, null, null, null, null, null, null, null],
-};
+const currentYear = new Date().getFullYear();
+const availableYears = ref([currentYear, currentYear - 1, currentYear - 2]);
+const selectedYear = ref(String(currentYear));
+const monthlyEmissions = ref(Array.from({ length: 12 }, () => 0));
 
 const allMonthLabels = computed(() => [
   translate("dashboard.months.jan", language.value),
@@ -52,37 +47,33 @@ const allMonthLabels = computed(() => [
   translate("dashboard.months.dec", language.value),
 ]);
 
-const chartData = computed(() => {
-  const currentData = datasets[selectedYear.value] || [];
-
-  return {
-    labels: allMonthLabels.value,
-    datasets: [
-      {
-        label: `${translate("dashboard.co2Emissions", language.value)} (${
-          selectedYear.value
-        })`,
-        data: currentData,
-        borderColor: "#10b981",
-        backgroundColor: (context) => {
-          const ctx = context.chart.ctx;
-          const gradient = ctx.createLinearGradient(0, 0, 0, 300);
-          gradient.addColorStop(0, "rgba(16, 185, 129, 0.4)");
-          gradient.addColorStop(1, "rgba(16, 185, 129, 0.0)");
-          return gradient;
-        },
-        fill: true,
-        tension: 0.4,
-        pointBackgroundColor: "#10b981",
-        pointBorderColor: "#fff",
-        pointBorderWidth: 2,
-        pointRadius: 5,
-        pointHoverRadius: 7,
-        spanGaps: false,
+const chartData = computed(() => ({
+  labels: allMonthLabels.value,
+  datasets: [
+    {
+      label: `${translate("dashboard.co2Emissions", language.value)} (${
+        selectedYear.value
+      })`,
+      data: monthlyEmissions.value,
+      borderColor: "#10b981",
+      backgroundColor: (context) => {
+        const ctx = context.chart.ctx;
+        const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+        gradient.addColorStop(0, "rgba(16, 185, 129, 0.4)");
+        gradient.addColorStop(1, "rgba(16, 185, 129, 0.0)");
+        return gradient;
       },
-    ],
-  };
-});
+      fill: true,
+      tension: 0.4,
+      pointBackgroundColor: "#10b981",
+      pointBorderColor: "#fff",
+      pointBorderWidth: 2,
+      pointRadius: 5,
+      pointHoverRadius: 7,
+      spanGaps: false,
+    },
+  ],
+}));
 
 const t = (key) => translate(key, language.value);
 
@@ -124,12 +115,47 @@ const handleLanguageChange = (event) => {
   language.value = event.detail.language;
 };
 
+const fetchMonthlyEmissions = async () => {
+  try {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      monthlyEmissions.value = Array.from({ length: 12 }, () => 0);
+      return;
+    }
+
+    const response = await fetch(
+      `http://localhost:3000/api/dashboard/emissions?year=${selectedYear.value}`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch monthly emissions");
+    }
+
+    const data = await response.json();
+    monthlyEmissions.value =
+      Array.isArray(data.months) && data.months.length === 12
+        ? data.months
+        : Array.from({ length: 12 }, () => 0);
+  } catch (error) {
+    console.error("Failed to fetch monthly emissions:", error);
+    monthlyEmissions.value = Array.from({ length: 12 }, () => 0);
+  }
+};
+
 onMounted(() => {
   window.addEventListener("languageChanged", handleLanguageChange);
+  fetchMonthlyEmissions();
 });
 
 onUnmounted(() => {
   window.removeEventListener("languageChanged", handleLanguageChange);
+});
+
+watch(selectedYear, () => {
+  fetchMonthlyEmissions();
 });
 </script>
 
@@ -165,7 +191,7 @@ onUnmounted(() => {
               class="select select-xs select-ghost pl-8 font-medium text-gray-600 focus:bg-white w-24 focus:outline-none cursor-pointer"
             >
               <option
-                v-for="year in Object.keys(datasets).reverse()"
+              v-for="year in availableYears"
                 :key="year"
                 :value="year"
               >

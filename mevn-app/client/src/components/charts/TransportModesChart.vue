@@ -16,6 +16,8 @@ const language = ref(getLanguage());
 
 const t = (key) => translate(key, language.value);
 
+const modeValues = ref([0, 0, 0, 0, 0, 0]);
+
 const chartData = computed(() => ({
   labels: [
     translate("dashboard.transportTypes.train", language.value),
@@ -27,7 +29,7 @@ const chartData = computed(() => ({
   ],
   datasets: [
     {
-      data: [30, 25, 20, 10, 10, 5],
+      data: modeValues.value,
       backgroundColor: [
         "rgba(59, 130, 246, 0.7)",
         "rgba(139, 92, 246, 0.7)",
@@ -99,8 +101,40 @@ const handleLanguageChange = (event) => {
   language.value = event.detail.language;
 };
 
+const fetchTransportModes = async () => {
+  try {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      modeValues.value = [0, 0, 0, 0, 0, 0];
+      return;
+    }
+
+    const response = await fetch(
+      "http://localhost:3000/api/dashboard/transport-modes",
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch transport modes");
+    }
+
+    const data = await response.json();
+    if (Array.isArray(data.values) && data.values.length === 6) {
+      modeValues.value = data.values;
+    } else {
+      modeValues.value = [0, 0, 0, 0, 0, 0];
+    }
+  } catch (error) {
+    console.error("Failed to fetch transport modes:", error);
+    modeValues.value = [0, 0, 0, 0, 0, 0];
+  }
+};
+
 onMounted(() => {
   window.addEventListener("languageChanged", handleLanguageChange);
+  fetchTransportModes();
 });
 
 onUnmounted(() => {

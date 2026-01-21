@@ -22,58 +22,37 @@ ChartJS.register(
   Legend
 );
 
-// --- STATE ---
 const isLoading = ref(true);
 const processedTrips = ref([]);
 const language = ref(getLanguage());
 
-// --- TRANSLATION HELPER ---
 const t = (key) => translate(key, language.value);
 
-const rawTrips = [
-  {
-    id: 101,
-    name: "Italian Summer",
-    segments: [
-      { from: "Rome", to: "Naples", myMode: "Train", myCo2: 4 },
-      { from: "Naples", to: "Catania", myMode: "Airplane", myCo2: 65 },
-    ],
-  },
-  {
-    id: 102,
-    name: "Nordic Tour",
-    segments: [
-      { from: "Copenhagen", to: "Stockholm", myMode: "Train", myCo2: 12 },
-      { from: "Stockholm", to: "Helsinki", myMode: "Ferry", myCo2: 30 },
-    ],
-  },
-  {
-    id: 103,
-    name: "London Biz",
-    segments: [{ from: "Paris", to: "London", myMode: "Train", myCo2: 6 }],
-  },
-  {
-    id: 104,
-    name: "Iberian Roadtrip",
-    segments: [
-      { from: "Barcelona", to: "Madrid", myMode: "EV Car", myCo2: 15 },
-      { from: "Madrid", to: "Lisbon", myMode: "EV Car", myCo2: 22 },
-    ],
-  },
-  {
-    id: 105,
-    name: "German Wknd",
-    segments: [{ from: "Berlin", to: "Munich", myMode: "Bus", myCo2: 14 }],
-  },
-];
+const fetchTripEfficiency = async () => {
+  try {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      processedTrips.value = [];
+      return;
+    }
 
-const calculateAverageEmission = async (from, to) => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const randomCo2 = Math.floor(Math.random() * (90 - 40 + 1) + 40);
-      resolve(randomCo2);
-    }, 200);
-  });
+    const response = await fetch(
+      "http://localhost:3000/api/dashboard/trip-efficiency",
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch trip efficiency");
+    }
+
+    const data = await response.json();
+    processedTrips.value = Array.isArray(data.trips) ? data.trips : [];
+  } catch (error) {
+    console.error("Failed to fetch trip efficiency:", error);
+    processedTrips.value = [];
+  }
 };
 
 const handleLanguageChange = (event) => {
@@ -82,36 +61,7 @@ const handleLanguageChange = (event) => {
 
 onMounted(async () => {
   window.addEventListener("languageChanged", handleLanguageChange);
-
-  const tripsToProcess = rawTrips.slice(0, 5);
-  const results = [];
-
-  for (const trip of tripsToProcess) {
-    let totalMyCo2 = 0;
-    let totalAvgCo2 = 0;
-    let routeDesc = [];
-
-    for (const segment of trip.segments) {
-      totalMyCo2 += segment.myCo2;
-
-      const avgSegmentCo2 = await calculateAverageEmission(
-        segment.from,
-        segment.to
-      );
-      totalAvgCo2 += avgSegmentCo2;
-
-      routeDesc.push(`${segment.from}→${segment.to}`);
-    }
-
-    results.push({
-      name: trip.name,
-      routeSummary: routeDesc.join(", "),
-      myTotal: totalMyCo2,
-      avgTotal: totalAvgCo2,
-    });
-  }
-
-  processedTrips.value = results;
+  await fetchTripEfficiency();
   isLoading.value = false;
 });
 
@@ -119,22 +69,21 @@ onUnmounted(() => {
   window.removeEventListener("languageChanged", handleLanguageChange);
 });
 
-// --- CHART CONFIGURATION ---
 const chartData = computed(() => ({
   labels: processedTrips.value.map((t) => t.name),
   datasets: [
     {
-      label: t("dashboard.myTrip"), // Translatable label
+      label: t("dashboard.myTrip"),
       data: processedTrips.value.map((t) => t.myTotal),
-      backgroundColor: "#10b981", // Green
+      backgroundColor: "#10b981",
       borderRadius: 4,
       barPercentage: 0.6,
       categoryPercentage: 0.8,
     },
     {
-      label: t("dashboard.averageTrip"), // Translatable label
+      label: t("dashboard.averageTrip"),
       data: processedTrips.value.map((t) => t.avgTotal),
-      backgroundColor: "#d1d5db", // Gray
+      backgroundColor: "#d1d5db",
       borderRadius: 4,
       barPercentage: 0.6,
       categoryPercentage: 0.8,
@@ -142,7 +91,6 @@ const chartData = computed(() => ({
   ],
 }));
 
-// Changed from const to computed so axis titles update when language changes
 const chartOptions = computed(() => ({
   responsive: true,
   maintainAspectRatio: false,
@@ -157,7 +105,6 @@ const chartOptions = computed(() => ({
         afterBody: (tooltipItems) => {
           const index = tooltipItems[0].dataIndex;
           const trip = processedTrips.value[index];
-          // Example translation for Route prefix
           return `${t("dashboard.route")}: ${trip.routeSummary}`;
         },
         label: (context) => ` ${context.dataset.label}: ${context.raw} kg CO₂`,
@@ -167,7 +114,7 @@ const chartOptions = computed(() => ({
   scales: {
     y: {
       beginAtZero: true,
-      title: { display: true, text: t("dashboard.totalCo2") }, // Translatable axis title
+      title: { display: true, text: t("dashboard.totalCo2") },
       grid: { color: "#f3f4f6" },
       border: { display: false },
     },

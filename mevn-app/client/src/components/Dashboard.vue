@@ -16,85 +16,150 @@ import TransportModesChart from "./charts/TransportModesChart.vue";
 import DestinationChart from "./charts/DestinationChart.vue";
 import { getLanguage, t as translate } from "../utils/translations.js";
 
-// --- Translation Logic ---
 const language = ref(getLanguage());
 
 const handleLanguageChange = (event) => {
   language.value = event.detail.language;
 };
 
-onMounted(() => {
-  window.addEventListener("languageChanged", handleLanguageChange);
-});
-
 onUnmounted(() => {
   window.removeEventListener("languageChanged", handleLanguageChange);
 });
 
-// Helper to translate inside script
 const t = (key) => translate(key, language.value);
 
-// --- Stats Data (Merged) ---
+const statsData = ref({
+  totalCo2SavedKg: 0,
+  totalDistanceKm: 0,
+  greenDistanceKm: 0,
+  ecoScore: 0,
+  zeroTrips: 0,
+});
+
+const formatNumber = (value) => {
+  return Number.isFinite(value) ? value.toLocaleString() : "0";
+};
+
+const fetchDashboardSummary = async () => {
+  try {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    const response = await fetch("http://localhost:3000/api/dashboard/summary", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch dashboard summary");
+    }
+
+    const data = await response.json();
+    statsData.value = {
+      totalCo2SavedKg: data.totalCo2SavedKg || 0,
+      totalDistanceKm: data.totalDistanceKm || 0,
+      greenDistanceKm: data.greenDistanceKm || 0,
+      ecoScore: data.ecoScore || 0,
+      zeroTrips: data.zeroTrips || 0,
+    };
+  } catch (error) {
+    console.error("Failed to fetch dashboard summary:", error);
+  }
+};
+
+const fetchEnvironmentalImpact = async () => {
+  try {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    const response = await fetch("http://localhost:3000/api/dashboard/impact", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch environmental impact");
+    }
+
+    const data = await response.json();
+    environmentalImpactRaw.value = {
+      ...environmentalImpactRaw.value,
+      treesValue: data.trees || 0,
+      energyValue: data.energyKwh || 0,
+      distanceValue: data.miles || 0,
+    };
+  } catch (error) {
+    console.error("Failed to fetch environmental impact:", error);
+  }
+};
+
+onMounted(() => {
+  window.addEventListener("languageChanged", handleLanguageChange);
+  fetchDashboardSummary();
+  fetchEnvironmentalImpact();
+});
+
 const stats = computed(() => [
   {
     label: t("dashboard.totalCo2Saved"),
-    value: "245 kg",
-    subtitle: "", // compare to average equivalent distance
+    value: `${formatNumber(statsData.value.totalCo2SavedKg)} kg`,
+    subtitle: "",
     icon: Leaf,
   },
   {
-    label: t("dashboard.totalDistance"), // "Total Distance"
-    value: "5542 km",
+    label: t("dashboard.totalDistance"),
+    value: `${formatNumber(statsData.value.totalDistanceKm)} km`,
     subtitle: t("dashboard.thisMonth"),
     icon: Sprout,
   },
   {
-    label: t("dashboard.greenDistance"), // "Green Distance"
-    value: "3842 km",
+    label: t("dashboard.greenDistance"),
+    value: `${formatNumber(statsData.value.greenDistanceKm)} km`,
     subtitle: t("dashboard.thisMonthGreen"),
     icon: TrendingUp,
   },
   {
     label: t("dashboard.ecoScore"),
-    value: "892",
+    value: `${formatNumber(statsData.value.ecoScore)}`,
     subtitle: t("dashboard.topGlobally"),
     icon: Gauge,
   },
   {
     label: t("dashboard.zeroTrips"),
-    value: "14",
+    value: `${formatNumber(statsData.value.zeroTrips)}`,
     subtitle: t("dashboard.zeroTripsBanner"),
     icon: Footprints,
     isZeroCount: true,
   },
 ]);
 
-// --- Environmental Impact Data ---
-const environmentalImpactRaw = {
-  treesValue: 11,
+const environmentalImpactRaw = ref({
+  treesValue: 0,
   treesKey: "dashboard.trees",
   treesDescKey: "dashboard.treesDesc",
-  energyValue: 580,
+  energyValue: 0,
   energyKey: "dashboard.energy",
   energyDescKey: "dashboard.energyDesc",
-  distanceValue: 1440,
-  distanceKey: "dashboard.miles", // or distance
-  distanceDescKey: "dashboard.milesDesc", // or distance desc
-};
+  distanceValue: 0,
+  distanceKey: "dashboard.miles",
+  distanceDescKey: "dashboard.milesDesc",
+});
 
 const environmentalImpact = computed(() => ({
-  trees: `${environmentalImpactRaw.treesValue} ${t(
-    environmentalImpactRaw.treesKey
+  trees: `${environmentalImpactRaw.value.treesValue} ${t(
+    environmentalImpactRaw.value.treesKey
   )}`,
-  treesDesc: t(environmentalImpactRaw.treesDescKey),
-  energy: `${environmentalImpactRaw.energyValue} ${t(
-    environmentalImpactRaw.energyKey
+  treesDesc: t(environmentalImpactRaw.value.treesDescKey),
+  energy: `${environmentalImpactRaw.value.energyValue} ${t(
+    environmentalImpactRaw.value.energyKey
   )}`,
-  energyDesc: t(environmentalImpactRaw.energyDescKey),
-  distance: `${environmentalImpactRaw.distanceValue} ${t(
-    environmentalImpactRaw.distanceKey
+  energyDesc: t(environmentalImpactRaw.value.energyDescKey),
+  distance: `${environmentalImpactRaw.value.distanceValue} ${t(
+    environmentalImpactRaw.value.distanceKey
   )}`,
-  distanceDesc: t(environmentalImpactRaw.distanceDescKey),
+  distanceDesc: t(environmentalImpactRaw.value.distanceDescKey),
 }));
 </script>
 

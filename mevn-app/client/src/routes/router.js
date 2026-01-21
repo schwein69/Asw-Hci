@@ -107,7 +107,7 @@ router.beforeEach((to, from, next) => {
   if (!isPublicRoute && !isAuthenticated) {
     return next('/login');
   }
-  
+
   next();
 });
 

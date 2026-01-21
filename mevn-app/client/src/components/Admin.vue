@@ -3,11 +3,9 @@ import {
   Shield,
   MessageCircle,
   UserCog,
-  Settings,
-  Save,
   Check,
   X,
-  Trash2,
+  Flag,
 } from "lucide-vue-next";
 import { getLanguage, t as translate } from "../utils/translations.js";
 
@@ -17,11 +15,9 @@ export default {
     Shield,
     MessageCircle,
     UserCog,
-    Settings,
-    Save,
     Check,
     X,
-    Trash2,
+    Flag,
   },
   data() {
     return {
@@ -38,83 +34,21 @@ export default {
       // Tab State
       activeTab: "users",
 
-      // Settings Data
-      platformName: "EcoGo",
-      ecoScoreThreshold: 70,
-      weatherSensitivity: 3,
-      maintenanceMessage: "",
-
       // User Management Data
-      users: [
-        {
-          id: 1,
-          name: "Sarah Mitchell",
-          email: "sarah@example.com",
-          joined: "2024-01-15",
-          role: "user",
-          status: "active",
-          initials: "SM",
-        },
-        {
-          id: 2,
-          name: "Michael Chen",
-          email: "michael@example.com",
-          joined: "2024-02-20",
-          role: "admin",
-          status: "active",
-          initials: "MC",
-        },
-        {
-          id: 3,
-          name: "Emma Johnson",
-          email: "emma@example.com",
-          joined: "2024-03-10",
-          role: "user",
-          status: "active",
-          initials: "EJ",
-        },
-        {
-          id: 4,
-          name: "David Brown",
-          email: "david@example.com",
-          joined: "2024-01-05",
-          role: "user",
-          status: "suspended",
-          initials: "DB",
-        },
-      ],
+      users: [],
+      isUsersLoading: false,
+
+      // Reported Users Data
+      reportedFeedback: [],
+      isReportsLoading: false,
+
+      // Feedback (non-report) Data
+      feedbackEntries: [],
+      isFeedbackLoading: false,
 
       // --- NEW: Forum Moderation Data ---
-      forumPosts: [
-        {
-          id: 1,
-          author: "Sarah M.",
-          initials: "SA",
-          time: "2h ago",
-          content:
-            "Best eco-friendly hotels in Copenhagen? Looking for sustainable options with good transport links.",
-          status: "approved",
-          reports: 0,
-        },
-        {
-          id: 2,
-          author: "John D.",
-          initials: "JO",
-          time: "5h ago",
-          content: "This platform is amazing! Saved 50kg CO2 on my last trip.",
-          status: "approved",
-          reports: 0,
-        },
-        {
-          id: 3,
-          author: "Anonymous",
-          initials: "AN",
-          time: "1h ago",
-          content: "Check out this spam link...",
-          status: "pending", // Pending review
-          reports: 3,
-        },
-      ],
+      forumPosts: [],
+      isForumLoading: false,
     };
   },
   computed: {
@@ -134,12 +68,165 @@ export default {
     this.setCurrentUserRole();
     if (this.isForumAdmin) {
       this.activeTab = "forum";
+      this.fetchForumPosts();
+    }
+    if (this.isGeneralAdmin) {
+      this.activeTab = "users";
+      this.fetchUsers();
+      this.fetchReportedFeedback();
+      this.fetchFeedbackEntries();
     }
   },
   beforeUnmount() {
     window.removeEventListener('languageChanged', this.handleLanguageChange);
   },
   methods: {
+    formatDate(dateString) {
+      if (!dateString) return "";
+      const date = new Date(dateString);
+      if (Number.isNaN(date.getTime())) return "";
+      return date.toLocaleDateString();
+    },
+    async fetchUsers() {
+      this.isUsersLoading = true;
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) return;
+
+        const response = await fetch(
+          "http://localhost:3000/api/users/admin/users",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch users");
+        }
+
+        const data = await response.json();
+        this.users = data
+          .filter((user) => user.role === "Standard")
+          .map((user) => ({
+            id: user._id,
+            name: user.username,
+            email: user.email,
+            joined: this.formatDate(user.createdAt),
+            role: user.role,
+            status: user.status || "active",
+            reports: user.numberOfReports || 0,
+            initials: (user.username || "U").slice(0, 2).toUpperCase(),
+          }));
+      } catch (error) {
+        console.error("Error loading users:", error);
+      } finally {
+        this.isUsersLoading = false;
+      }
+    },
+    async fetchReportedFeedback() {
+      this.isReportsLoading = true;
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) return;
+
+        const response = await fetch(
+          "http://localhost:3000/api/feedback/admin/reports",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch reported users");
+        }
+
+        const data = await response.json();
+        this.reportedFeedback = (data.feedbacks || []).map((feedback) => ({
+          id: feedback._id,
+          reporter: feedback.userName,
+          reportedUserName: feedback.reportedUserName || "Unknown",
+          reportedUserId: feedback.reportedUserId || "",
+          status: feedback.status,
+          createdAt: this.formatDate(feedback.createdAt),
+          subject: feedback.subject,
+        }));
+      } catch (error) {
+        console.error("Error loading reported users:", error);
+      } finally {
+        this.isReportsLoading = false;
+      }
+    },
+    async fetchFeedbackEntries() {
+      this.isFeedbackLoading = true;
+      try {
+        const token = localStorage.getItem("token");
+        const response = await fetch("http://localhost:3000/api/feedback", {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch feedback");
+        }
+
+        const data = await response.json();
+        this.feedbackEntries = (data.feedbacks || [])
+          .filter((feedback) => feedback.category !== "feedback.reportUser")
+          .map((feedback) => ({
+            id: feedback._id,
+            user: feedback.userName,
+            subject: feedback.subject,
+            message: feedback.message,
+            category: feedback.category,
+            status: feedback.status,
+            createdAt: this.formatDate(feedback.createdAt),
+          }));
+      } catch (error) {
+        console.error("Error loading feedback:", error);
+      } finally {
+        this.isFeedbackLoading = false;
+      }
+    },
+    async fetchForumPosts() {
+      this.isForumLoading = true;
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) return;
+
+        const response = await fetch(
+          "http://localhost:3000/api/travelcards/moderation?status=Pending,Rejected,Approved",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch moderation posts");
+        }
+
+        const data = await response.json();
+        this.forumPosts = data.cards.map((card) => ({
+          id: card._id,
+          author: card.creator?.username || "Unknown",
+          initials: (card.creator?.username || "U")
+            .slice(0, 2)
+            .toUpperCase(),
+          time: this.formatDate(card.createdAt),
+          content: card.description,
+          status: card.status.toLowerCase(),
+          reports: card.numberOfReports || 0,
+        }));
+      } catch (error) {
+        console.error("Error loading moderation posts:", error);
+      } finally {
+        this.isForumLoading = false;
+      }
+    },
     setCurrentUserRole() {
       try {
         const storedUser = localStorage.getItem("user");
@@ -155,11 +242,32 @@ export default {
     handleLanguageChange(event) {
       this.language = event.detail.language;
     },
-    saveSettings() {
-      alert(this.t('admin.systemSettingsSaved'));
-    },
-    toggleUserStatus(user) {
-      user.status = user.status === "active" ? "suspended" : "active";
+    async toggleUserStatus(user) {
+      const newStatus = user.status === "active" ? "suspended" : "active";
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) return;
+
+        const response = await fetch(
+          `http://localhost:3000/api/users/${user.id}/status`,
+          {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ status: newStatus }),
+          },
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to update user status");
+        }
+
+        user.status = newStatus;
+      } catch (error) {
+        console.error("Error updating user status:", error);
+      }
     },
     getRoleColor(role) {
       return role === "admin" || role === "AdminGeneral" || role === "AdminForum"
@@ -171,22 +279,94 @@ export default {
         ? "bg-green-100 text-green-600"
         : "bg-red-100 text-red-600";
     },
-    // New methods for forum actions
-    approvePost(id) {
-      const post = this.forumPosts.find((p) => p.id === id);
-      if (post) {
-        post.status = "approved";
-        post.reports = 0;
-        alert(this.t('admin.postApproved'));
+    getReportStatusColor(status) {
+      switch (status) {
+        case "Implemented":
+          return "bg-emerald-100 text-emerald-700";
+        case "Reviewing":
+          return "bg-amber-100 text-amber-700";
+        case "Rejected":
+          return "bg-red-100 text-red-700";
+        default:
+          return "bg-gray-100 text-gray-600";
       }
     },
-    rejectPost(id) {
-      this.forumPosts = this.forumPosts.filter((p) => p.id !== id);
-      alert(this.t('admin.postRejected'));
+    getFeedbackStatusColor(status) {
+      switch (status) {
+        case "Implemented":
+          return "bg-emerald-100 text-emerald-700";
+        case "Reviewing":
+          return "bg-amber-100 text-amber-700";
+        case "Rejected":
+          return "bg-red-100 text-red-700";
+        default:
+          return "bg-blue-100 text-blue-700";
+      }
     },
-    deletePost(id) {
-      this.forumPosts = this.forumPosts.filter((p) => p.id !== id);
-      alert(this.t('admin.postDeleted'));
+    getFeedbackCategoryLabel(category) {
+      const map = {
+        "feedback.featureRequest": "Feature Request",
+        "feedback.bugReport": "Bug Report",
+        "feedback.improvement": "Improvement",
+        "feedback.generalFeedback": "General Feedback",
+      };
+      return map[category] || category;
+    },
+    // New methods for forum actions
+    async approvePost(id) {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) return;
+
+        const response = await fetch(
+          `http://localhost:3000/api/travelcards/${id}/status`,
+          {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ status: "Approved" }),
+          },
+        );
+
+        if (!response.ok) throw new Error("Failed to approve post");
+        const post = this.forumPosts.find((p) => p.id === id);
+        if (post) {
+          post.status = "approved";
+        }
+        alert(this.t('admin.postApproved'));
+      } catch (error) {
+        console.error("Error approving post:", error);
+      }
+    },
+    async rejectPost(id) {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) return;
+
+        const response = await fetch(
+          `http://localhost:3000/api/travelcards/${id}/status`,
+          {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ status: "Rejected" }),
+          },
+        );
+
+        if (!response.ok) throw new Error("Failed to reject post");
+
+        const post = this.forumPosts.find((p) => p.id === id);
+        if (post) {
+          post.status = "rejected";
+        }
+        alert(this.t('admin.postRejected'));
+      } catch (error) {
+        console.error("Error rejecting post:", error);
+      }
     },
   },
 };
@@ -246,76 +426,31 @@ export default {
 
         <button
           v-if="isGeneralAdmin"
-          @click="activeTab = 'settings'"
+          @click="activeTab = 'feedback'"
           class="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-sm font-medium transition-colors"
           :class="
-            activeTab === 'settings'
+            activeTab === 'feedback'
               ? 'bg-emerald-50 text-emerald-700 font-bold'
               : 'text-gray-600 hover:bg-gray-50'
           "
         >
-          <Settings class="w-4 h-4" />
-          {{ t('admin.systemSettings') }}
+          <MessageCircle class="w-4 h-4" />
+          {{ t('admin.feedbackManagement') }}
         </button>
-    </div>
 
-    <div
-      v-if="isGeneralAdmin && activeTab === 'settings'"
-      class="bg-white p-6 rounded-2xl border border-green-200 shadow-sm"
-    >
-      <div class="mb-6">
-        <h3 class="text-emerald-700 font-medium">{{ t('admin.systemSettingsTitle') }}</h3>
-        <p class="text-sm text-gray-500">{{ t('admin.configurePlatformParameters') }}</p>
-      </div>
-      <form @submit.prevent="saveSettings" class="space-y-4">
-        <div class="space-y-1">
-          <label class="text-xs font-bold text-gray-800 ml-1"
-            >{{ t('admin.platformName') }}</label
-          >
-          <input
-            v-model="platformName"
-            type="text"
-            class="w-full p-3 bg-gray-50 rounded-xl border border-gray-200 text-gray-900 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"
-          />
-        </div>
-        <div class="space-y-1">
-          <label class="text-xs font-bold text-gray-800 ml-1"
-            >{{ t('admin.defaultEcoScoreThreshold') }}</label
-          >
-          <input
-            v-model="ecoScoreThreshold"
-            type="number"
-            class="w-full p-3 bg-gray-50 rounded-xl border border-gray-200 text-gray-900 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"
-          />
-        </div>
-        <div class="space-y-1">
-          <label class="text-xs font-bold text-gray-800 ml-1"
-            >{{ t('admin.weatherAlertSensitivity') }}</label
-          >
-          <input
-            v-model="weatherSensitivity"
-            type="number"
-            class="w-full p-3 bg-gray-50 rounded-xl border border-gray-200 text-gray-900 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"
-          />
-        </div>
-        <div class="space-y-1">
-          <label class="text-xs font-bold text-gray-800 ml-1"
-            >{{ t('admin.maintenanceMessage') }}</label
-          >
-          <input
-            v-model="maintenanceMessage"
-            type="text"
-            :placeholder="t('admin.maintenanceMessagePlaceholder')"
-            class="w-full p-3 bg-gray-50 rounded-xl border border-gray-200 text-gray-900 placeholder-gray-500 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"
-          />
-        </div>
         <button
-          type="submit"
-          class="bg-emerald-600 text-white py-3 px-6 rounded-lg font-bold hover:bg-emerald-700 transition-colors shadow-sm mt-2"
+          v-if="isGeneralAdmin"
+          @click="activeTab = 'reports'"
+          class="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-sm font-medium transition-colors"
+          :class="
+            activeTab === 'reports'
+              ? 'bg-emerald-50 text-emerald-700 font-bold'
+              : 'text-gray-600 hover:bg-gray-50'
+          "
         >
-          {{ t('admin.saveSettings') }}
+          <Flag class="w-4 h-4" />
+          {{ t('admin.userReports') }}
         </button>
-      </form>
     </div>
 
     <div
@@ -345,15 +480,12 @@ export default {
                 <span class="font-bold text-gray-900">{{ user.name }}</span>
                 <span
                   class="text-[10px] px-1.5 py-0.5 rounded border border-gray-100"
-                  :class="getRoleColor(user.role)"
-                >
-                  {{ user.role }}
-                </span>
-                <span
-                  class="text-[10px] px-1.5 py-0.5 rounded border border-gray-100"
                   :class="getStatusColor(user.status)"
                 >
                   {{ user.status }}
+                </span>
+                <span class="text-[10px] px-1.5 py-0.5 rounded border border-gray-100 bg-gray-100 text-gray-600">
+                  {{ t('admin.reportsCount') }}: {{ user.reports }}
                 </span>
               </div>
               <div class="text-xs text-gray-500">
@@ -374,6 +506,110 @@ export default {
           >
             {{ user.status === "active" ? t('admin.suspend') : t('admin.activate') }}
           </button>
+        </div>
+      </div>
+    </div>
+
+    <div
+      v-if="isGeneralAdmin && activeTab === 'feedback'"
+      class="bg-white p-6 rounded-2xl border border-green-200 shadow-sm"
+    >
+      <div class="mb-6">
+        <h3 class="text-emerald-700 font-medium">{{ t('admin.feedbackListTitle') }}</h3>
+        <p class="text-sm text-gray-500">
+          {{ t('admin.reviewFeedback') }}
+        </p>
+      </div>
+
+      <div v-if="isFeedbackLoading" class="text-sm text-gray-500">
+        {{ t('admin.loadingFeedback') }}
+      </div>
+
+      <div v-else class="space-y-4">
+        <div
+          v-for="feedback in feedbackEntries"
+          :key="feedback.id"
+          class="p-4 border border-green-200 rounded-xl bg-white"
+        >
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <div class="flex items-center gap-2 mb-1">
+                <span class="text-xs text-gray-500">{{ t('admin.feedbackFrom') }}:</span>
+                <span class="text-sm font-bold text-gray-900">
+                  {{ feedback.user }}
+                </span>
+              </div>
+              <div class="text-xs text-gray-500">
+                {{ t('admin.feedbackCategory') }}:
+                {{ getFeedbackCategoryLabel(feedback.category) }}
+                <span class="mx-1">•</span>
+                {{ t('admin.reportedOn') }} {{ feedback.createdAt }}
+              </div>
+              <div class="text-sm text-gray-800 mt-2">
+                {{ feedback.subject }}
+              </div>
+              <div v-if="feedback.message" class="text-sm text-gray-600 mt-1">
+                {{ feedback.message }}
+              </div>
+            </div>
+
+            <span
+              class="text-[10px] px-2 py-0.5 rounded border border-gray-100"
+              :class="getFeedbackStatusColor(feedback.status)"
+            >
+              {{ feedback.status }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div
+      v-if="isGeneralAdmin && activeTab === 'reports'"
+      class="bg-white p-6 rounded-2xl border border-green-200 shadow-sm"
+    >
+      <div class="mb-6">
+        <h3 class="text-emerald-700 font-medium">{{ t('admin.userReportsTitle') }}</h3>
+        <p class="text-sm text-gray-500">
+          {{ t('admin.reviewUserReports') }}
+        </p>
+      </div>
+
+      <div v-if="isReportsLoading" class="text-sm text-gray-500">
+        {{ t('admin.loadingReports') }}
+      </div>
+
+      <div v-else class="space-y-4">
+        <div
+          v-for="report in reportedFeedback"
+          :key="report.id"
+          class="p-4 border border-green-200 rounded-xl bg-white"
+        >
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <div class="flex items-center gap-2 mb-1">
+                <span class="text-xs text-gray-500">{{ t('admin.reportedUser') }}:</span>
+                <span class="text-sm font-bold text-gray-900">
+                  {{ report.reportedUserName }}
+                </span>
+              </div>
+              <div class="text-xs text-gray-500">
+                {{ t('admin.reporter') }}: {{ report.reporter }}
+                <span class="mx-1">•</span>
+                {{ t('admin.reportedOn') }} {{ report.createdAt }}
+              </div>
+              <div v-if="report.reportedUserId" class="text-xs text-gray-400 mt-1">
+                ID: {{ report.reportedUserId }}
+              </div>
+            </div>
+
+            <span
+              class="text-[10px] px-2 py-0.5 rounded border border-gray-100"
+              :class="getReportStatusColor(report.status)"
+            >
+              {{ report.status }}
+            </span>
+          </div>
         </div>
       </div>
     </div>
@@ -430,10 +666,18 @@ export default {
                 :class="
                   post.status === 'approved'
                     ? 'bg-emerald-500 text-white'
-                    : 'bg-amber-400 text-white'
+                    : post.status === 'rejected'
+                      ? 'bg-red-500 text-white'
+                      : 'bg-amber-400 text-white'
                 "
               >
-                {{ post.status === 'approved' ? t('admin.approved') : t('admin.pending') }}
+                {{
+                  post.status === 'approved'
+                    ? t('admin.approved')
+                    : post.status === 'rejected'
+                      ? t('admin.rejected')
+                      : t('admin.pending')
+                }}
               </span>
             </div>
           </div>
@@ -459,13 +703,6 @@ export default {
             >
               <X class="w-3.5 h-3.5" />
               {{ t('admin.reject') }}
-            </button>
-            <button
-              @click="deletePost(post.id)"
-              class="flex items-center gap-1.5 px-3 py-1.5 text-red-500 text-xs font-medium hover:text-red-700 transition-colors ml-auto"
-            >
-              <Trash2 class="w-3.5 h-3.5" />
-              {{ t('admin.delete') }}
             </button>
           </div>
         </div>

@@ -28,148 +28,8 @@ export default {
     return {
       language: getLanguage(),
       showMapForTrip: null,
-      trips: [
-        {
-          id: 1,
-          title: "European Summer Adventure",
-          date: "2024-08-15",
-          endDate: "2024-08-25",
-          segments: 2,
-          emissions: "125 kg",
-          cost: "€1850",
-          duration: "2 days",
-          status: "Completed",
-          isExpanded: false,
-          transportMethods: [
-            {
-              id: 1,
-              route: "Paris → Berlin",
-              provider: "TGV",
-              code: "TG456",
-              departure: "08:30 AM",
-              departureType: "Platform 12",
-              arrival: "02:15 PM",
-              arrivalType: "Platform 8",
-              time: "5h 45m",
-              co2: "18kg",
-              cost: "€120",
-              type: "train",
-            },
-            {
-              id: 2,
-              route: "Berlin → Amsterdam",
-              provider: "FlixBus",
-              code: "BUS234",
-              departure: "09:00 AM",
-              departureType: "Bay 5",
-              arrival: "04:30 PM",
-              arrivalType: "Bay 12",
-              time: "7h 30m",
-              co2: "22kg",
-              cost: "€45",
-              type: "bus",
-            },
-          ],
-        },
-        {
-          id: 2,
-          title: "Asian Discovery Tour",
-          date: "2024-07-01",
-          endDate: "2024-07-15",
-          segments: 3,
-          emissions: "240 kg",
-          cost: "€2450",
-          duration: "3 days",
-          status: "Completed",
-          isExpanded: false,
-          transportMethods: [
-            {
-              id: 3,
-              route: "London → Rome",
-              provider: "British Airways",
-              code: "BA456",
-              departure: "10:00 AM",
-              departureType: "Terminal 5, Gate 12",
-              arrival: "01:30 PM",
-              arrivalType: "Terminal 3, Gate 8",
-              time: "3h 30m",
-              co2: "180kg",
-              cost: "€450",
-              type: "airplane",
-            },
-            {
-              id: 4,
-              route: "Rome → Athens",
-              provider: "Alitalia",
-              code: "AZ789",
-              departure: "08:00 AM",
-              departureType: "Terminal 1, Gate 5",
-              arrival: "11:15 AM",
-              arrivalType: "Terminal 2, Gate 3",
-              time: "3h 15m",
-              co2: "45kg",
-              cost: "€280",
-              type: "airplane",
-            },
-            {
-              id: 5,
-              route: "Athens → Barcelona",
-              provider: "Aegean Airlines",
-              code: "A3 234",
-              departure: "02:00 PM",
-              departureType: "Terminal 1, Gate 10",
-              arrival: "04:45 PM",
-              arrivalType: "Terminal 1, Gate 7",
-              time: "2h 45m",
-              co2: "15kg",
-              cost: "€320",
-              type: "airplane",
-            },
-          ],
-        },
-        {
-          id: 3,
-          title: "Caribbean Escape",
-          date: "2024-06-10",
-          endDate: "2024-06-20",
-          segments: 2,
-          emissions: "180 kg",
-          cost: "€1650",
-          duration: "2 days",
-          status: "Completed",
-          isExpanded: false,
-          transportMethods: [
-            {
-              id: 6,
-              route: "Madrid → Lisbon",
-              provider: "Renfe",
-              code: "REN123",
-              departure: "09:00 AM",
-              departureType: "Platform 3",
-              arrival: "02:30 PM",
-              arrivalType: "Platform 1",
-              time: "5h 30m",
-              co2: "25kg",
-              cost: "€85",
-              type: "train",
-            },
-            {
-              id: 7,
-              route: "Lisbon → Barcelona",
-              provider: "TAP Air Portugal",
-              code: "TP567",
-              departure: "11:00 AM",
-              departureType: "Terminal 2, Gate 15",
-              arrival: "01:20 PM",
-              arrivalType: "Terminal 1, Gate 12",
-              time: "2h 20m",
-              co2: "155kg",
-              cost: "€450",
-              type: "airplane",
-            },
-          ],
-        },
-      ],
+      trips: [],
+      isLoadingTrips: false,
     };
   },
   computed: {
@@ -265,11 +125,94 @@ export default {
   },
   mounted() {
     window.addEventListener("languageChanged", this.handleLanguageChange);
+    this.fetchCompletedTrips();
   },
   beforeUnmount() {
     window.removeEventListener("languageChanged", this.handleLanguageChange);
   },
   methods: {
+    formatDate(value) {
+      if (!value) return "";
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return "";
+      return date.toISOString().split("T")[0];
+    },
+    formatTime(value) {
+      if (!value) return "";
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return "";
+      return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    },
+    formatDuration(hours) {
+      if (!Number.isFinite(hours)) return "";
+      if (hours < 1) return `${Math.round(hours * 60)} min`;
+      return `${Math.round(hours)} h`;
+    },
+    formatMoney(value) {
+      if (!Number.isFinite(value)) return "";
+      return `€${Math.round(value)}`;
+    },
+    async fetchCompletedTrips() {
+      this.isLoadingTrips = true;
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) return;
+
+        const response = await fetch(
+          "http://localhost:3000/api/trips/completed",
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch completed trips");
+        }
+
+        const trips = await response.json();
+        this.trips = (trips || []).map((trip) => {
+          const itinerary = trip.itinerary || [];
+          const transportMethods = itinerary.map((segment, index) => {
+            const fromName = segment.fromLocation?.name || "";
+            const toName = segment.toLocation?.name || "";
+            return {
+              id: `${trip._id}-${index}`,
+              route: fromName && toName ? `${fromName} → ${toName}` : "Route",
+              provider: segment.transportNumber || "EcoGo",
+              code: segment.transportNumber || "",
+              departure: this.formatTime(segment.startTime || trip.startTime),
+              departureType: segment.gate || segment.departureGate || "",
+              arrival: this.formatTime(segment.endTime || trip.endTime),
+              arrivalType: segment.arrivalGate || "",
+              time: this.formatDuration(segment.estimatedDurationMinutes
+                ? segment.estimatedDurationMinutes / 60
+                : segment.durationHours),
+              co2: `${Math.round(segment.co2 || 0)}kg`,
+              cost: this.formatMoney(segment.price || 0),
+              type: segment.transportMode || segment.category || "travel",
+            };
+          });
+
+          return {
+            id: trip._id,
+            title: trip.title || "Trip",
+            date: this.formatDate(trip.startTime || trip.createdAt),
+            endDate: this.formatDate(trip.endTime || trip.createdAt),
+            segments: itinerary.length,
+            emissions: `${Math.round(trip.totalCo2Emission || 0)} kg`,
+            cost: this.formatMoney(trip.totalPrice || 0),
+            duration: this.formatDuration(trip.totalDurationHours || 0),
+            status: "Completed",
+            isExpanded: false,
+            transportMethods,
+          };
+        });
+      } catch (error) {
+        console.error("Failed to fetch completed trips:", error);
+      } finally {
+        this.isLoadingTrips = false;
+      }
+    },
     deleteTrip(id) {
       this.trips = this.trips.filter((trip) => trip.id !== id);
       if (this.showMapForTrip === id) {
