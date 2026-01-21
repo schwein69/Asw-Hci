@@ -22,12 +22,10 @@ ChartJS.register(
   Legend
 );
 
-// --- STATE ---
 const isLoading = ref(true);
 const processedTrips = ref([]);
 const language = ref(getLanguage());
 
-// --- TRANSLATION HELPER ---
 const t = (key) => translate(key, language.value);
 
 const fetchTripEfficiency = async () => {
@@ -71,22 +69,21 @@ onUnmounted(() => {
   window.removeEventListener("languageChanged", handleLanguageChange);
 });
 
-// --- CHART CONFIGURATION ---
 const chartData = computed(() => ({
   labels: processedTrips.value.map((t) => t.name),
   datasets: [
     {
-      label: t("dashboard.myTrip"), // Translatable label
+      label: t("dashboard.myTrip"),
       data: processedTrips.value.map((t) => t.myTotal),
-      backgroundColor: "#10b981", // Green
+      backgroundColor: "#10b981",
       borderRadius: 4,
       barPercentage: 0.6,
       categoryPercentage: 0.8,
     },
     {
-      label: t("dashboard.averageTrip"), // Translatable label
+      label: t("dashboard.averageTrip"),
       data: processedTrips.value.map((t) => t.avgTotal),
-      backgroundColor: "#d1d5db", // Gray
+      backgroundColor: "#d1d5db",
       borderRadius: 4,
       barPercentage: 0.6,
       categoryPercentage: 0.8,
@@ -94,7 +91,6 @@ const chartData = computed(() => ({
   ],
 }));
 
-// Changed from const to computed so axis titles update when language changes
 const chartOptions = computed(() => ({
   responsive: true,
   maintainAspectRatio: false,
@@ -109,7 +105,6 @@ const chartOptions = computed(() => ({
         afterBody: (tooltipItems) => {
           const index = tooltipItems[0].dataIndex;
           const trip = processedTrips.value[index];
-          // Example translation for Route prefix
           return `${t("dashboard.route")}: ${trip.routeSummary}`;
         },
         label: (context) => ` ${context.dataset.label}: ${context.raw} kg CO₂`,
@@ -119,7 +114,7 @@ const chartOptions = computed(() => ({
   scales: {
     y: {
       beginAtZero: true,
-      title: { display: true, text: t("dashboard.totalCo2") }, // Translatable axis title
+      title: { display: true, text: t("dashboard.totalCo2") },
       grid: { color: "#f3f4f6" },
       border: { display: false },
     },

@@ -16,7 +16,6 @@ import TransportModesChart from "./charts/TransportModesChart.vue";
 import DestinationChart from "./charts/DestinationChart.vue";
 import { getLanguage, t as translate } from "../utils/translations.js";
 
-// --- Translation Logic ---
 const language = ref(getLanguage());
 
 const handleLanguageChange = (event) => {
@@ -27,7 +26,6 @@ onUnmounted(() => {
   window.removeEventListener("languageChanged", handleLanguageChange);
 });
 
-// Helper to translate inside script
 const t = (key) => translate(key, language.value);
 
 const statsData = ref({
@@ -103,22 +101,21 @@ onMounted(() => {
   fetchEnvironmentalImpact();
 });
 
-// --- Stats Data (Merged) ---
 const stats = computed(() => [
   {
     label: t("dashboard.totalCo2Saved"),
     value: `${formatNumber(statsData.value.totalCo2SavedKg)} kg`,
-    subtitle: "", // compare to average equivalent distance
+    subtitle: "",
     icon: Leaf,
   },
   {
-    label: t("dashboard.totalDistance"), // "Total Distance"
+    label: t("dashboard.totalDistance"),
     value: `${formatNumber(statsData.value.totalDistanceKm)} km`,
     subtitle: t("dashboard.thisMonth"),
     icon: Sprout,
   },
   {
-    label: t("dashboard.greenDistance"), // "Green Distance"
+    label: t("dashboard.greenDistance"),
     value: `${formatNumber(statsData.value.greenDistanceKm)} km`,
     subtitle: t("dashboard.thisMonthGreen"),
     icon: TrendingUp,
