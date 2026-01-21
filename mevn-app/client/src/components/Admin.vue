@@ -43,44 +43,8 @@ export default {
       maintenanceMessage: "",
 
       // User Management Data
-      users: [
-        {
-          id: 1,
-          name: "Sarah Mitchell",
-          email: "sarah@example.com",
-          joined: "2024-01-15",
-          role: "user",
-          status: "active",
-          initials: "SM",
-        },
-        {
-          id: 2,
-          name: "Michael Chen",
-          email: "michael@example.com",
-          joined: "2024-02-20",
-          role: "admin",
-          status: "active",
-          initials: "MC",
-        },
-        {
-          id: 3,
-          name: "Emma Johnson",
-          email: "emma@example.com",
-          joined: "2024-03-10",
-          role: "user",
-          status: "active",
-          initials: "EJ",
-        },
-        {
-          id: 4,
-          name: "David Brown",
-          email: "david@example.com",
-          joined: "2024-01-05",
-          role: "user",
-          status: "suspended",
-          initials: "DB",
-        },
-      ],
+      users: [],
+      isUsersLoading: false,
 
       // --- NEW: Forum Moderation Data ---
       forumPosts: [],
@@ -106,6 +70,10 @@ export default {
       this.activeTab = "forum";
       this.fetchForumPosts();
     }
+    if (this.isGeneralAdmin) {
+      this.activeTab = "users";
+      this.fetchUsers();
+    }
   },
   beforeUnmount() {
     window.removeEventListener('languageChanged', this.handleLanguageChange);
@@ -116,6 +84,43 @@ export default {
       const date = new Date(dateString);
       if (Number.isNaN(date.getTime())) return "";
       return date.toLocaleDateString();
+    },
+    async fetchUsers() {
+      this.isUsersLoading = true;
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) return;
+
+        const response = await fetch(
+          "http://localhost:3000/api/users/admin/users",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch users");
+        }
+
+        const data = await response.json();
+        this.users = data
+          .filter((user) => user.role === "Standard")
+          .map((user) => ({
+            id: user._id,
+            name: user.username,
+            email: user.email,
+            joined: this.formatDate(user.createdAt),
+            role: user.role,
+            status: user.status || "active",
+            initials: (user.username || "U").slice(0, 2).toUpperCase(),
+          }));
+      } catch (error) {
+        console.error("Error loading users:", error);
+      } finally {
+        this.isUsersLoading = false;
+      }
     },
     async fetchForumPosts() {
       this.isForumLoading = true;
@@ -172,8 +177,32 @@ export default {
     saveSettings() {
       alert(this.t('admin.systemSettingsSaved'));
     },
-    toggleUserStatus(user) {
-      user.status = user.status === "active" ? "suspended" : "active";
+    async toggleUserStatus(user) {
+      const newStatus = user.status === "active" ? "suspended" : "active";
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) return;
+
+        const response = await fetch(
+          `http://localhost:3000/api/users/${user.id}/status`,
+          {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ status: newStatus }),
+          },
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to update user status");
+        }
+
+        user.status = newStatus;
+      } catch (error) {
+        console.error("Error updating user status:", error);
+      }
     },
     getRoleColor(role) {
       return role === "admin" || role === "AdminGeneral" || role === "AdminForum"
