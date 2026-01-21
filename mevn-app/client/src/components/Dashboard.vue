@@ -23,10 +23,6 @@ const handleLanguageChange = (event) => {
   language.value = event.detail.language;
 };
 
-onMounted(() => {
-  window.addEventListener("languageChanged", handleLanguageChange);
-});
-
 onUnmounted(() => {
   window.removeEventListener("languageChanged", handleLanguageChange);
 });
@@ -34,35 +30,80 @@ onUnmounted(() => {
 // Helper to translate inside script
 const t = (key) => translate(key, language.value);
 
+const statsData = ref({
+  totalCo2SavedKg: 0,
+  totalDistanceKm: 0,
+  greenDistanceKm: 0,
+  ecoScore: 0,
+  zeroTrips: 0,
+});
+
+const formatNumber = (value) => {
+  return Number.isFinite(value) ? value.toLocaleString() : "0";
+};
+
+const fetchDashboardSummary = async () => {
+  try {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    const response = await fetch("http://localhost:3000/api/dashboard/summary", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch dashboard summary");
+    }
+
+    const data = await response.json();
+    statsData.value = {
+      totalCo2SavedKg: data.totalCo2SavedKg || 0,
+      totalDistanceKm: data.totalDistanceKm || 0,
+      greenDistanceKm: data.greenDistanceKm || 0,
+      ecoScore: data.ecoScore || 0,
+      zeroTrips: data.zeroTrips || 0,
+    };
+  } catch (error) {
+    console.error("Failed to fetch dashboard summary:", error);
+  }
+};
+
+onMounted(() => {
+  window.addEventListener("languageChanged", handleLanguageChange);
+  fetchDashboardSummary();
+});
+
 // --- Stats Data (Merged) ---
 const stats = computed(() => [
   {
     label: t("dashboard.totalCo2Saved"),
-    value: "245 kg",
+    value: `${formatNumber(statsData.value.totalCo2SavedKg)} kg`,
     subtitle: "", // compare to average equivalent distance
     icon: Leaf,
   },
   {
     label: t("dashboard.totalDistance"), // "Total Distance"
-    value: "5542 km",
+    value: `${formatNumber(statsData.value.totalDistanceKm)} km`,
     subtitle: t("dashboard.thisMonth"),
     icon: Sprout,
   },
   {
     label: t("dashboard.greenDistance"), // "Green Distance"
-    value: "3842 km",
+    value: `${formatNumber(statsData.value.greenDistanceKm)} km`,
     subtitle: t("dashboard.thisMonthGreen"),
     icon: TrendingUp,
   },
   {
     label: t("dashboard.ecoScore"),
-    value: "892",
+    value: `${formatNumber(statsData.value.ecoScore)}`,
     subtitle: t("dashboard.topGlobally"),
     icon: Gauge,
   },
   {
     label: t("dashboard.zeroTrips"),
-    value: "14",
+    value: `${formatNumber(statsData.value.zeroTrips)}`,
     subtitle: t("dashboard.zeroTripsBanner"),
     icon: Footprints,
     isZeroCount: true,
