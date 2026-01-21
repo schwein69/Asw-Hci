@@ -23,6 +23,11 @@ const UserSchema = new mongoose.Schema({
     enum: ["Standard", "AdminGeneral", "AdminForum"],
     default: "Standard",
   },
+  status: {
+    type: String,
+    enum: ["active", "suspended"],
+    default: "active",
+  },
 
   profileImage: { type: String },
 
