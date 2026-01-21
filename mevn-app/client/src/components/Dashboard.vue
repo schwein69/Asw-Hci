@@ -70,9 +70,37 @@ const fetchDashboardSummary = async () => {
   }
 };
 
+const fetchEnvironmentalImpact = async () => {
+  try {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    const response = await fetch("http://localhost:3000/api/dashboard/impact", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch environmental impact");
+    }
+
+    const data = await response.json();
+    environmentalImpactRaw.value = {
+      ...environmentalImpactRaw.value,
+      treesValue: data.trees || 0,
+      energyValue: data.energyKwh || 0,
+      distanceValue: data.miles || 0,
+    };
+  } catch (error) {
+    console.error("Failed to fetch environmental impact:", error);
+  }
+};
+
 onMounted(() => {
   window.addEventListener("languageChanged", handleLanguageChange);
   fetchDashboardSummary();
+  fetchEnvironmentalImpact();
 });
 
 // --- Stats Data (Merged) ---
@@ -110,32 +138,31 @@ const stats = computed(() => [
   },
 ]);
 
-// --- Environmental Impact Data ---
-const environmentalImpactRaw = {
-  treesValue: 11,
+const environmentalImpactRaw = ref({
+  treesValue: 0,
   treesKey: "dashboard.trees",
   treesDescKey: "dashboard.treesDesc",
-  energyValue: 580,
+  energyValue: 0,
   energyKey: "dashboard.energy",
   energyDescKey: "dashboard.energyDesc",
-  distanceValue: 1440,
-  distanceKey: "dashboard.miles", // or distance
-  distanceDescKey: "dashboard.milesDesc", // or distance desc
-};
+  distanceValue: 0,
+  distanceKey: "dashboard.miles",
+  distanceDescKey: "dashboard.milesDesc",
+});
 
 const environmentalImpact = computed(() => ({
-  trees: `${environmentalImpactRaw.treesValue} ${t(
-    environmentalImpactRaw.treesKey
+  trees: `${environmentalImpactRaw.value.treesValue} ${t(
+    environmentalImpactRaw.value.treesKey
   )}`,
-  treesDesc: t(environmentalImpactRaw.treesDescKey),
-  energy: `${environmentalImpactRaw.energyValue} ${t(
-    environmentalImpactRaw.energyKey
+  treesDesc: t(environmentalImpactRaw.value.treesDescKey),
+  energy: `${environmentalImpactRaw.value.energyValue} ${t(
+    environmentalImpactRaw.value.energyKey
   )}`,
-  energyDesc: t(environmentalImpactRaw.energyDescKey),
-  distance: `${environmentalImpactRaw.distanceValue} ${t(
-    environmentalImpactRaw.distanceKey
+  energyDesc: t(environmentalImpactRaw.value.energyDescKey),
+  distance: `${environmentalImpactRaw.value.distanceValue} ${t(
+    environmentalImpactRaw.value.distanceKey
   )}`,
-  distanceDesc: t(environmentalImpactRaw.distanceDescKey),
+  distanceDesc: t(environmentalImpactRaw.value.distanceDescKey),
 }));
 </script>
 
