@@ -3,8 +3,6 @@ import {
   Shield,
   MessageCircle,
   UserCog,
-  Settings,
-  Save,
   Check,
   X,
   Flag,
@@ -17,10 +15,9 @@ export default {
     Shield,
     MessageCircle,
     UserCog,
-    Settings,
-    Save,
     Check,
     X,
+    Flag,
   },
   data() {
     return {
@@ -37,12 +34,6 @@ export default {
       // Tab State
       activeTab: "users",
 
-      // Settings Data
-      platformName: "EcoGo",
-      ecoScoreThreshold: 70,
-      weatherSensitivity: 3,
-      maintenanceMessage: "",
-
       // User Management Data
       users: [],
       isUsersLoading: false,
@@ -50,6 +41,10 @@ export default {
       // Reported Users Data
       reportedFeedback: [],
       isReportsLoading: false,
+
+      // Feedback (non-report) Data
+      feedbackEntries: [],
+      isFeedbackLoading: false,
 
       // --- NEW: Forum Moderation Data ---
       forumPosts: [],
@@ -79,6 +74,7 @@ export default {
       this.activeTab = "users";
       this.fetchUsers();
       this.fetchReportedFeedback();
+      this.fetchFeedbackEntries();
     }
   },
   beforeUnmount() {
@@ -164,6 +160,36 @@ export default {
         this.isReportsLoading = false;
       }
     },
+    async fetchFeedbackEntries() {
+      this.isFeedbackLoading = true;
+      try {
+        const token = localStorage.getItem("token");
+        const response = await fetch("http://localhost:3000/api/feedback", {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch feedback");
+        }
+
+        const data = await response.json();
+        this.feedbackEntries = (data.feedbacks || [])
+          .filter((feedback) => feedback.category !== "feedback.reportUser")
+          .map((feedback) => ({
+            id: feedback._id,
+            user: feedback.userName,
+            subject: feedback.subject,
+            message: feedback.message,
+            category: feedback.category,
+            status: feedback.status,
+            createdAt: this.formatDate(feedback.createdAt),
+          }));
+      } catch (error) {
+        console.error("Error loading feedback:", error);
+      } finally {
+        this.isFeedbackLoading = false;
+      }
+    },
     async fetchForumPosts() {
       this.isForumLoading = true;
       try {
@@ -216,9 +242,6 @@ export default {
     handleLanguageChange(event) {
       this.language = event.detail.language;
     },
-    saveSettings() {
-      alert(this.t('admin.systemSettingsSaved'));
-    },
     async toggleUserStatus(user) {
       const newStatus = user.status === "active" ? "suspended" : "active";
       try {
@@ -267,6 +290,27 @@ export default {
         default:
           return "bg-gray-100 text-gray-600";
       }
+    },
+    getFeedbackStatusColor(status) {
+      switch (status) {
+        case "Implemented":
+          return "bg-emerald-100 text-emerald-700";
+        case "Reviewing":
+          return "bg-amber-100 text-amber-700";
+        case "Rejected":
+          return "bg-red-100 text-red-700";
+        default:
+          return "bg-blue-100 text-blue-700";
+      }
+    },
+    getFeedbackCategoryLabel(category) {
+      const map = {
+        "feedback.featureRequest": "Feature Request",
+        "feedback.bugReport": "Bug Report",
+        "feedback.improvement": "Improvement",
+        "feedback.generalFeedback": "General Feedback",
+      };
+      return map[category] || category;
     },
     // New methods for forum actions
     async approvePost(id) {
@@ -382,6 +426,20 @@ export default {
 
         <button
           v-if="isGeneralAdmin"
+          @click="activeTab = 'feedback'"
+          class="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-sm font-medium transition-colors"
+          :class="
+            activeTab === 'feedback'
+              ? 'bg-emerald-50 text-emerald-700 font-bold'
+              : 'text-gray-600 hover:bg-gray-50'
+          "
+        >
+          <MessageCircle class="w-4 h-4" />
+          {{ t('admin.feedbackManagement') }}
+        </button>
+
+        <button
+          v-if="isGeneralAdmin"
           @click="activeTab = 'reports'"
           class="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-sm font-medium transition-colors"
           :class="
@@ -393,79 +451,6 @@ export default {
           <Flag class="w-4 h-4" />
           {{ t('admin.userReports') }}
         </button>
-
-        <button
-          v-if="isGeneralAdmin"
-          @click="activeTab = 'settings'"
-          class="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-sm font-medium transition-colors"
-          :class="
-            activeTab === 'settings'
-              ? 'bg-emerald-50 text-emerald-700 font-bold'
-              : 'text-gray-600 hover:bg-gray-50'
-          "
-        >
-          <Settings class="w-4 h-4" />
-          {{ t('admin.systemSettings') }}
-        </button>
-    </div>
-
-    <div
-      v-if="isGeneralAdmin && activeTab === 'settings'"
-      class="bg-white p-6 rounded-2xl border border-green-200 shadow-sm"
-    >
-      <div class="mb-6">
-        <h3 class="text-emerald-700 font-medium">{{ t('admin.systemSettingsTitle') }}</h3>
-        <p class="text-sm text-gray-500">{{ t('admin.configurePlatformParameters') }}</p>
-      </div>
-      <form @submit.prevent="saveSettings" class="space-y-4">
-        <div class="space-y-1">
-          <label class="text-xs font-bold text-gray-800 ml-1"
-            >{{ t('admin.platformName') }}</label
-          >
-          <input
-            v-model="platformName"
-            type="text"
-            class="w-full p-3 bg-gray-50 rounded-xl border border-gray-200 text-gray-900 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"
-          />
-        </div>
-        <div class="space-y-1">
-          <label class="text-xs font-bold text-gray-800 ml-1"
-            >{{ t('admin.defaultEcoScoreThreshold') }}</label
-          >
-          <input
-            v-model="ecoScoreThreshold"
-            type="number"
-            class="w-full p-3 bg-gray-50 rounded-xl border border-gray-200 text-gray-900 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"
-          />
-        </div>
-        <div class="space-y-1">
-          <label class="text-xs font-bold text-gray-800 ml-1"
-            >{{ t('admin.weatherAlertSensitivity') }}</label
-          >
-          <input
-            v-model="weatherSensitivity"
-            type="number"
-            class="w-full p-3 bg-gray-50 rounded-xl border border-gray-200 text-gray-900 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"
-          />
-        </div>
-        <div class="space-y-1">
-          <label class="text-xs font-bold text-gray-800 ml-1"
-            >{{ t('admin.maintenanceMessage') }}</label
-          >
-          <input
-            v-model="maintenanceMessage"
-            type="text"
-            :placeholder="t('admin.maintenanceMessagePlaceholder')"
-            class="w-full p-3 bg-gray-50 rounded-xl border border-gray-200 text-gray-900 placeholder-gray-500 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"
-          />
-        </div>
-        <button
-          type="submit"
-          class="bg-emerald-600 text-white py-3 px-6 rounded-lg font-bold hover:bg-emerald-700 transition-colors shadow-sm mt-2"
-        >
-          {{ t('admin.saveSettings') }}
-        </button>
-      </form>
     </div>
 
     <div
@@ -521,6 +506,60 @@ export default {
           >
             {{ user.status === "active" ? t('admin.suspend') : t('admin.activate') }}
           </button>
+        </div>
+      </div>
+    </div>
+
+    <div
+      v-if="isGeneralAdmin && activeTab === 'feedback'"
+      class="bg-white p-6 rounded-2xl border border-green-200 shadow-sm"
+    >
+      <div class="mb-6">
+        <h3 class="text-emerald-700 font-medium">{{ t('admin.feedbackListTitle') }}</h3>
+        <p class="text-sm text-gray-500">
+          {{ t('admin.reviewFeedback') }}
+        </p>
+      </div>
+
+      <div v-if="isFeedbackLoading" class="text-sm text-gray-500">
+        {{ t('admin.loadingFeedback') }}
+      </div>
+
+      <div v-else class="space-y-4">
+        <div
+          v-for="feedback in feedbackEntries"
+          :key="feedback.id"
+          class="p-4 border border-green-200 rounded-xl bg-white"
+        >
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <div class="flex items-center gap-2 mb-1">
+                <span class="text-xs text-gray-500">{{ t('admin.feedbackFrom') }}:</span>
+                <span class="text-sm font-bold text-gray-900">
+                  {{ feedback.user }}
+                </span>
+              </div>
+              <div class="text-xs text-gray-500">
+                {{ t('admin.feedbackCategory') }}:
+                {{ getFeedbackCategoryLabel(feedback.category) }}
+                <span class="mx-1">•</span>
+                {{ t('admin.reportedOn') }} {{ feedback.createdAt }}
+              </div>
+              <div class="text-sm text-gray-800 mt-2">
+                {{ feedback.subject }}
+              </div>
+              <div v-if="feedback.message" class="text-sm text-gray-600 mt-1">
+                {{ feedback.message }}
+              </div>
+            </div>
+
+            <span
+              class="text-[10px] px-2 py-0.5 rounded border border-gray-100"
+              :class="getFeedbackStatusColor(feedback.status)"
+            >
+              {{ feedback.status }}
+            </span>
+          </div>
         </div>
       </div>
     </div>
