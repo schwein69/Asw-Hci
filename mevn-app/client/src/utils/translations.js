@@ -150,6 +150,7 @@ const translations = {
       cost: "Cost",
       platform: "Platform",
       seat: "Seat",
+      distance: "Distance",
       gate: "Gate",
       terminal: "Terminal",
       class: "Class",
@@ -496,6 +497,7 @@ const translations = {
       delete: "Delete",
       edit: "Edit",
       close: "Close",
+      navigate: "Navigate",
     },
     admin: {
       adminPanel: "Admin Panel",
@@ -688,6 +690,7 @@ const translations = {
       seat: "Posto",
       gate: "Gate",
       terminal: "Terminale",
+      distance: "Distanza",
       class: "Classe",
       completed: "Completa Viaggio",
       upcoming: "In arrivo",
@@ -1041,6 +1044,7 @@ const translations = {
       delete: "Elimina",
       edit: "Modifica",
       close: "Chiudi",
+      navigate: "Naviga",
     },
     admin: {
       adminPanel: "Pannello Amministratore",

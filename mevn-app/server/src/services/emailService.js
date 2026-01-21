@@ -96,3 +96,56 @@ This link will expire in 1 hour. If you didn't request this, please ignore this 
   });
 };
 
+export const sendAccountSuspendedEmail = async (email, username) => {
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2 style="color: #10b981;">EcoGo - Account Suspended</h2>
+      <p>Hello ${username || ""},</p>
+      <p>Your account has been suspended by an administrator.</p>
+      <p>If you believe this is a mistake, please contact support.</p>
+    </div>
+  `;
+
+  const text = `
+EcoGo - Account Suspended
+
+Hello ${username || ""},
+
+Your account has been suspended by an administrator.
+If you believe this is a mistake, please contact support.
+  `;
+
+  return await sendEmail({
+    to: email,
+    subject: "EcoGo - Account Suspended",
+    html,
+    text,
+  });
+};
+
+export const sendAccountReactivatedEmail = async (email, username) => {
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2 style="color: #10b981;">EcoGo - Account Reactivated</h2>
+      <p>Hello ${username || ""},</p>
+      <p>Your account has been reactivated. You can now access the platform again.</p>
+      <p>If you have any questions, please contact support.</p>
+    </div>
+  `;
+
+  const text = `
+EcoGo - Account Reactivated
+
+Hello ${username || ""},
+
+Your account has been reactivated. You can now access the platform again.
+If you have any questions, please contact support.
+  `;
+
+  return await sendEmail({
+    to: email,
+    subject: "EcoGo - Account Reactivated",
+    html,
+    text,
+  });
+};

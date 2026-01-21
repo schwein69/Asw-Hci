@@ -9,6 +9,7 @@ const props = defineProps({
   center: { type: Array, default: () => [-74.5, 40] },
   zoom: { type: Number, default: 9 },
 });
+const emit = defineEmits(["clear"]);
 
 const mapContainer = ref(null);
 const isLoading = ref(true);
@@ -17,17 +18,12 @@ const map = shallowRef(null);
 
 let directions = null;
 
-const addMarker = (lngLat, options = {}) => {
-  if (!map.value) return null;
-  return new mapboxgl.Marker(options).setLngLat(lngLat).addTo(map.value);
-};
-
 const flyTo = (center, zoom = 15) => {
   if (!map.value) return;
   map.value.flyTo({ center, zoom, duration: 2000 });
 };
 
-defineExpose({ addMarker, flyTo, map });
+defineExpose({ flyTo, map });
 
 const clearRoute = () => {
   if (directions) {
@@ -39,6 +35,7 @@ const clearRoute = () => {
   inputs.forEach((input) => {
     input.value = "";
   });
+  emit("clear");
 };
 
 onMounted(() => {
@@ -66,10 +63,10 @@ onMounted(() => {
         trackUserLocation: true,
         showUserHeading: true,
       }),
-      "top-right"
+      "top-right",
     );
 
-    // 3. Directions Setup
+    // Directions Setup
     directions = new MapboxDirections({
       accessToken: mapboxgl.accessToken,
       unit: "metric",
@@ -133,7 +130,7 @@ const toggleTraffic = () => {
   map.value.setLayoutProperty(
     "traffic-layer",
     "visibility",
-    visibility === "visible" ? "none" : "visible"
+    visibility === "visible" ? "none" : "visible",
   );
 };
 </script>
