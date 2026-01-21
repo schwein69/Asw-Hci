@@ -3,8 +3,12 @@ import User from "../models/users.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
-import { sendPasswordResetEmail } from "../services/emailService.js";
-import { authenticate } from "../middleware/auth.js";
+import {
+  sendPasswordResetEmail,
+  sendAccountSuspendedEmail,
+  sendAccountReactivatedEmail,
+} from "../services/emailService.js";
+import { authenticate, authorize } from "../middleware/auth.js";
 
 const router = express.Router();
 
@@ -50,6 +54,12 @@ router.post("/login", async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(401).json({ error: "Invalid email or password" });
+    }
+
+    if (user.status === "suspended") {
+      return res
+        .status(403)
+        .json({ error: "Account suspended. Please contact support." });
     }
 
     const token = jwt.sign(
@@ -281,6 +291,66 @@ router.delete("/account", authenticate, async (req, res) => {
     await User.findByIdAndDelete(userId);
 
     res.status(200).json({ message: "Account deleted successfully" });
+  } catch (err) {
+    res.status(500).json({ error: "Server error: " + err.message });
+  }
+});
+
+// Admin: get users list
+router.get("/admin/users", authenticate, authorize("AdminGeneral"), async (req, res) => {
+  try {
+    const users = await User.find()
+      .select("_id username email role status createdAt numberOfReports")
+      .sort({ createdAt: -1 });
+    res.status(200).json(users);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch users: " + err.message });
+  }
+});
+
+// Admin: update user status (suspend/activate)
+router.patch("/:userId/status", authenticate, authorize("AdminGeneral"), async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { status } = req.body;
+
+    if (!["active", "suspended"].includes(status)) {
+      return res.status(400).json({ error: "Invalid status" });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    user.status = status;
+    await user.save();
+
+    if (status === "suspended") {
+      try {
+        await sendAccountSuspendedEmail(user.email, user.username);
+      } catch (emailError) {
+        console.error("Failed to send suspension email:", emailError);
+      }
+    } else if (status === "active") {
+      try {
+        await sendAccountReactivatedEmail(user.email, user.username);
+      } catch (emailError) {
+        console.error("Failed to send reactivation email:", emailError);
+      }
+    }
+
+    res.status(200).json({
+      message: "User status updated",
+      user: {
+        _id: user._id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+        status: user.status,
+        createdAt: user.createdAt,
+      },
+    });
   } catch (err) {
     res.status(500).json({ error: "Server error: " + err.message });
   }

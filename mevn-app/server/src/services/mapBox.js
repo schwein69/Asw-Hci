@@ -2,9 +2,9 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const getCoordinatesFromAddress = async (address) => {
-  const mapboxToken = process.env.VITE_MAPBOX_TOKEN;
+  const mapboxToken = process.env.MAPBOX_TOKEN || process.env.VITE_MAPBOX_TOKEN;
   if (!mapboxToken) {
-    throw new Error("Missing Mapbox Token in environment variables");
+    throw new Error("Missing Mapbox token");
   }
   const endpoint = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
     address,

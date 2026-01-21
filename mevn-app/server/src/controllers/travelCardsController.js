@@ -36,6 +36,7 @@ export const createTravelCard = async (req, res) => {
         coordinates: [coordinates.longitude, coordinates.latitude], // Order: [Longitude, Latitude]
         address: data.address,
       },
+      status: "Pending",
     });
 
     const savedCard = await newCard.save();
@@ -452,5 +453,52 @@ export const reportTravelCard = async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ message: `Error reporting card: ${error.message}` });
+  }
+};
+
+export const getModerationCards = async (req, res) => {
+  try {
+    const statusParam = req.query.status;
+    const statuses = statusParam
+      ? statusParam.split(",").map((status) => status.trim())
+      : ["Pending", "Rejected"];
+
+    const cards = await TravelCard.find({ status: { $in: statuses } })
+      .populate("creator", "username profileImage")
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({ cards });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: `Error fetching moderation cards: ${error.message}` });
+  }
+};
+
+export const updateTravelCardStatus = async (req, res) => {
+  try {
+    const { cardId } = req.params;
+    const { status } = req.body;
+
+    const allowedStatuses = ["Approved", "Rejected"];
+    if (!allowedStatuses.includes(status)) {
+      return res.status(400).json({ message: "Invalid status" });
+    }
+
+    const updatedCard = await TravelCard.findByIdAndUpdate(
+      cardId,
+      { status },
+      { new: true },
+    ).populate("creator", "username profileImage");
+
+    if (!updatedCard) {
+      return res.status(404).json({ message: "Card not found" });
+    }
+
+    res.status(200).json(updatedCard);
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: `Error updating card status: ${error.message}` });
   }
 };
