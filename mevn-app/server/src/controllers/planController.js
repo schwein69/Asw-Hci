@@ -39,98 +39,102 @@ export const compareTravelOptions = async (req, res) => {
 
 export const saveTrip = async (req, res) => {
   try {
-    const userId = req.body.userId;
+    const { userId, segments, title } = req.body;
 
-    if (!userId) {
+    if (!userId)
       return res.status(401).json({ message: "User not authenticated" });
-    }
-
-    const { segments, title } = req.body;
-
-    if (!segments || segments.length === 0) {
+    if (!segments?.length)
       return res
         .status(400)
         .json({ message: "No itinerary segments provided" });
-    }
+
+    // HELPER: Parse "1 hours 30 minutes" ---
+    const parseDuration = (timeStr) => {
+      if (!timeStr) return 0;
+      // Regex handles "hour", "hours", "h", "mins", "minute", "m"
+      const h = (timeStr.match(/(\d+)\s*(h|hour)/i) || [])[1] || 0;
+      const m = (timeStr.match(/(\d+)\s*(m|min)/i) || [])[1] || 0;
+      return parseInt(h) * 60 + parseInt(m);
+    };
 
     let totalDistanceKm = 0;
     let totalPrice = 0;
     let totalCo2Emission = 0;
+    let totalDurationMinutes = 0;
     const transportModeBreakdown = {};
 
-    const itinerary = segments.map((seg) => {
+    // Track time for chaining segments
+    let previousEndTime = new Date();
+
+    const itinerary = segments.map((seg, index) => {
+      const typeLower = (seg.type || "transport").toLowerCase();
+
+      // Map Transport Mode
+      const modeMap = {
+        airplane: "airplane",
+        car: "car",
+        train: "train",
+        bus: "bus",
+        walking: "walk",
+        cycling: "bike",
+      };
+      const transportMode = modeMap[typeLower] || null;
+
+      //  Map Category
       let category = "Transport";
-      let transportMode = null;
-      const typeLower = (seg.type || "").toLowerCase();
-
-      if (
-        ["hotel", "motel", "resort", "b&b", "accommodation"].some((t) =>
-          typeLower.includes(t),
-        )
-      ) {
+      if (["hotel", "motel", "b&b"].some((t) => typeLower.includes(t)))
         category = "Accommodation";
-      } else if (
-        ["restaurant", "bar", "cafe", "food"].some((t) => typeLower.includes(t))
-      ) {
+      else if (["restaurant", "bar", "food"].some((t) => typeLower.includes(t)))
         category = "Restaurant";
-      } else {
-        // Map frontend types (Airplane, Car) to Schema enums (airplane, car)
-        const modeMap = {
-          airplane: "airplane",
-          car: "car",
-          train: "train",
-          bus: "bus",
-          walking: "walk",
-          cycling: "bike",
-        };
-        transportMode = modeMap[typeLower] || null;
-      }
 
-      // Accumulate Totals
-      const dist = parseFloat(seg.distance) || 0;
-      const cost = parseFloat(seg.cost) || 0;
-      const co2 = parseFloat(seg.co2) || 0;
+      // 3. Parse Numbers (Force Number to prevent Schema casting errors)
+      const dist = Number(seg.distance) || 0;
+      const cost = Number(seg.cost) || 0;
+      const co2 = Number(seg.co2) || 0;
+      const durationMins = parseDuration(seg.time);
 
+      // 4. Update Totals
       totalDistanceKm += dist;
       totalPrice += cost;
       totalCo2Emission += co2;
+      totalDurationMinutes += durationMins;
 
-      // Update Breakdown map (e.g., { "airplane": 500, "car": 20 })
       if (transportMode) {
+        // Increment breakdown for Charts
         transportModeBreakdown[transportMode] =
           (transportModeBreakdown[transportMode] || 0) + dist;
       }
 
-      // Handle Dates
-      let startDateTime = seg.date ? new Date(seg.date) : new Date();
-      if (seg.date && seg.departureTime) {
-        startDateTime = new Date(`${seg.date}T${seg.departureTime}`);
+      // 5. Smart Time Logic (The "Same Time" Fix)
+      let startDateTime;
+      if (seg.date) {
+        // If frontend gave a specific date, use it
+        const dateStr = seg.departureTime
+          ? `${seg.date}T${seg.departureTime}`
+          : seg.date;
+        startDateTime = new Date(dateStr);
+      } else {
+        // If NO date, chain it to the previous segment's end
+        startDateTime = index === 0 ? new Date() : new Date(previousEndTime);
       }
 
-      let endDateTime = startDateTime;
-      if (seg.date && seg.arrivalTime) {
-        endDateTime = new Date(`${seg.date}T${seg.arrivalTime}`);
-        if (endDateTime < startDateTime) {
-          endDateTime.setDate(endDateTime.getDate() + 1);
-        }
-      }
+      // Calculate End Time
+      const endDateTime = new Date(
+        startDateTime.getTime() + durationMins * 60000,
+      );
+      previousEndTime = endDateTime; // Update for next segment
 
-      // Return formatted object
       return {
         category,
         transportMode,
-        fuelType: seg.fuelType ? seg.fuelType.toLowerCase() : null,
+        fuelType: seg.fuelType?.toLowerCase() || null,
         distanceKm: dist,
-        estimatedDurationMinutes: 0, // You can calculate this from times if needed
-
-        // Specific Details
-        transportNumber: seg.transportNumber,
-        gate: seg.gate,
-        arrivalGate: seg.arrivalGate,
-        seatNumber: seg.seat,
-        class: seg.travelClass,
-
-        // Locations
+        estimatedDurationMinutes: durationMins,
+        transportNumber: seg.transportNumber || "",
+        gate: seg.gate || "",
+        arrivalGate: seg.arrivalGate || "",
+        seatNumber: seg.seat || "",
+        class: seg.travelClass || "",
         fromLocation: {
           name: seg.from || "Start",
           coordinates: seg.fromCoords || [0, 0],
@@ -141,7 +145,6 @@ export const saveTrip = async (req, res) => {
           coordinates: seg.toCoords || [0, 0],
           address: seg.toAddress || "",
         },
-
         startTime: startDateTime,
         endTime: endDateTime,
         price: cost,
@@ -149,15 +152,16 @@ export const saveTrip = async (req, res) => {
       };
     });
 
-    // Create the Trip Document
+    // Create the Document
     const newTrip = new Trip({
       user: userId,
       title:
         title || `Trip to ${itinerary[itinerary.length - 1].toLocation.name}`,
       status: "ongoing",
-      totalDistanceKm: parseFloat(totalDistanceKm.toFixed(2)),
-      totalPrice: parseFloat(totalPrice.toFixed(2)),
-      totalCo2Emission: parseFloat(totalCo2Emission.toFixed(2)),
+      totalDurationHours: Number((totalDurationMinutes / 60).toFixed(2)),
+      totalDistanceKm: Number(totalDistanceKm.toFixed(2)),
+      totalPrice: Number(totalPrice.toFixed(2)),
+      totalCo2Emission: Number(totalCo2Emission.toFixed(2)),
       transportModeBreakdown,
       startTime: itinerary[0]?.startTime,
       endTime: itinerary[itinerary.length - 1]?.endTime,
@@ -168,9 +172,8 @@ export const saveTrip = async (req, res) => {
     res.status(201).json(savedTrip);
   } catch (error) {
     console.error("Save Trip Error:", error);
-    res.status(500).json({
-      message: "Failed to save trip",
-      error: error.message,
-    });
+    res
+      .status(500)
+      .json({ message: "Failed to save trip", error: error.message });
   }
 };

@@ -89,7 +89,6 @@ const TripSchema = new mongoose.Schema({
   totalDistanceKm: { type: Number, default: 0 },
   totalPrice: { type: Number, default: 0 },
   totalCo2Emission: { type: Number, default: 0 },
-  co2Saved: { type: Number, default: 0 },
 
   transportModeBreakdown: {
     type: Map,

@@ -586,6 +586,7 @@ const saveTripToDB = async () => {
       const { markers, ...rest } = segment;
       return rest;
     });
+    console.log("Payload Segments:", cleanSegments);
     const payload = {
       userId: userId,
       title: `${fromSegment} to ${lastDest} Trip`,
@@ -599,7 +600,7 @@ const saveTripToDB = async () => {
     });
 
     if (response.status === 201) {
-      console.log("Saved Trip Data:", response.data);
+      console.log("Saved Trip Data:", response);
       router.push("/World");
     }
   } catch (err) {

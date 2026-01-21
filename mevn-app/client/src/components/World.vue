@@ -97,7 +97,7 @@ const fetchActiveTrips = async () => {
               segment.estimatedDurationMinutes % 60
             }m`,
             distance: segment.distanceKm,
-            co2: segment.co2Emission || 0,
+            co2: segment.co2 || 0,
             cost: segment.price,
             startCoords: segment.fromLocation.coordinates,
             endCoords: segment.toLocation.coordinates,
