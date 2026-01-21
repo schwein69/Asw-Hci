@@ -33,18 +33,17 @@ import { getLanguage, t as translate } from "../utils/translations.js";
 import { useTripStore } from "../data/tripStore";
 import EditTripModal from "./template/EditTripModal.vue";
 import ComparisonModal from "./template/ComparisonModal.vue";
+import { useRouter } from "vue-router";
 
 const tripStore = useTripStore();
-
+const router = useRouter();
 const language = ref(getLanguage());
+const accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
 
 const t = computed(() => (key) => translate(key, language.value));
-
 const handleLanguageChange = (event) => {
   language.value = event.detail.language;
 };
-
-const accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
 
 const mapboxMapRef = ref(null);
 const mapContainerRef = ref(null);
@@ -339,7 +338,7 @@ async function getEcoRating(name, category) {
     currentEcoRating.value = score;
     newSegment.value.ecoScore = score;
     isCalculatingEco.value = false;
-  }, 800);
+  }, 500);
 }
 
 async function geminiEstimation(mode, distanceKm, fuelType) {
@@ -567,10 +566,47 @@ function removeSegment(index) {
   }
 }
 
-//TODO: Implementare salvataggio su DB
-function saveTripToDB() {
-  alert("Trip Saved!");
-}
+const getUserId = () => {
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  return user._id || user.id;
+};
+
+const saveTripToDB = async () => {
+  if (savedSegments.value.length === 0) {
+    alert("Please add at least one segment to your trip.");
+    return;
+  }
+
+  const userId = getUserId();
+
+  try {
+    const lastDest = savedSegments.value[savedSegments.value.length - 1].to;
+    const fromSegment = savedSegments.value[0].from;
+    const cleanSegments = savedSegments.value.map((segment) => {
+      const { markers, ...rest } = segment;
+      return rest;
+    });
+    const payload = {
+      userId: userId,
+      title: `${fromSegment} to ${lastDest} Trip`,
+      segments: cleanSegments,
+    };
+
+    const response = await fetch("http://localhost:3000/api/plan/save", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (response.status === 201) {
+      console.log("Saved Trip Data:", response.data);
+      router.push("/World");
+    }
+  } catch (err) {
+    console.error("Error saving trip:", err);
+    alert("Failed to save trip. Check console for details.");
+  }
+};
 
 async function visualizeRoute(startCoords, endCoords, type, segmentId) {
   const map = mapboxMapRef.value?.map;

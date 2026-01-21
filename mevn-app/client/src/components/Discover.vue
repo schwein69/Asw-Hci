@@ -697,7 +697,7 @@ onUnmounted(() => {
                     'fill-current text-emerald-600': selectedPlace.saved,
                   }"
                 />
-                Save
+                {{ t("common.save") }}
               </button>
               <button
                 @click="navigateToPlace(selectedPlace)"
@@ -720,7 +720,7 @@ onUnmounted(() => {
                 title="Delete Post"
               >
                 <Trash2 class="w-4 h-4" />
-                Delete
+                {{ t("common.delete") }}
               </button>
             </div>
           </div>

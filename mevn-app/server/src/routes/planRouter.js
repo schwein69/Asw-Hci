@@ -4,4 +4,5 @@ const router = express.Router();
 
 router.post("/estimate", planController.getTravelItineraryEstimation);
 router.post("/compare", planController.compareTravelOptions);
+router.post("/save", planController.saveTrip);
 export default router;
