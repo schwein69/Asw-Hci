@@ -12,6 +12,7 @@ import {
   Bike,
   Target,
   Crown,
+  Medal,
 } from "lucide-vue-next";
 import { t as translate } from "../../utils/translations.js";
 
@@ -37,7 +38,7 @@ const iconMap = {
 };
 
 const activeStreakCount = computed(
-  () => props.streakHistory.filter(Boolean).length,
+  () => props.streakHistory.filter(Boolean).length
 );
 
 const t = (key) => translate(key, props.language);
@@ -77,7 +78,29 @@ const t = (key) => translate(key, props.language);
                 />
               </div>
               <div>
-                <h4 class="font-bold text-gray-800">{{ achievement.name }}</h4>
+                <div class="flex items-center gap-2">
+                  <h4 class="font-bold text-gray-800">
+                    {{ achievement.name }}
+                  </h4>
+                  <span
+                    v-if="!achievement.locked"
+                    class="text-xs font-semibold px-2 py-0.5 rounded-full"
+                    :class="{
+                      'bg-amber-100 text-amber-700':
+                        achievement.tierName === 'Bronze',
+                      'bg-gray-100 text-gray-700':
+                        achievement.tierName === 'Silver',
+                      'bg-yellow-100 text-yellow-700':
+                        achievement.tierName === 'Gold',
+                      'bg-cyan-100 text-cyan-700':
+                        achievement.tierName === 'Platinum',
+                      'bg-blue-100 text-blue-700':
+                        achievement.tierName === 'Diamond',
+                    }"
+                  >
+                    {{ achievement.tierName }}
+                  </span>
+                </div>
                 <p class="text-xs text-gray-600">
                   {{ achievement.description }}
                 </p>
@@ -108,7 +131,7 @@ const t = (key) => translate(key, props.language);
                   width:
                     Math.min(
                       (achievement.current / achievement.target) * 100,
-                      100,
+                      100
                     ) + '%',
                 }"
               ></div>
@@ -178,6 +201,9 @@ const t = (key) => translate(key, props.language);
                 v-if="index === 0"
                 class="w-6 h-6 text-yellow-500 fill-yellow-500"
               />
+              <span v-else-if="index === 1" class="text-2xl">🥈</span>
+              <span v-else-if="index === 2" class="text-2xl">🥉</span>
+              <span v-else class="text-gray-400">{{ index + 1 }}</span>
             </div>
             <div
               class="font-semibold"

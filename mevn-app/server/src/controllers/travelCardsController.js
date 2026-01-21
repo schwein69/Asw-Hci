@@ -2,22 +2,38 @@ import TravelCard from "../models/travelCard.js";
 import Notification from "../models/notification.js";
 import { emitNotification } from "../socket/notificationSocket.js";
 import { getCoordinatesFromAddress } from "../services/mapBox.js";
-import mongoose from "mongoose";
 
 // Add new travel card
 export const createTravelCard = async (req, res) => {
   try {
     const data = req.body;
+    if (!data.creator) {
+      console.error("Missing Creator ID");
+      return res
+        .status(400)
+        .json({ message: "User ID (creator) is missing. Are you logged in?" });
+    }
+    let coordinates = { longitude: 0, latitude: 0 }; // Default Fallback
+    try {
+      if (data.address) {
+        const geoResult = await getCoordinatesFromAddress(data.address);
+        if (geoResult && typeof geoResult.latitude === "number") {
+          coordinates = geoResult;
+        }
+      }
+    } catch (geoError) {
+      console.warn("Geocoding failed, using default (0,0):", geoError.message);
+    }
     const newCard = new TravelCard({
       creator: data.creator,
       title: data.title,
       description: data.description,
-      images: data.images || [],
+      images: data.image || [],
       category: data.category,
       price: data.price,
       location: {
         type: "Point",
-        coordinates: [data.longitude, data.latitude], // Order: [Longitude, Latitude]
+        coordinates: [coordinates.longitude, coordinates.latitude], // Order: [Longitude, Latitude]
         address: data.address,
       },
     });
@@ -32,7 +48,7 @@ export const createTravelCard = async (req, res) => {
 // Get ALL travel cards (Randomized Feed) with Search & Category
 export const getTravelCards = async (req, res) => {
   try {
-    const userId = req.userId;
+    const userId = req.query.userId;
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 6;
 
@@ -45,9 +61,9 @@ export const getTravelCards = async (req, res) => {
     };
 
     // Exclude current user's posts
-    if (userId) {
+    /*if (userId) {
       matchStage.creator = { $ne: new mongoose.Types.ObjectId(userId) };
-    }
+    }*/
 
     // Filter by Category (if provided and not "All")
     if (category && category !== "All") {
@@ -61,7 +77,7 @@ export const getTravelCards = async (req, res) => {
     }
 
     //  Aggregation
-    const cards = await TravelCard.aggregate([
+    let cards = await TravelCard.aggregate([
       { $match: matchStage }, // Apply filters first
       { $sample: { size: limit } }, // Then pick random documents from the result
     ]);
@@ -71,6 +87,19 @@ export const getTravelCards = async (req, res) => {
       path: "creator",
       select: "_id username profileImage",
     });
+
+    // If a user is logged in, calculate if they have liked/saved these cards
+    if (userId) {
+      cards = cards.map((card) => {
+        const likesStrings = (card.likes || []).map((id) => id.toString());
+        const savesStrings = (card.saves || []).map((id) => id.toString());
+        return {
+          ...card,
+          isLiked: likesStrings.includes(userId.toString()),
+          isSaved: savesStrings.includes(userId.toString()),
+        };
+      });
+    }
 
     // Pagination Counts
     const total = await TravelCard.countDocuments(matchStage);
@@ -90,7 +119,7 @@ export const getTravelCards = async (req, res) => {
 // Get only the current user's travel cards (With Search & Category)
 export const getUserTravelCards = async (req, res) => {
   try {
-    const userId = req.userId;
+    const userId = req.query.userId;
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 6;
     const { search, category } = req.query; // Extract params
@@ -101,7 +130,7 @@ export const getUserTravelCards = async (req, res) => {
     const query = { creator: userId };
 
     // Category Filter
-    if (category && category !== "All") {
+    if (category && category !== "all" && category !== "All") {
       query.category = category;
     }
 
@@ -111,14 +140,27 @@ export const getUserTravelCards = async (req, res) => {
     }
 
     // Fetch cards created by this user
-    const cards = await TravelCard.find(query)
+    let cards = await TravelCard.find(query)
       .populate("creator", "username profileImage")
       .sort({ createdAt: -1 }) // Newest to Oldest
       .skip(skip)
-      .limit(limit);
+      .limit(limit)
+      .lean();
 
     const total = await TravelCard.countDocuments(query);
+    if (userId) {
+      cards = cards.map((card) => {
+        const likesStrings = (card.likes || []).map((id) => id.toString());
+        const savesStrings = (card.saves || []).map((id) => id.toString());
 
+        return {
+          ...card,
+          // Check if the viewer's ID is in the likes/saves arrays
+          isLiked: likesStrings.includes(userId.toString()),
+          isSaved: savesStrings.includes(userId.toString()),
+        };
+      });
+    }
     res.status(200).json({
       cards,
       currentPage: page,
@@ -135,21 +177,21 @@ export const getUserTravelCards = async (req, res) => {
 // Get cards that the user has Saved (With Search & Category)
 export const getSavedTravelCards = async (req, res) => {
   try {
-    const userId = req.userId;
+    const userId = req.query.userId;
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 6;
     const { search, category } = req.query; // Extract params
 
     const skip = (page - 1) * limit;
 
-    // Build Base Query (Liked + Approved)
+    // Build Base Query (Saved + Approved)
     const query = {
-      likes: userId,
+      saves: userId,
       status: "Approved",
     };
 
     // Add Category Filter
-    if (category && category !== "All") {
+    if (category && category !== "all" && category !== "All") {
       query.category = category;
     }
 
@@ -158,14 +200,27 @@ export const getSavedTravelCards = async (req, res) => {
       query.title = { $regex: search, $options: "i" };
     }
 
-    const cards = await TravelCard.find(query)
+    let cards = await TravelCard.find(query)
       .populate("creator", "username profileImage")
       .sort({ createdAt: -1 }) // Sorted by Card creation date
       .skip(skip)
-      .limit(limit);
+      .limit(limit)
+      .lean();
 
     const total = await TravelCard.countDocuments(query);
+    // If a user is logged in, calculate if they have liked/saved these cards
+    if (userId) {
+      cards = cards.map((card) => {
+        const likesStrings = (card.likes || []).map((id) => id.toString());
+        const savesStrings = (card.saves || []).map((id) => id.toString());
 
+        return {
+          ...card,
+          isLiked: likesStrings.includes(userId.toString()),
+          isSaved: savesStrings.includes(userId.toString()),
+        };
+      });
+    }
     res.status(200).json({
       cards,
       currentPage: page,
@@ -198,7 +253,7 @@ export const updateTravelCard = async (req, res) => {
     if (updateData.description) card.description = updateData.description;
     if (updateData.price) card.price = updateData.price;
     if (updateData.category) card.category = updateData.category;
-    if (updateData.images) card.images = updateData.images;
+    if (updateData.image) card.images = updateData.image;
 
     //  User changed the address
     if (updateData.address && updateData.address !== card.location.address) {
@@ -223,7 +278,7 @@ export const updateTravelCard = async (req, res) => {
 export const deleteTravelCard = async (req, res) => {
   try {
     const { cardId } = req.params;
-    const userId = req.userId;
+    const userId = req.body.userId;
 
     const deletedCard = await TravelCard.findOneAndDelete({
       _id: cardId,
@@ -246,7 +301,7 @@ export const deleteTravelCard = async (req, res) => {
 export const toggleLikeCard = async (req, res) => {
   try {
     const { cardId } = req.params;
-    const userId = req.userId;
+    const userId = req.body.userId;
 
     const card = await TravelCard.findById(cardId);
     if (!card) return res.status(404).json({ message: "Card not found" });
@@ -315,7 +370,7 @@ export const toggleLikeCard = async (req, res) => {
 export const toggleSaveCard = async (req, res) => {
   try {
     const { cardId } = req.params;
-    const userId = req.userId;
+    const userId = req.body.userId;
 
     const card = await TravelCard.findById(cardId);
     if (!card) return res.status(404).json({ message: "Card not found" });
@@ -355,8 +410,7 @@ export const toggleSaveCard = async (req, res) => {
 export const reportTravelCard = async (req, res) => {
   try {
     const { cardId } = req.params;
-    const userId = req.userId; // reporter's ID
-    const { reason } = req.body;
+    const userId = req.body.userId;
 
     // Find the card
     const card = await TravelCard.findById(cardId);
@@ -364,28 +418,27 @@ export const reportTravelCard = async (req, res) => {
       return res.status(404).json({ message: "Card not found" });
     }
 
-    // 2. Prevent Duplicate Reporting
+    // Prevent Duplicate Reporting
     const alreadyReported = card.reports.some(
       (r) => r.user.toString() === userId,
     );
 
     if (alreadyReported) {
       return res
-        .status(400)
+        .status(409)
         .json({ message: "You have already reported this card" });
     }
 
     // Add Report & Increment Counter
     card.reports.push({
       user: userId,
-      reason: reason || "No reason provided",
     });
 
     // Increment your new counter
     card.numberOfReports += 1;
 
     //  If 5 people report it, mark it suspicious automatically
-    const REPORT_THRESHOLD = 5;
+    const REPORT_THRESHOLD = 2;
 
     if (card.numberOfReports >= REPORT_THRESHOLD) {
       card.status = "Suspicious";

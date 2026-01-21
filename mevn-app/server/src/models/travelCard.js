@@ -20,8 +20,8 @@ const TravelCardSchema = new mongoose.Schema({
 
   category: {
     type: String,
-    enum: ["Itinerary", "Restaurant", "Accommodation", "Activity"],
-    default: "Itinerary",
+    enum: ["Attraction", "Restaurant", "Accommodation", "Activity"],
+    default: "Activity",
   },
 
   // DATI GEOGRAFICI
@@ -33,8 +33,9 @@ const TravelCardSchema = new mongoose.Schema({
   },
 
   price: {
-    type: Number,
-    default: 0,
+    type: String,
+    enum: ["Free", "$", "$$", "$$$"],
+    default: "Free",
   },
   // Array di ID per evitare voti doppi
   likes: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
@@ -53,7 +54,6 @@ const TravelCardSchema = new mongoose.Schema({
   reports: [
     {
       user: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-      reason: { type: String, required: true },
       createdAt: { type: Date, default: Date.now },
     },
   ],

@@ -18,6 +18,7 @@ const FeedbackSchema = new mongoose.Schema(
         "feedback.bugReport",
         "feedback.improvement",
         "feedback.generalFeedback",
+        "feedback.reportUser",
       ],
       required: true,
     },
