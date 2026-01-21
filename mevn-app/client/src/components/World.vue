@@ -441,10 +441,7 @@ onUnmounted(() => {
                       class="w-5 h-5"
                     />
                     <Car v-else-if="segment.type === 'Car'" class="w-5 h-5" />
-                    <Bike
-                      v-else-if="segment.type === 'Bicycle'"
-                      class="w-5 h-5"
-                    />
+                    <Bike v-else-if="segment.type === 'Bike'" class="w-5 h-5" />
                     <Bus v-else-if="segment.type === 'Bus'" class="w-5 h-5" />
                     <Bed
                       v-else-if="segment.type === 'Accommodation'"
