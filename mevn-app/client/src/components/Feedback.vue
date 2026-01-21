@@ -100,19 +100,21 @@ const fetchCommunityFeedback = async () => {
       implementationRate.value = data.stats.implementationRate;
 
       // Map feedbacks to display format
-      communityFeedback.value = data.feedbacks.map((f) => ({
-        id: f._id,
-        title: f.subject,
-        status: f.status,
-        user: f.userName,
-        time: getTimeAgo(f.createdAt),
-        rating: f.rating,
-        text: f.message,
-        upvotes: f.upvotes,
-        category: getCategoryDisplay(f.category),
-        icon: getCategoryIcon(f.category),
-        hasUpvoted: false, // Will be updated if user is logged in
-      }));
+      communityFeedback.value = data.feedbacks
+        .filter((f) => f.category !== "feedback.reportUser")
+        .map((f) => ({
+          id: f._id,
+          title: f.subject,
+          status: f.status,
+          user: f.userName,
+          time: getTimeAgo(f.createdAt),
+          rating: f.rating,
+          text: f.message,
+          upvotes: f.upvotes,
+          category: getCategoryDisplay(f.category),
+          icon: getCategoryIcon(f.category),
+          hasUpvoted: false, // Will be updated if user is logged in
+        }));
 
       console.log("✅ Loaded feedback:", communityFeedback.value.length);
     }
