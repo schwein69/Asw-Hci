@@ -7,7 +7,6 @@ import {
   Save,
   Check,
   X,
-  Trash2,
 } from "lucide-vue-next";
 import { getLanguage, t as translate } from "../utils/translations.js";
 
@@ -21,7 +20,6 @@ export default {
     Save,
     Check,
     X,
-    Trash2,
   },
   data() {
     return {
@@ -85,36 +83,8 @@ export default {
       ],
 
       // --- NEW: Forum Moderation Data ---
-      forumPosts: [
-        {
-          id: 1,
-          author: "Sarah M.",
-          initials: "SA",
-          time: "2h ago",
-          content:
-            "Best eco-friendly hotels in Copenhagen? Looking for sustainable options with good transport links.",
-          status: "approved",
-          reports: 0,
-        },
-        {
-          id: 2,
-          author: "John D.",
-          initials: "JO",
-          time: "5h ago",
-          content: "This platform is amazing! Saved 50kg CO2 on my last trip.",
-          status: "approved",
-          reports: 0,
-        },
-        {
-          id: 3,
-          author: "Anonymous",
-          initials: "AN",
-          time: "1h ago",
-          content: "Check out this spam link...",
-          status: "pending", // Pending review
-          reports: 3,
-        },
-      ],
+      forumPosts: [],
+      isForumLoading: false,
     };
   },
   computed: {
@@ -134,12 +104,56 @@ export default {
     this.setCurrentUserRole();
     if (this.isForumAdmin) {
       this.activeTab = "forum";
+      this.fetchForumPosts();
     }
   },
   beforeUnmount() {
     window.removeEventListener('languageChanged', this.handleLanguageChange);
   },
   methods: {
+    formatDate(dateString) {
+      if (!dateString) return "";
+      const date = new Date(dateString);
+      if (Number.isNaN(date.getTime())) return "";
+      return date.toLocaleDateString();
+    },
+    async fetchForumPosts() {
+      this.isForumLoading = true;
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) return;
+
+        const response = await fetch(
+          "http://localhost:3000/api/travelcards/moderation?status=Pending,Rejected,Approved",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch moderation posts");
+        }
+
+        const data = await response.json();
+        this.forumPosts = data.cards.map((card) => ({
+          id: card._id,
+          author: card.creator?.username || "Unknown",
+          initials: (card.creator?.username || "U")
+            .slice(0, 2)
+            .toUpperCase(),
+          time: this.formatDate(card.createdAt),
+          content: card.description,
+          status: card.status.toLowerCase(),
+          reports: card.numberOfReports || 0,
+        }));
+      } catch (error) {
+        console.error("Error loading moderation posts:", error);
+      } finally {
+        this.isForumLoading = false;
+      }
+    },
     setCurrentUserRole() {
       try {
         const storedUser = localStorage.getItem("user");
@@ -172,21 +186,60 @@ export default {
         : "bg-red-100 text-red-600";
     },
     // New methods for forum actions
-    approvePost(id) {
-      const post = this.forumPosts.find((p) => p.id === id);
-      if (post) {
-        post.status = "approved";
-        post.reports = 0;
+    async approvePost(id) {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) return;
+
+        const response = await fetch(
+          `http://localhost:3000/api/travelcards/${id}/status`,
+          {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ status: "Approved" }),
+          },
+        );
+
+        if (!response.ok) throw new Error("Failed to approve post");
+        const post = this.forumPosts.find((p) => p.id === id);
+        if (post) {
+          post.status = "approved";
+        }
         alert(this.t('admin.postApproved'));
+      } catch (error) {
+        console.error("Error approving post:", error);
       }
     },
-    rejectPost(id) {
-      this.forumPosts = this.forumPosts.filter((p) => p.id !== id);
-      alert(this.t('admin.postRejected'));
-    },
-    deletePost(id) {
-      this.forumPosts = this.forumPosts.filter((p) => p.id !== id);
-      alert(this.t('admin.postDeleted'));
+    async rejectPost(id) {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) return;
+
+        const response = await fetch(
+          `http://localhost:3000/api/travelcards/${id}/status`,
+          {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ status: "Rejected" }),
+          },
+        );
+
+        if (!response.ok) throw new Error("Failed to reject post");
+
+        const post = this.forumPosts.find((p) => p.id === id);
+        if (post) {
+          post.status = "rejected";
+        }
+        alert(this.t('admin.postRejected'));
+      } catch (error) {
+        console.error("Error rejecting post:", error);
+      }
     },
   },
 };
@@ -430,10 +483,18 @@ export default {
                 :class="
                   post.status === 'approved'
                     ? 'bg-emerald-500 text-white'
-                    : 'bg-amber-400 text-white'
+                    : post.status === 'rejected'
+                      ? 'bg-red-500 text-white'
+                      : 'bg-amber-400 text-white'
                 "
               >
-                {{ post.status === 'approved' ? t('admin.approved') : t('admin.pending') }}
+                {{
+                  post.status === 'approved'
+                    ? t('admin.approved')
+                    : post.status === 'rejected'
+                      ? t('admin.rejected')
+                      : t('admin.pending')
+                }}
               </span>
             </div>
           </div>
@@ -459,13 +520,6 @@ export default {
             >
               <X class="w-3.5 h-3.5" />
               {{ t('admin.reject') }}
-            </button>
-            <button
-              @click="deletePost(post.id)"
-              class="flex items-center gap-1.5 px-3 py-1.5 text-red-500 text-xs font-medium hover:text-red-700 transition-colors ml-auto"
-            >
-              <Trash2 class="w-3.5 h-3.5" />
-              {{ t('admin.delete') }}
             </button>
           </div>
         </div>
