@@ -25,11 +25,17 @@ const subject = ref("");
 const message = ref("");
 const isSubmitting = ref(false);
 
+// Report user specific
+const allUsers = ref([]);
+const selectedUserToReport = ref("");
+const isLoadingUsers = ref(false);
+
 const categories = [
   { key: "feedback.featureRequest", emoji: "💡" },
   { key: "feedback.bugReport", emoji: "🐛" },
   { key: "feedback.improvement", emoji: "⚡" },
   { key: "feedback.generalFeedback", emoji: "💬" },
+  { key: "feedback.reportUser", emoji: "🚨" },
 ];
 
 const communityFeedback = ref([]);
@@ -47,6 +53,10 @@ const t = computed(() => {
   return (key) => translate(key, language.value);
 });
 
+const isReportUser = computed(() => {
+  return selectedCategory.value === "feedback.reportUser";
+});
+
 // Methods
 const handleLanguageChange = (event) => {
   language.value = event.detail.language;
@@ -55,6 +65,25 @@ const handleLanguageChange = (event) => {
 const getUserId = () => {
   const user = JSON.parse(localStorage.getItem("user") || "{}");
   return user._id || user.id;
+};
+
+// Fetch all users for report dropdown
+const fetchAllUsers = async () => {
+  isLoadingUsers.value = true;
+  try {
+    const response = await fetch("http://localhost:3000/api/users/all");
+    const users = await response.json();
+
+    // Exclude current user from the list
+    const currentUserId = getUserId();
+    allUsers.value = users.filter((u) => u._id !== currentUserId);
+
+    console.log("Loaded users:", allUsers.value.length);
+  } catch (error) {
+    console.error("Failed to fetch users:", error);
+  } finally {
+    isLoadingUsers.value = false;
+  }
 };
 
 // Fetch community feedback from backend
@@ -334,6 +363,9 @@ onBeforeUnmount(() => {
             <div class="relative">
               <select
                 v-model="selectedCategory"
+                @change="
+                  selectedCategory === 'feedback.reportUser' && fetchAllUsers()
+                "
                 class="w-full p-3 bg-gray-50 rounded-xl border border-transparent focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all appearance-none cursor-pointer"
                 :class="
                   selectedCategory === '' ? 'text-gray-900' : 'text-gray-900'
@@ -363,7 +395,7 @@ onBeforeUnmount(() => {
             </div>
           </div>
 
-          <div class="space-y-1">
+          <div v-if="!isReportUser" class="space-y-1">
             <label class="text-xs font-bold text-gray-700 ml-1">{{
               t("feedback.yourRating")
             }}</label>
@@ -388,7 +420,42 @@ onBeforeUnmount(() => {
           </div>
         </div>
 
-        <div class="space-y-1">
+        <!-- User selector for Report User -->
+        <div v-if="isReportUser" class="space-y-1">
+          <label class="text-xs font-bold text-gray-700 ml-1"
+            >Select User to Report</label
+          >
+          <div class="relative">
+            <select
+              v-model="selectedUserToReport"
+              class="w-full p-3 bg-gray-50 rounded-xl border border-transparent focus:bg-white focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none transition-all appearance-none cursor-pointer"
+              required
+            >
+              <option value="" disabled selected>
+                {{ isLoadingUsers ? "Loading users..." : "Select a user" }}
+              </option>
+              <option
+                v-for="user in allUsers"
+                :key="user._id"
+                :value="user._id"
+                class="text-gray-900"
+              >
+                {{ user.username }} ({{ user.email }})
+              </option>
+            </select>
+            <div
+              class="absolute inset-y-0 right-3 flex items-center pointer-events-none text-gray-400"
+            >
+              <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20">
+                <path
+                  d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                />
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="!isReportUser" class="space-y-1">
           <label class="text-xs font-bold text-gray-700 ml-1">{{
             t("feedback.subject")
           }}</label>
@@ -400,7 +467,7 @@ onBeforeUnmount(() => {
           />
         </div>
 
-        <div class="space-y-1">
+        <div v-if="!isReportUser" class="space-y-1">
           <label class="text-xs font-bold text-gray-700 ml-1">{{
             t("feedback.message")
           }}</label>
@@ -414,14 +481,21 @@ onBeforeUnmount(() => {
 
         <button
           type="submit"
-          class="w-full bg-emerald-600 text-white py-3 rounded-xl font-bold hover:bg-emerald-700 transition-colors flex justify-center items-center gap-2 shadow-sm"
+          class="w-full py-3 rounded-xl font-bold transition-colors flex justify-center items-center gap-2 shadow-sm"
+          :class="[
+            isReportUser
+              ? 'bg-red-600 hover:bg-red-700 text-white'
+              : 'bg-emerald-600 hover:bg-emerald-700 text-white',
+            { 'opacity-70 cursor-not-allowed': isSubmitting },
+          ]"
           :disabled="isSubmitting"
-          :class="{ 'opacity-70 cursor-not-allowed': isSubmitting }"
         >
           <Send class="w-4 h-4" />
           {{
             isSubmitting
               ? t("feedback.submitting")
+              : isReportUser
+              ? "Report User"
               : t("feedback.submitFeedbackButton")
           }}
         </button>
