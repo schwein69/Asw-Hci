@@ -127,4 +127,3 @@ const goBackToLogin = () => {
     </div>
   </div>
 </template>
-

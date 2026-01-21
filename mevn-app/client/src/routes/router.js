@@ -74,6 +74,7 @@ const routes = [
   },
 ];
 
+
 const router = createRouter({
   history: createWebHistory(),
   routes,
@@ -81,7 +82,6 @@ const router = createRouter({
 
 const publicRoutes = ['Login', 'ResetPassword', 'ForgotPassword'];
 const publicPaths = ['/login', '/reset-password', '/forgot-password'];
-
 router.beforeEach((to, from, next) => {
   const token = localStorage.getItem('token');
   const isAuthenticated = !!token;
