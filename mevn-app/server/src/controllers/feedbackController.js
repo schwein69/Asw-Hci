@@ -8,6 +8,14 @@ export const createFeedback = async (req, res) => {
   try {
     const { userId, category, subject, message, rating } = req.body;
 
+    console.log("📝 Feedback submission:", {
+      userId,
+      category,
+      subject,
+      message,
+      rating,
+    });
+
     if (!userId || !category || !subject || !message || !rating) {
       return res.status(400).json({
         success: false,
@@ -22,6 +30,20 @@ export const createFeedback = async (req, res) => {
         success: false,
         message: "User not found",
       });
+    }
+
+    // Handle Report User - increment numberOfReports for the reported user
+    if (category === "feedback.reportUser") {
+      // Extract reported user ID from message
+      const reportedUserIdMatch = message.match(/User ID: ([a-f0-9]{24})/);
+      if (reportedUserIdMatch && reportedUserIdMatch[1]) {
+        const reportedUserId = reportedUserIdMatch[1];
+        console.log(`🚨 Reporting user: ${reportedUserId}`);
+        await User.findByIdAndUpdate(reportedUserId, {
+          $inc: { numberOfReports: 1 },
+        });
+        console.log(`✅ Incremented reports for user ${reportedUserId}`);
+      }
     }
 
     // Create feedback
@@ -42,7 +64,7 @@ export const createFeedback = async (req, res) => {
       feedback,
     });
   } catch (error) {
-    console.error("Error creating feedback:", error);
+    console.error("❌ Error creating feedback:", error);
     res.status(500).json({
       success: false,
       message: "Failed to submit feedback",

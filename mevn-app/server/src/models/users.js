@@ -44,6 +44,10 @@ const UserSchema = new mongoose.Schema({
     },
   },
 
+  numberOfReports: {
+    type: Number,
+    default: 0,
+  },
   // --- GAMIFICATION & ECO STATS ---
   ecoLevel: { type: Number, default: 1 },
   ecoPoints: { type: Number, default: 0 },

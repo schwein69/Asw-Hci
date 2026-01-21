@@ -422,6 +422,7 @@ const translations = {
       bugReport: "🐛 Bug Report",
       improvement: "⚡ Improvement",
       generalFeedback: "💬 General Feedback",
+      reportUser: "🚨 Report User",
       implemented: "Implemented",
       reviewing: "Reviewing",
       new: "New",
@@ -960,6 +961,7 @@ const translations = {
       bugReport: "🐛 Segnalazione Bug",
       improvement: "⚡ Miglioramento",
       generalFeedback: "💬 Feedback Generale",
+      reportUser: "🚨 Segnala Utente",
       implemented: "Implementato",
       reviewing: "In Revisione",
       new: "Nuovo",
@@ -1087,7 +1089,7 @@ export const getLanguage = () => {
 export const setLanguage = (lang) => {
   localStorage.setItem("language", lang);
   window.dispatchEvent(
-    new CustomEvent("languageChanged", { detail: { language: lang } }),
+    new CustomEvent("languageChanged", { detail: { language: lang } })
   );
 };
 
