@@ -120,6 +120,7 @@ export default {
             joined: this.formatDate(user.createdAt),
             role: user.role,
             status: user.status || "active",
+            reports: user.numberOfReports || 0,
             initials: (user.username || "U").slice(0, 2).toUpperCase(),
           }));
       } catch (error) {
@@ -494,15 +495,12 @@ export default {
                 <span class="font-bold text-gray-900">{{ user.name }}</span>
                 <span
                   class="text-[10px] px-1.5 py-0.5 rounded border border-gray-100"
-                  :class="getRoleColor(user.role)"
-                >
-                  {{ user.role }}
-                </span>
-                <span
-                  class="text-[10px] px-1.5 py-0.5 rounded border border-gray-100"
                   :class="getStatusColor(user.status)"
                 >
                   {{ user.status }}
+                </span>
+                <span class="text-[10px] px-1.5 py-0.5 rounded border border-gray-100 bg-gray-100 text-gray-600">
+                  {{ t('admin.reportsCount') }}: {{ user.reports }}
                 </span>
               </div>
               <div class="text-xs text-gray-500">
