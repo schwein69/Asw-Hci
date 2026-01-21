@@ -65,6 +65,12 @@ export const createFeedback = async (req, res) => {
     });
   } catch (error) {
     console.error("❌ Error creating feedback:", error);
+    if (error.name === "ValidationError") {
+      return res.status(400).json({
+        success: false,
+        message: error.message,
+      });
+    }
     res.status(500).json({
       success: false,
       message: "Failed to submit feedback",
