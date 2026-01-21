@@ -78,7 +78,9 @@ export const getCommunityFeedback = async (req, res) => {
   try {
     const { limit = 20, status, sortBy = "createdAt" } = req.query;
 
-    const query = {};
+    const query = {
+      category: { $ne: "feedback.reportUser" },
+    };
     if (status) {
       query.status = status;
     }
@@ -247,6 +249,51 @@ export const updateFeedbackStatus = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Failed to update feedback status",
+      error: error.message,
+    });
+  }
+};
+
+export const getReportedUserFeedback = async (req, res) => {
+  try {
+    const feedbacks = await Feedback.find({
+      category: "feedback.reportUser",
+    })
+      .sort({ createdAt: -1 })
+      .select("-__v")
+      .lean();
+
+    const mapped = feedbacks.map((feedback) => {
+      const reportedUserIdMatch = feedback.message?.match(
+        /User ID: ([a-f0-9]{24})/
+      );
+      const reportedUserId =
+        reportedUserIdMatch && reportedUserIdMatch[1]
+          ? reportedUserIdMatch[1]
+          : null;
+
+      const reportedUserNameMatch = feedback.subject?.match(/Report User:\s*(.+)$/);
+      const reportedUserName =
+        reportedUserNameMatch && reportedUserNameMatch[1]
+          ? reportedUserNameMatch[1]
+          : null;
+
+      return {
+        ...feedback,
+        reportedUserId,
+        reportedUserName,
+      };
+    });
+
+    res.status(200).json({
+      success: true,
+      feedbacks: mapped,
+    });
+  } catch (error) {
+    console.error("Error fetching reported user feedback:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch reported user feedback",
       error: error.message,
     });
   }
