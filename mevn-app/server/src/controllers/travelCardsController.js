@@ -13,7 +13,7 @@ export const createTravelCard = async (req, res) => {
       creator: data.creator,
       title: data.title,
       description: data.description,
-      images: data.images || [],
+      images: data.image || [],
       category: data.category,
       price: data.price,
       location: {
@@ -219,7 +219,7 @@ export const updateTravelCard = async (req, res) => {
     if (updateData.description) card.description = updateData.description;
     if (updateData.price) card.price = updateData.price;
     if (updateData.category) card.category = updateData.category;
-    if (updateData.images) card.images = updateData.images;
+    if (updateData.image) card.images = updateData.image;
 
     //  User changed the address
     if (updateData.address && updateData.address !== card.location.address) {

@@ -63,27 +63,7 @@ const newPlace = reactive({
 const isAddModalOpen = ref(false);
 const isDetailOpen = ref(false);
 const selectedPlace = ref(null);
-const isSubmitting = ref(false);
 
-const priceOptions = ["Free", "$", "$$", "$$$"];
-
-const getPriceLabel = (price) => {
-  const priceOptions = ["Free", "$", "$$", "$$$"];
-
-  switch (true) {
-    case !price || price === 0:
-      return priceOptions[0];
-
-    case price < 30:
-      return priceOptions[1];
-
-    case price < 60:
-      return priceOptions[2];
-
-    default:
-      return priceOptions[3];
-  }
-};
 const categories = computed(() => [
   { name: t.value("discover.all"), icon: null, key: "all" },
   { name: t.value("discover.restaurants"), icon: Utensils, key: "restaurants" },
@@ -142,7 +122,7 @@ const fetchPlaces = async (reset = false) => {
       location: card.location.address || "Unknown Location",
       coordinates: card.location.coordinates,
       category: card.category,
-      price: getPriceLabel(card.price),
+      price: card.price,
       description: card.description,
       image:
         card.images?.[0] || `https://picsum.photos/seed/${card._id}/600/400`,
@@ -215,51 +195,25 @@ const toggleSave = async (place) => {
     place.saved = !place.saved;
   }
 };
-
-const handleCreatePlace = async (formData) => {
-  isSubmitting.value = true;
-  try {
-    const payload = {
-      ...formData,
-      creator: getUserId(),
-    };
-
-    const response = await fetch("http://localhost:3000/api/travelcards", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-
-    if (!response.ok) throw new Error("Failed to create");
-
-    const newCard = await response.json();
-
-    // Add to top of list immediately
-    places.value.unshift({
-      id: newCard._id,
-      title: newCard.title,
-      location: newCard.location.address,
-      coordinates: newCard.location.coordinates,
-      category: newCard.category,
-      price: getPriceLabel(newCard.price),
-      description: newCard.description,
-      image:
-        newCard.images?.[0] ||
-        `https://picsum.photos/seed/${newCard._id}/600/400`,
-      user: { name: "You", avatar: "https://i.pravatar.cc/150?u=me" }, // Placeholder until refresh
-      likes: 0,
-      saved: false,
-      isLiked: false,
-    });
-
-    isAddModalOpen.value = false;
-  } catch (error) {
-    alert("Error creating post: " + error.message);
-  } finally {
-    isSubmitting.value = false;
-  }
+const handleCardCreated = (newCard) => {
+  places.value.unshift({
+    id: newCard._id,
+    title: newCard.title,
+    location: newCard.location?.address || "Unknown",
+    coordinates: newCard.location?.coordinates,
+    category: newCard.category,
+    price: newCard.price,
+    description: newCard.description,
+    image:
+      newCard.images?.[0] ||
+      `https://picsum.photos/seed/${newCard._id}/600/400`,
+    user: { name: "You", avatar: "https://i.pravatar.cc/150?u=me" },
+    likes: 0,
+    saved: false,
+    isLiked: false,
+  });
+  isAddModalOpen.value = false;
 };
-
 const reportPlace = async () => {
   if (!selectedPlace.value) return;
   const reason = prompt("Please provide a reason for reporting this content:");
@@ -270,7 +224,7 @@ const reportPlace = async () => {
       `http://localhost:3000/api/travelcards/${selectedPlace.value.id}/report`,
       {
         method: "POST",
-        headers: getAuthHeaders(),
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ reason, userId: getUserId() }),
       },
     );
@@ -570,144 +524,11 @@ onUnmounted(() => {
       ></span>
     </div>
 
-    <div
-      v-if="isAddModalOpen"
-      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
-      @click.self="isAddModalOpen = false"
-    >
-      <div
-        class="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-300"
-      >
-        <div
-          class="flex justify-between items-center p-5 border-b border-gray-100"
-        >
-          <h3 class="text-xl font-bold text-gray-800">Add New Place</h3>
-          <button
-            @click="isAddModalOpen = false"
-            class="btn btn-sm btn-circle btn-ghost"
-          >
-            <X class="w-5 h-5" />
-          </button>
-        </div>
-
-        <div
-          class="p-6 space-y-4 max-h-[70vh] overflow-y-auto custom-scrollbar"
-        >
-          <div class="form-control">
-            <label class="label"
-              ><span class="label-text font-semibold"
-                >Place Name <span class="text-red-500">*</span></span
-              ></label
-            >
-            <input
-              v-model="newPlace.title"
-              type="text"
-              class="input input-bordered w-full rounded-xl focus:input-success"
-              placeholder="e.g. Green Leaf Cafe"
-            />
-          </div>
-          <div class="grid grid-cols-2 gap-4">
-            <div class="form-control">
-              <label class="label"
-                ><span class="label-text font-semibold"
-                  >Location <span class="text-red-500">*</span></span
-                ></label
-              >
-              <input
-                v-model="newPlace.location"
-                type="text"
-                class="input input-bordered w-full rounded-xl focus:input-success"
-                placeholder="City"
-              />
-            </div>
-            <div class="form-control">
-              <label class="label"
-                ><span class="label-text font-semibold"
-                  >Category <span class="text-red-500">*</span></span
-                ></label
-              >
-              <select
-                v-model="newPlace.category"
-                class="select select-bordered w-full rounded-xl focus:select-success"
-              >
-                <option v-for="cat in categories.slice(1)" :key="cat.name">
-                  {{ cat.name }}
-                </option>
-              </select>
-            </div>
-          </div>
-          <div class="form-control">
-            <label class="label"
-              ><span class="label-text font-semibold">Price Range</span></label
-            >
-            <select
-              v-model="newPlace.price"
-              class="select select-bordered w-full rounded-xl focus:select-success"
-            >
-              <option value="">-- None --</option>
-              <option v-for="p in priceOptions" :key="p">{{ p }}</option>
-            </select>
-          </div>
-          <div class="form-control">
-            <label class="label"
-              ><span class="label-text font-semibold"
-                >Description <span class="text-red-500">*</span></span
-              ></label
-            >
-            <textarea
-              v-model="newPlace.description"
-              class="textarea textarea-bordered h-24 rounded-xl focus:textarea-success"
-              placeholder="Why is it eco-friendly?"
-            ></textarea>
-          </div>
-          <div class="form-control">
-            <label class="label"
-              ><span class="label-text font-semibold text-gray-500"
-                >Tags (Optional)</span
-              ></label
-            >
-            <input
-              v-model="newPlace.tags"
-              type="text"
-              class="input input-bordered w-full rounded-xl focus:input-success"
-              placeholder="Organic, Solar..."
-            />
-          </div>
-          <div class="form-control">
-            <label class="label"
-              ><span class="label-text font-semibold text-gray-500"
-                >Photo (Optional)</span
-              ></label
-            >
-            <div
-              class="border-2 border-dashed border-gray-200 rounded-xl p-6 text-center text-gray-400 hover:border-emerald-400 hover:text-emerald-500 cursor-pointer transition-colors"
-            >
-              <ImageIcon class="w-8 h-8 mx-auto mb-2" />
-              <span class="text-xs">Click to upload image</span>
-            </div>
-          </div>
-        </div>
-
-        <div
-          class="p-5 border-t border-gray-100 bg-gray-50 flex justify-end gap-3"
-        >
-          <button
-            @click="isAddModalOpen = false"
-            class="btn btn-ghost rounded-xl"
-          >
-            Cancel
-          </button>
-          <button
-            @click="submitRecommendation"
-            class="btn bg-emerald-500 hover:bg-emerald-600 text-white border-none rounded-xl px-8"
-            :disabled="isSubmitting"
-          >
-            <Loader2 v-if="isSubmitting" class="w-4 h-4 animate-spin" />
-            {{ isSubmitting ? "Posting..." : "Post" }}
-          </button>
-        </div>
-      </div>
-    </div>
+    <AddTravelCardModal
+      :is-open="isAddModalOpen"
+      @close="isAddModalOpen = false"
+      @create="handleCardCreated"
+    />
 
     <div
       v-if="isDetailOpen && selectedPlace"
