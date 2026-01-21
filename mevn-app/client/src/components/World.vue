@@ -104,6 +104,7 @@ const fetchActiveTrips = async () => {
             completed: false,
             seat: segment.seatNumber || null,
             gate: segment.gate || null,
+            arrivalGate: segment.arrivalGate || null,
             class: segment.class || null,
           };
         }),
@@ -502,6 +503,16 @@ onUnmounted(() => {
                   </div>
                   <div class="text-xs font-semibold text-gray-700">
                     {{ segment.gate }}
+                  </div>
+                </div>
+                <div v-if="segment.arrivalGate">
+                  <div
+                    class="text-[9px] text-gray-400 font-bold uppercase flex items-center gap-1"
+                  >
+                    <DoorOpen class="w-3 h-3" /> {{ t("world.gate") }}
+                  </div>
+                  <div class="text-xs font-semibold text-gray-700">
+                    {{ segment.arrivalGate }}
                   </div>
                 </div>
                 <div v-if="segment.seat">
