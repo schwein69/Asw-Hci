@@ -20,6 +20,9 @@ import {
   AlertCircle,
   Edit,
   Calendar,
+  Bed,
+  Flag,
+  Utensils,
 } from "lucide-vue-next";
 import actualMap from "./maps/actualMap.vue";
 import * as turf from "@turf/turf";
@@ -58,49 +61,53 @@ const fetchActiveTrips = async () => {
   try {
     console.log("🔍 Fetching active trips for userId:", userId);
     const response = await fetch(
-      `http://localhost:3000/api/trips/active/${userId}`
+      `http://localhost:3000/api/trips/active/${userId}`,
     );
     const activeTrips = await response.json();
     console.log("📦 Received active trips:", activeTrips);
 
     if (activeTrips && activeTrips.length > 0) {
-      // Transform backend data to World.vue format
       trips.value = activeTrips.map((trip) => ({
         id: trip._id,
         name: trip.title,
-        routes: trip.itinerary.map((segment, index) => ({
-          id: `${trip._id}-${index}`,
-          from: segment.fromLocation.name,
-          to: segment.toLocation.name,
-          type:
-            segment.transportMode.charAt(0).toUpperCase() +
-            segment.transportMode.slice(1),
-          transportName:
-            segment.transportMode.charAt(0).toUpperCase() +
-            segment.transportMode.slice(1),
-          transportCode: segment.transportNumber || "N/A",
-          date: new Date(segment.startTime).toLocaleDateString(),
-          depTime: new Date(segment.startTime).toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-          }),
-          arrTime: new Date(segment.endTime).toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-          }),
-          duration: `${Math.round(segment.estimatedDurationMinutes / 60)}h ${
-            segment.estimatedDurationMinutes % 60
-          }m`,
-          distance: segment.distanceKm,
-          co2: segment.co2Emission || 0,
-          cost: segment.price,
-          startCoords: segment.fromLocation.coordinates,
-          endCoords: segment.toLocation.coordinates,
-          completed: false,
-          seat: segment.seatNumber || null,
-          gate: segment.gate || null,
-          class: segment.class || null,
-        })),
+        routes: trip.itinerary.map((segment, index) => {
+          const rawMode =
+            segment.transportMode || segment.category || "General";
+
+          const displayMode =
+            rawMode.charAt(0).toUpperCase() + rawMode.slice(1);
+
+          return {
+            id: `${trip._id}-${index}`,
+            from: segment.fromLocation.name,
+            to: segment.toLocation.name,
+            type: displayMode,
+            transportName: displayMode,
+            transportCode: segment.transportNumber || "N/A",
+            date: new Date(segment.startTime).toLocaleDateString(),
+            depTime: new Date(segment.startTime).toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            }),
+            arrTime: new Date(segment.endTime).toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            }),
+            duration: `${Math.round(segment.estimatedDurationMinutes / 60)}h ${
+              segment.estimatedDurationMinutes % 60
+            }m`,
+            distance: segment.distanceKm,
+            co2: segment.co2 || 0,
+            cost: segment.price,
+            startCoords: segment.fromLocation.coordinates,
+            endCoords: segment.toLocation.coordinates,
+            completed: false,
+            seat: segment.seatNumber || null,
+            gate: segment.gate || null,
+            arrivalGate: segment.arrivalGate || null,
+            class: segment.class || null,
+          };
+        }),
       }));
       console.log("✅ Transformed trips:", trips.value);
     } else {
@@ -122,7 +129,7 @@ const getTripStats = (trip) => {
     totalCost: trip.routes.reduce((acc, curr) => acc + curr.cost, 0),
     totalDistance: trip.routes.reduce(
       (acc, curr) => acc + (curr.distance || 0),
-      0
+      0,
     ),
   };
 };
@@ -439,7 +446,15 @@ onUnmounted(() => {
                       class="w-5 h-5"
                     />
                     <Bus v-else-if="segment.type === 'Bus'" class="w-5 h-5" />
-                    <Car v-else class="w-5 h-5" />
+                    <Bed
+                      v-else-if="segment.type === 'Accommodation'"
+                      class="w-5 h-5"
+                    />
+                    <Utensils
+                      v-else-if="segment.type === 'Restaurant'"
+                      class="w-5 h-5"
+                    />
+                    <Flag v-else class="w-5 h-5" />
                   </div>
                   <div>
                     <div
@@ -488,6 +503,16 @@ onUnmounted(() => {
                   </div>
                   <div class="text-xs font-semibold text-gray-700">
                     {{ segment.gate }}
+                  </div>
+                </div>
+                <div v-if="segment.arrivalGate">
+                  <div
+                    class="text-[9px] text-gray-400 font-bold uppercase flex items-center gap-1"
+                  >
+                    <DoorOpen class="w-3 h-3" /> {{ t("world.gate") }}
+                  </div>
+                  <div class="text-xs font-semibold text-gray-700">
+                    {{ segment.arrivalGate }}
                   </div>
                 </div>
                 <div v-if="segment.seat">

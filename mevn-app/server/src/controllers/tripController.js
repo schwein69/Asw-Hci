@@ -116,60 +116,6 @@ export const getTripById = async (req, res) => {
   }
 };
 
-// Create new trip
-export const createTrip = async (req, res) => {
-  try {
-    const tripData = req.body;
-
-    // Calculate totals from itinerary
-    let totalDurationHours = 0;
-    let totalDistanceKm = 0;
-    let totalPrice = 0;
-    let totalCo2Emission = 0;
-    const transportModeBreakdown = new Map();
-
-    if (tripData.itinerary && tripData.itinerary.length > 0) {
-      tripData.itinerary.forEach((segment) => {
-        // Add to totals
-        if (segment.durationHours) totalDurationHours += segment.durationHours;
-        if (segment.distanceKm) totalDistanceKm += segment.distanceKm;
-        if (segment.price) totalPrice += segment.price;
-        if (segment.co2) totalCo2Emission += segment.co2;
-
-        // Track transport modes
-        if (segment.category === "Transport" && segment.transportMode) {
-          const mode = segment.transportMode;
-          const current = transportModeBreakdown.get(mode) || 0;
-          transportModeBreakdown.set(mode, current + (segment.distanceKm || 0));
-        }
-      });
-    }
-
-    // Calculate CO2 saved (compared to average car travel)
-    const avgCarCo2PerKm = 0.171; // kg CO2 per km
-    const carCo2 = totalDistanceKm * avgCarCo2PerKm;
-    const co2Saved = Math.max(0, carCo2 - totalCo2Emission);
-
-    const newTrip = new Trip({
-      ...tripData,
-      totalDurationHours,
-      totalDistanceKm,
-      totalPrice,
-      totalCo2Emission,
-      co2Saved,
-      transportModeBreakdown: Object.fromEntries(transportModeBreakdown),
-    });
-
-    const savedTrip = await newTrip.save();
-    res.status(201).json(savedTrip);
-  } catch (error) {
-    console.error("Error creating trip:", error);
-    res
-      .status(500)
-      .json({ message: "Failed to create trip", error: error.message });
-  }
-};
-
 // Update trip
 export const updateTrip = async (req, res) => {
   try {
@@ -199,15 +145,13 @@ export const updateTrip = async (req, res) => {
 
       const avgCarCo2PerKm = 0.171;
       const carCo2 = totalDistanceKm * avgCarCo2PerKm;
-      const co2Saved = Math.max(0, carCo2 - totalCo2Emission);
 
       updateData.totalDurationHours = totalDurationHours;
       updateData.totalDistanceKm = totalDistanceKm;
       updateData.totalPrice = totalPrice;
       updateData.totalCo2Emission = totalCo2Emission;
-      updateData.co2Saved = co2Saved;
       updateData.transportModeBreakdown = Object.fromEntries(
-        transportModeBreakdown
+        transportModeBreakdown,
       );
     }
 
@@ -257,7 +201,7 @@ export const markTripCompleted = async (req, res) => {
     const trip = await Trip.findByIdAndUpdate(
       tripId,
       { status: "completed", endTime: new Date() },
-      { new: true }
+      { new: true },
     );
 
     if (!trip) {
@@ -279,7 +223,7 @@ export const markTripCompleted = async (req, res) => {
           const result = await updateAchievementProgress(
             userId,
             "rail_rider",
-            trainKm
+            trainKm,
           );
           if (result?.unlockedTiers?.length > 0) {
             unlockedAchievements.push(...result.unlockedTiers);
@@ -292,7 +236,7 @@ export const markTripCompleted = async (req, res) => {
           const result = await updateAchievementProgress(
             userId,
             "bike_champion",
-            bikeKm
+            bikeKm,
           );
           if (result?.unlockedTiers?.length > 0) {
             unlockedAchievements.push(...result.unlockedTiers);
@@ -305,7 +249,7 @@ export const markTripCompleted = async (req, res) => {
           const result = await updateAchievementProgress(
             userId,
             "walking_warrior",
-            walkKm
+            walkKm,
           );
           if (result?.unlockedTiers?.length > 0) {
             unlockedAchievements.push(...result.unlockedTiers);
@@ -318,20 +262,25 @@ export const markTripCompleted = async (req, res) => {
           const result = await updateAchievementProgress(
             userId,
             "bus_believer",
-            busKm
+            busKm,
           );
           if (result?.unlockedTiers?.length > 0) {
             unlockedAchievements.push(...result.unlockedTiers);
           }
         }
       }
-
+      const avgCarCo2PerKm = 0.171;
+      const estimatedCarCo2 = (trip.totalDistanceKm || 0) * avgCarCo2PerKm;
+      const co2Saved = Math.max(
+        0,
+        estimatedCarCo2 - (trip.totalCo2Emission || 0),
+      );
       // Carbon saved achievement
-      if (trip.co2Saved > 0) {
+      if (co2Saved > 0) {
         const result = await updateAchievementProgress(
           userId,
           "carbon_saver",
-          trip.co2Saved
+          co2Saved,
         );
         if (result?.unlockedTiers?.length > 0) {
           unlockedAchievements.push(...result.unlockedTiers);
@@ -339,7 +288,7 @@ export const markTripCompleted = async (req, res) => {
 
         // Update user's total CO2 saved
         await User.findByIdAndUpdate(userId, {
-          $inc: { totalCo2Saved: trip.co2Saved },
+          $inc: { totalCo2Saved: co2Saved },
         });
       }
 
@@ -347,7 +296,7 @@ export const markTripCompleted = async (req, res) => {
       const completedTripsResult = await updateAchievementProgress(
         userId,
         "trip_collector",
-        1
+        1,
       );
       if (completedTripsResult?.unlockedTiers?.length > 0) {
         unlockedAchievements.push(...completedTripsResult.unlockedTiers);
@@ -357,7 +306,7 @@ export const markTripCompleted = async (req, res) => {
       await updateUserStreak(userId);
 
       console.log(
-        `Trip ${tripId} completed. Unlocked ${unlockedAchievements.length} achievement tiers.`
+        `Trip ${tripId} completed. Unlocked ${unlockedAchievements.length} achievement tiers.`,
       );
       if (unlockedAchievements.length > 0) {
         unlockedAchievements.forEach((tier) => {

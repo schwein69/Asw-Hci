@@ -5,7 +5,6 @@ import {
   getActiveTrips,
   getCompletedTripsAuth,
   getTripById,
-  createTrip,
   updateTrip,
   deleteTrip,
   markTripCompleted,
@@ -28,9 +27,6 @@ router.get("/completed", authenticate, getCompletedTripsAuth);
 
 // Get single trip by ID
 router.get("/:tripId", getTripById);
-
-// Create new trip
-router.post("/", createTrip);
 
 // Update trip
 router.put("/:tripId", updateTrip);

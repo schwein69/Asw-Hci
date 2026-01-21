@@ -7,9 +7,11 @@ export const useTripStore = defineStore("trip", () => {
     name: "",
     routes: [],
   });
-  // Database locale
   const savedTrips = ref([]);
-
+  const destinationFromDiscoverToPlan = ref("");
+  function setDestination(address) {
+    destinationFromDiscoverToPlan.value = address;
+  }
   function setTripToEdit(tripFromDashboard) {
     const convertedRoutes = tripFromDashboard.routes.map((route) => ({
       id: route.id,
@@ -37,7 +39,7 @@ export const useTripStore = defineStore("trip", () => {
     };
   }
 
-  // Salva i dati dal Planner nel Database Locale
+  // Salva i dati dal Planner
   function saveTrip(tripData) {
     // Controlla se stiamo aggiornando un viaggio esistente o creandone uno nuovo
     const index = savedTrips.value.findIndex((t) => t.id === tripData.id);
@@ -55,5 +57,12 @@ export const useTripStore = defineStore("trip", () => {
     currentTrip.value = { id: null, name: "", routes: [] };
   }
 
-  return { currentTrip, setTripToEdit, clearTrip, saveTrip };
+  return {
+    currentTrip,
+    setTripToEdit,
+    clearTrip,
+    saveTrip,
+    setDestination,
+    destinationFromDiscoverToPlan,
+  };
 });

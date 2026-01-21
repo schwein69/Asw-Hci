@@ -497,6 +497,7 @@ const translations = {
       delete: "Delete",
       edit: "Edit",
       close: "Close",
+      navigate: "Navigate",
     },
     admin: {
       adminPanel: "Admin Panel",
@@ -1058,6 +1059,7 @@ const translations = {
       delete: "Elimina",
       edit: "Modifica",
       close: "Chiudi",
+      navigate: "Naviga",
     },
     admin: {
       adminPanel: "Pannello Amministratore",
