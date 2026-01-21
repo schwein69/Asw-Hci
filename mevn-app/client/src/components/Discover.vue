@@ -19,9 +19,12 @@ import {
   User,
 } from "lucide-vue-next";
 import { getLanguage, t as translate } from "../utils/translations.js";
+import { useRouter } from "vue-router";
+import { useRewardsStore } from "../data/rewardsStore.js";
 
+const rewardsStore = useRewardsStore();
+const router = useRouter();
 const language = ref(getLanguage());
-
 const t = computed(() => (key) => translate(key, language.value));
 
 const handleLanguageChange = (event) => {
@@ -39,9 +42,10 @@ onUnmounted(() => {
 const places = ref([]);
 const loading = ref(false);
 const page = ref(1);
+const hasMore = ref(true); // Track if backend has more data
 const activeFilter = ref("All");
 const searchQuery = ref("");
-const viewMode = ref("all");
+const viewMode = ref("all"); // 'all', 'my-posts', 'saved'
 const observer = ref(null);
 const bottomSentinel = ref(null);
 
@@ -79,14 +83,8 @@ watch(
   () => isAddModalOpen.value || isDetailOpen.value,
   (isOpen) => {
     document.body.style.overflow = isOpen ? "hidden" : "";
-  }
+  },
 );
-
-const getLeafCount = (likes) => {
-  if (likes > 300) return 3;
-  if (likes >= 100) return 2;
-  return 1;
-};
 
 // --- FILTERING LOGIC ---
 const filteredPlaces = computed(() => {
@@ -109,8 +107,9 @@ const filteredPlaces = computed(() => {
     return matchesCategory && matchesSearch;
   });
 });
+const cats = ["Restaurants", "Hotels", "Attractions", "Activities"];
 
-// --- FAKE DATA ---
+/*// --- FAKE DATA ---
 const generateMockData = (count) => {
   const titles = [
     "Green Harvest Café",
@@ -132,7 +131,7 @@ const generateMockData = (count) => {
     "Vancouver, Canada",
     "Portland, USA",
   ];
-  const prices = ["$$", "$$$", "$", "Free", null];
+  const prices = ["$$", "$$$", "$", "Free"];
   const cats = ["Restaurants", "Hotels", "Attractions", "Activities"];
 
   return Array.from({ length: count }).map((_, i) => {
@@ -151,17 +150,18 @@ const generateMockData = (count) => {
       score: 85 + Math.floor(Math.random() * 15),
       tags: ["Organic", "Local", "Zero Waste"],
       user: {
+        id: 1 + Math.floor(Math.random() * 9000),
         name: "Sarah M.",
         avatar: `https://i.pravatar.cc/150?u=${Math.random()}`,
       },
       likes: likes,
       shares: 40 + Math.floor(Math.random() * 200),
-      saved: Math.random() > 0.8, // Randomly save some items for demo
+      saved: false,
     };
   });
-};
+};*/
 
-const loadMorePlaces = async () => {
+/*const loadMorePlaces = async () => {
   if (loading.value) return;
   loading.value = true;
   setTimeout(() => {
@@ -171,7 +171,92 @@ const loadMorePlaces = async () => {
     loading.value = false;
   }, 800);
 };
+*/
+const getUserId = () => {
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  return user._id || user.id;
+};
+// --- DATA FETCHING ---
+const fetchPlaces = async (reset = false) => {
+  if (loading.value || (!hasMore.value && !reset)) return;
+  loading.value = true;
+  if (reset) {
+    page.value = 1;
+    places.value = [];
+    hasMore.value = true;
+  }
+  const userId = getUserId();
 
+  try {
+    let url = "";
+    const params = new URLSearchParams({
+      page: page.value,
+      limit: 6,
+      search: searchQuery.value,
+      category: activeFilter.value !== "All" ? activeFilter.value : "",
+    });
+
+    if (viewMode.value === "my-posts") {
+      url = `http://localhost:3000/api/travelcards/myTravelCards?${params}`;
+    } else if (viewMode.value === "saved") {
+      url = `http://localhost:3000/api/travelcards/savedTravelCards?${params}`;
+    } else {
+      url = `http://localhost:3000/api/travelcards/discover?${params}`;
+    }
+
+    const response = await fetch(url, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+    });
+
+    if (!response.ok) throw new Error("Failed to fetch places");
+
+    const data = await response.json();
+
+    // Map backend data to frontend structure if needed
+    // Assuming backend returns { cards: [], hasMore: bool }
+    const newPlaces = data.cards.map((card) => ({
+      id: card._id,
+      title: card.title,
+      location: card.location.address || "Unknown Location",
+      category: card.category,
+      price: card.price > 0 ? "$".repeat(card.price) : "Free", // Adjust logic based on backend price format
+      description: card.description,
+      image:
+        card.images?.[0] || `https://picsum.photos/seed/${card._id}/600/400`,
+      user: {
+        id: card.creator._id,
+        name: card.creator.username,
+        avatar:
+          card.creator.profileImage ||
+          `https://i.pravatar.cc/150?u=${card.creator._id}`,
+      },
+      likes: card.numberOfLikes || 0,
+      shares: 0,
+      saved: card.isSaved || false, // Ensure backend sends this boolean
+    }));
+
+    if (reset) {
+      places.value = newPlaces;
+    } else {
+      places.value.push(...newPlaces);
+    }
+
+    hasMore.value = data.hasMore;
+    if (hasMore.value) page.value++;
+  } catch (error) {
+    console.error("Error loading places:", error);
+  } finally {
+    loading.value = false;
+  }
+};
+
+// Re-fetch when filters change
+watch([activeFilter, searchQuery, viewMode], () => {
+  fetchPlaces(true); // Reset and fetch new data
+});
+
+const loadMorePlaces = () => fetchPlaces();
 // --- ACTIONS ---
 
 const openDetail = (place) => {
@@ -238,16 +323,18 @@ const submitRecommendation = () => {
   }, 1500);
 };
 
-function openProfile(userName) {
-  alert(`Opening profile for ${userName}...`);
-}
+const goToUserProfile = (userId) => {
+  rewardsStore.setTargetUser(userId);
+  router.push("/Rewards");
+};
+
 onMounted(() => {
   loadMorePlaces();
   observer.value = new IntersectionObserver(
     (entries) => {
       if (entries[0].isIntersecting) loadMorePlaces();
     },
-    { root: null, threshold: 0.1 }
+    { root: null, threshold: 0.1 },
   );
   if (bottomSentinel.value) observer.value.observe(bottomSentinel.value);
 });
@@ -699,7 +786,10 @@ onUnmounted(() => {
           >
             <div class="flex items-center gap-3">
               <div class="avatar placeholder">
-                <div class="bg-neutral text-neutral-content rounded-full w-10">
+                <div
+                  class="bg-neutral text-neutral-content rounded-full w-10 cursor-pointer"
+                  @click.stop="goToUserProfile(selectedPlace.user.id)"
+                >
                   <img :src="selectedPlace.user.avatar" />
                 </div>
               </div>

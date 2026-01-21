@@ -1,4 +1,6 @@
-<script>
+<script setup>
+import { ref, computed, onMounted, onBeforeUnmount } from "vue";
+import { io } from "socket.io-client";
 import {
   Clock,
   Bell,
@@ -21,273 +23,613 @@ import {
   CloudLightning, // Added for storm
 } from "lucide-vue-next";
 import { getLanguage, t as translate } from "../utils/translations.js";
+import { useRouter } from "vue-router";
 
-export default {
-  name: "Live",
-  components: {
-    Clock,
-    Bell,
-    MapPin,
-    Calendar,
-    TrainFront,
-    AlertTriangle,
-    Info,
-    Cloud,
-    User,
-    CheckCircle,
-    TrendingUp,
-    TrendingDown,
-    Minus,
-    Sun,
-    CloudRain,
-    Wind,
-    CloudSun,
-    Snowflake,
-    CloudLightning,
-  },
-  data() {
-    return {
-      language: getLanguage(),
-      hasUpcomingTrip: true,
-      trip: {
-        title: "European Adventure",
-        status: "Departure in 24 hours",
-        from: "Paris",
-        to: "Berlin",
-        type: "Train",
-        date: "12/17/2025",
-        time: "08:30 AM",
-      },
-      notifications: [
-        {
-          id: 1,
-          type: "social",
-          city: "Berlin",
-          time: "3:55:49 PM",
-          message: "New interaction on your post",
-          icon: "Bell",
-          color: "bg-purple-100 text-purple-600",
-        },
-        {
-          id: 2,
-          type: "weather",
-          city: "Amsterdam",
-          time: "3:53:58 PM",
-          message: "Weather conditions updated",
-          icon: "Cloud",
-          color: "bg-blue-100 text-blue-600",
-        },
-        {
-          id: 3,
-          type: "social",
-          city: "Berlin",
-          time: "3:52:58 PM",
-          message: "New interaction on your post",
-          icon: "Bell",
-          color: "bg-purple-100 text-purple-600",
-        },
-        {
-          id: 4,
-          type: "weather",
-          city: "Amsterdam",
-          time: "3:35:58 PM",
-          message: "Weather conditions updated",
-          icon: "Cloud",
-          color: "bg-blue-100 text-blue-600",
-        },
-        {
-          id: 5,
-          type: "weather",
-          city: "Barcelona",
-          time: "3:30:58 PM",
-          message: "Weather conditions updated",
-          icon: "Cloud",
-          color: "bg-blue-100 text-blue-600",
-        },
-        {
-          id: 6,
-          type: "location",
-          city: "Copenhagen",
-          time: "3:27:58 PM",
-          message: "New eco-friendly location recommended",
-          icon: "MapPin",
-          color: "bg-emerald-100 text-emerald-600",
-        },
-        {
-          id: 7,
-          type: "user",
-          city: "Copenhagen",
-          time: "12:33:29 PM",
-          message: "Tourist density changed",
-          icon: "User",
-          color: "bg-yellow-100 text-yellow-600",
-        },
-        {
-          id: 8,
-          type: "location",
-          city: "Copenhagen",
-          time: "12:32:59 PM",
-          message: "New eco-friendly location recommended",
-          icon: "MapPin",
-          color: "bg-emerald-100 text-emerald-600",
-        },
-      ],
+// Router
+const router = useRouter();
 
-      locations: [
-        {
-          id: 1,
-          name: "Amsterdam",
-          lat: 52.3676,
-          lon: 4.9041,
-          live: true,
-          weather: {
-            condition: "Loading...",
-            temp: "--",
-            icon: "Cloud",
-            alert: false,
-          },
-          crowd: {
-            levelKey: "live.lowDensity",
-            value: 45,
-            trend: "Up",
-            trendIcon: "TrendingUp",
-            color: "text-emerald-600",
-            barColor: "bg-emerald-300",
-          },
-          alternative: null,
-        },
-        {
-          id: 2,
-          name: "Barcelona",
-          lat: 41.3851,
-          lon: 2.1734,
-          live: true,
-          weather: {
-            condition: "Loading...",
-            temp: "--",
-            icon: "Cloud",
-            alert: false,
-          },
-          crowd: {
-            levelKey: "live.highDensity",
-            value: 81,
-            trend: "Stable",
-            trendIcon: "Minus",
-            color: "text-red-500",
-            barColor: "bg-red-300",
-          },
-          alternative: "Visit during off-peak hours (early morning or evening)",
-        },
-        {
-          id: 3,
-          name: "Copenhagen",
-          lat: 55.6761,
-          lon: 12.5683,
-          live: true,
-          weather: {
-            condition: "Loading...",
-            temp: "--",
-            icon: "Cloud",
-            alert: false,
-          },
-          crowd: {
-            levelKey: "live.mediumDensity",
-            value: 56,
-            trend: "Up",
-            trendIcon: "TrendingUp",
-            color: "text-orange-500",
-            barColor: "bg-orange-300",
-          },
-          alternative: "Consider indoor activities or postpone visit",
-        },
-        {
-          id: 4,
-          name: "Berlin",
-          lat: 52.52,
-          lon: 13.405,
-          live: true,
-          weather: {
-            condition: "Loading...",
-            temp: "--",
-            icon: "Cloud",
-            alert: false,
-          },
-          crowd: {
-            levelKey: "live.mediumDensity",
-            value: 61,
-            trend: "Down",
-            trendIcon: "TrendingDown",
-            color: "text-orange-500",
-            barColor: "bg-orange-300",
-          },
-          alternative: null,
-        },
-      ],
-    };
-  },
-  computed: {
-    t() {
-      return (key) => translate(key, this.language);
-    },
-  },
-  mounted() {
-    this.fetchRealWeather();
-    window.addEventListener('languageChanged', this.handleLanguageChange);
-  },
-  beforeUnmount() {
-    window.removeEventListener('languageChanged', this.handleLanguageChange);
-  },
-  methods: {
-    handleLanguageChange(event) {
-      this.language = event.detail.language;
-    },
-    dismissReminder() {
-      this.hasUpcomingTrip = false;
-    },
-    markAllRead() {
-      alert("All notifications marked as read!");
-    },
-    // Fetch Real Weather Data
-    async fetchRealWeather() {
-      for (const loc of this.locations) {
-        try {
-          const response = await fetch(
-            `https://api.open-meteo.com/v1/forecast?latitude=${loc.lat}&longitude=${loc.lon}&current_weather=true`
-          );
-          const data = await response.json();
+// Socket.io connection
+const socket = ref(null);
 
-          if (data.current_weather) {
-            const { temperature, weathercode } = data.current_weather;
-            const weatherInfo = this.getWeatherInfo(weathercode);
+// Reactive state
+const language = ref(getLanguage());
+const hasUpcomingTrip = ref(false);
+const trip = ref(null);
+const activeFilter = ref("all"); // Filter state: all, weather, tourist, social, location
 
-            // Update the location object with real data
-            loc.weather.temp = `${Math.round(temperature)}°C`;
-            loc.weather.condition = weatherInfo.text;
-            loc.weather.icon = weatherInfo.icon;
-            loc.weather.alert = weatherInfo.alert;
-          }
-        } catch (error) {
-          console.error(`Failed to fetch weather for ${loc.name}`, error);
-          loc.weather.condition = this.t('live.weatherConditions.unavailable');
-        }
-      }
-    },
-    // changing codes to icons ---
-    getWeatherInfo(code) {
-      if (code === 0) return { text: "Sunny", icon: "Sun", alert: false };
-      if (code <= 3)
-        return { text: "Partly Cloudy", icon: "CloudSun", alert: false };
-      if (code <= 48) return { text: "Foggy", icon: "Cloud", alert: true };
-      if (code <= 67) return { text: "Rainy", icon: "CloudRain", alert: true };
-      if (code <= 77) return { text: "Snowy", icon: "Snowflake", alert: true };
-      if (code <= 82)
-        return { text: "Showers", icon: "CloudRain", alert: true };
-      if (code <= 99)
-        return { text: "Stormy", icon: "CloudLightning", alert: true };
-      return { text: "Unknown", icon: "Cloud", alert: false };
-    },
+const notifications = ref([
+  {
+    id: 1,
+    type: "social",
+    city: "Berlin",
+    time: "3:55:49 PM",
+    message: "New interaction on your post",
+    icon: "Bell",
+    color: "bg-purple-100 text-purple-600",
   },
+  {
+    id: 2,
+    type: "weather",
+    city: "Amsterdam",
+    time: "3:53:58 PM",
+    message: "Weather conditions updated",
+    icon: "Cloud",
+    color: "bg-blue-100 text-blue-600",
+  },
+  {
+    id: 3,
+    type: "social",
+    city: "Berlin",
+    time: "3:52:58 PM",
+    message: "New interaction on your post",
+    icon: "Bell",
+    color: "bg-purple-100 text-purple-600",
+  },
+  {
+    id: 4,
+    type: "weather",
+    city: "Amsterdam",
+    time: "3:35:58 PM",
+    message: "Weather conditions updated",
+    icon: "Cloud",
+    color: "bg-blue-100 text-blue-600",
+  },
+  {
+    id: 5,
+    type: "weather",
+    city: "Barcelona",
+    time: "3:30:58 PM",
+    message: "Weather conditions updated",
+    icon: "Cloud",
+    color: "bg-blue-100 text-blue-600",
+  },
+  {
+    id: 6,
+    type: "location",
+    city: "Copenhagen",
+    time: "3:27:58 PM",
+    message: "New eco-friendly location recommended",
+    icon: "MapPin",
+    color: "bg-emerald-100 text-emerald-600",
+  },
+  {
+    id: 7,
+    type: "user",
+    city: "Copenhagen",
+    time: "12:33:29 PM",
+    message: "Tourist density changed",
+    icon: "User",
+    color: "bg-yellow-100 text-yellow-600",
+  },
+  {
+    id: 8,
+    type: "location",
+    city: "Copenhagen",
+    time: "12:32:59 PM",
+    message: "New eco-friendly location recommended",
+    icon: "MapPin",
+    color: "bg-emerald-100 text-emerald-600",
+  },
+]);
+
+const locations = ref([
+  {
+    id: 1,
+    name: "Amsterdam",
+    lat: 52.3676,
+    lon: 4.9041,
+    live: true,
+    weather: {
+      condition: "Loading...",
+      temp: "--",
+      icon: "Cloud",
+      alert: false,
+    },
+    crowd: {
+      levelKey: "live.lowDensity",
+      value: 45,
+      trend: "Up",
+      trendIcon: "TrendingUp",
+      color: "text-emerald-600",
+      barColor: "bg-emerald-300",
+    },
+    alternative: null,
+  },
+  {
+    id: 2,
+    name: "Barcelona",
+    lat: 41.3851,
+    lon: 2.1734,
+    live: true,
+    weather: {
+      condition: "Loading...",
+      temp: "--",
+      icon: "Cloud",
+      alert: false,
+    },
+    crowd: {
+      levelKey: "live.highDensity",
+      value: 81,
+      trend: "Stable",
+      trendIcon: "Minus",
+      color: "text-red-500",
+      barColor: "bg-red-300",
+    },
+    alternative: "Visit during off-peak hours (early morning or evening)",
+  },
+  {
+    id: 3,
+    name: "Copenhagen",
+    lat: 55.6761,
+    lon: 12.5683,
+    live: true,
+    weather: {
+      condition: "Loading...",
+      temp: "--",
+      icon: "Cloud",
+      alert: false,
+    },
+    crowd: {
+      levelKey: "live.mediumDensity",
+      value: 56,
+      trend: "Up",
+      trendIcon: "TrendingUp",
+      color: "text-orange-500",
+      barColor: "bg-orange-300",
+    },
+    alternative: "Consider indoor activities or postpone visit",
+  },
+  {
+    id: 4,
+    name: "Berlin",
+    lat: 52.52,
+    lon: 13.405,
+    live: true,
+    weather: {
+      condition: "Loading...",
+      temp: "--",
+      icon: "Cloud",
+      alert: false,
+    },
+    crowd: {
+      levelKey: "live.mediumDensity",
+      value: 61,
+      trend: "Down",
+      trendIcon: "TrendingDown",
+      color: "text-orange-500",
+      barColor: "bg-orange-300",
+    },
+    alternative: null,
+  },
+]);
+
+// Icon mapping for dynamic components
+const iconComponents = {
+  Bell,
+  Cloud,
+  MapPin,
+  User,
+  TrendingUp,
+  TrendingDown,
+  Minus,
+  Sun,
+  CloudRain,
+  Wind,
+  CloudSun,
+  Snowflake,
+  CloudLightning,
 };
+
+// Computed properties
+const t = computed(() => {
+  return (key) => translate(key, language.value);
+});
+
+const filteredNotifications = computed(() => {
+  // Filter by type if not "all"
+  if (activeFilter.value === "all") {
+    return notifications.value;
+  }
+  return notifications.value.filter((n) => n.type === activeFilter.value);
+});
+
+const notificationCounts = computed(() => {
+  const counts = {
+    all: notifications.value.length,
+    weather: 0,
+    tourist: 0,
+    social: 0,
+    location: 0,
+  };
+  notifications.value.forEach((n) => {
+    if (counts[n.type] !== undefined) {
+      counts[n.type]++;
+    }
+  });
+  return counts;
+});
+
+// Methods
+const handleLanguageChange = (event) => {
+  language.value = event.detail.language;
+};
+
+const setFilter = (filter) => {
+  activeFilter.value = filter;
+};
+
+const dismissReminder = () => {
+  hasUpcomingTrip.value = false;
+};
+
+const viewTripDetails = () => {
+  router.push("/world");
+};
+
+const markAllRead = async () => {
+  const userId = getUserId();
+  if (!userId) return;
+
+  try {
+    const response = await fetch(
+      `http://localhost:3000/api/notifications/mark-all-read/${userId}`,
+      { method: "PUT" }
+    );
+
+    if (response.ok) {
+      notifications.value = notifications.value.map((n) => ({
+        ...n,
+        isRead: true,
+      }));
+      alert("All notifications marked as read!");
+    }
+  } catch (error) {
+    console.error("Failed to mark all as read:", error);
+  }
+};
+
+const getUserId = () => {
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  return user._id || user.id;
+};
+
+// Fetch upcoming trip (within 24 hours)
+const fetchUpcomingTrip = async () => {
+  const userId = getUserId();
+  console.log("🔍 Fetching trips for userId:", userId);
+  if (!userId) return;
+
+  try {
+    const response = await fetch(
+      `http://localhost:3000/api/trips/upcoming/${userId}`
+    );
+    const trips = await response.json();
+    console.log("📦 Received trips:", trips);
+
+    if (trips && trips.length > 0) {
+      const upcomingTrip = trips[0];
+      const segment = upcomingTrip.itinerary[0];
+
+      // Calculate hours until departure
+      const now = new Date();
+      const departureTime = new Date(segment.startTime);
+      const hoursUntil = Math.round((departureTime - now) / (1000 * 60 * 60));
+
+      trip.value = {
+        id: upcomingTrip._id,
+        title: upcomingTrip.title,
+        status: `Departure in ${hoursUntil} hours`,
+        from: segment.fromLocation.name,
+        to: segment.toLocation.name,
+        type:
+          segment.transportMode.charAt(0).toUpperCase() +
+          segment.transportMode.slice(1),
+        date: new Date(segment.startTime).toLocaleDateString(),
+        time: new Date(segment.startTime).toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+      };
+      hasUpcomingTrip.value = true;
+      console.log("✈️ Upcoming trip loaded:", trip.value);
+    } else {
+      hasUpcomingTrip.value = false;
+      trip.value = null;
+      console.log("📭 No upcoming trips found");
+    }
+  } catch (error) {
+    console.error("Failed to fetch upcoming trip:", error);
+    hasUpcomingTrip.value = false;
+  }
+};
+
+// Fetch notifications from backend
+const fetchNotifications = async () => {
+  const userId = getUserId();
+  if (!userId) return;
+
+  try {
+    const response = await fetch(
+      `http://localhost:3000/api/notifications/${userId}?limit=30`
+    );
+    const data = await response.json();
+
+    if (data.success) {
+      console.log("📥 Received notifications:", data.notifications.length);
+
+      // Create a balanced mix of notification types
+      const byType = {
+        weather: [],
+        tourist: [],
+        social: [],
+        location: [],
+        transport: [],
+      };
+
+      // Group notifications by type
+      data.notifications.forEach((n) => {
+        const type = n.type;
+        if (byType[type]) {
+          byType[type].push(n);
+        }
+      });
+
+      // Interleave notifications (alternate between types) for realistic mix
+      const balanced = [];
+      const maxPerType = 3;
+      const types = Object.keys(byType).filter(
+        (type) => byType[type].length > 0
+      );
+
+      for (let i = 0; i < maxPerType; i++) {
+        types.forEach((type) => {
+          if (byType[type][i]) {
+            balanced.push(byType[type][i]);
+          }
+        });
+      }
+
+      notifications.value = balanced.map((n) => ({
+        id: n._id,
+        type: n.type,
+        city: n.city || "N/A",
+        time: new Date(n.createdAt).toLocaleTimeString(),
+        message: n.message,
+        icon: n.icon || "Bell",
+        color: getNotificationColor(n.type),
+        isRead: n.isRead,
+        timestamp: new Date(n.createdAt).getTime(),
+      }));
+
+      console.log("📋 Processed notifications:", notifications.value.length);
+      console.log("🔍 First 3 notifications:", notifications.value.slice(0, 3));
+    }
+  } catch (error) {
+    console.error("Failed to fetch notifications:", error);
+  }
+};
+
+// Check weather and create notifications
+const checkWeatherAndNotify = async () => {
+  const userId = getUserId();
+  if (!userId) return;
+
+  const locs = locations.value.map((loc) => ({
+    name: loc.name,
+    lat: loc.lat,
+    lon: loc.lon,
+  }));
+
+  try {
+    const response = await fetch(
+      `http://localhost:3000/api/notifications/weather/${userId}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ locations: locs }),
+      }
+    );
+
+    const data = await response.json();
+
+    if (data.success && data.weatherData) {
+      // Update locations with weather data
+      data.weatherData.forEach((weather) => {
+        const loc = locations.value.find((l) => l.name === weather.city);
+        if (loc && !weather.error) {
+          loc.weather.temp = `${weather.temperature}°C`;
+          loc.weather.condition = weather.condition;
+          loc.weather.windSpeed = weather.windSpeed || null;
+          loc.weather.icon = weather.icon;
+          loc.weather.alert = weather.alert;
+        }
+      });
+
+      // Refresh notifications if new alerts were created
+      if (data.alertsCreated > 0) {
+        fetchNotifications();
+      }
+    }
+  } catch (error) {
+    console.error("Failed to check weather:", error);
+  }
+};
+
+// Check crowd density and create notifications
+const checkCrowdAndNotify = async () => {
+  const userId = getUserId();
+  if (!userId) return;
+
+  const locs = locations.value.map((loc) => ({
+    name: loc.name,
+    lat: loc.lat,
+    lon: loc.lon,
+  }));
+
+  try {
+    const response = await fetch(
+      `http://localhost:3000/api/notifications/crowd/${userId}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ locations: locs }),
+      }
+    );
+
+    const data = await response.json();
+
+    if (data.success && data.crowdData) {
+      // Update locations with crowd data
+      data.crowdData.forEach((crowd) => {
+        const loc = locations.value.find((l) => l.name === crowd.location);
+        if (loc) {
+          loc.crowd.value = crowd.density;
+          loc.crowd.levelKey = crowd.levelKey;
+          loc.crowd.trend = crowd.trend;
+          loc.crowd.trendIcon = crowd.icon;
+          loc.crowd.color = crowd.color;
+          loc.crowd.barColor = crowd.barColor;
+          loc.alternative = crowd.alternative;
+        }
+      });
+
+      // Refresh notifications if new alerts were created
+      if (data.alertsCreated > 0) {
+        fetchNotifications();
+      }
+    }
+  } catch (error) {
+    console.error("Failed to check crowd density:", error);
+  }
+};
+
+const getNotificationColor = (type) => {
+  const colors = {
+    weather: "bg-blue-100 text-blue-600",
+    social: "bg-purple-100 text-purple-600",
+    location: "bg-emerald-100 text-emerald-600",
+    tourist: "bg-yellow-100 text-yellow-600",
+    transport: "bg-orange-100 text-orange-600",
+  };
+  return colors[type] || "bg-gray-100 text-gray-600";
+};
+
+const getNotificationDotColor = (type) => {
+  const colors = {
+    weather: "bg-blue-500",
+    tourist: "bg-red-500",
+    transport: "bg-orange-500",
+    social: "bg-purple-500",
+    location: "bg-emerald-500",
+  };
+  return colors[type] || "bg-emerald-500";
+};
+
+// changing codes to icons ---
+const getWeatherInfo = (code) => {
+  if (code === 0) return { text: "Sunny", icon: "Sun", alert: false };
+  if (code <= 3)
+    return { text: "Partly Cloudy", icon: "CloudSun", alert: false };
+  if (code <= 48) return { text: "Foggy", icon: "Cloud", alert: true };
+  if (code <= 67) return { text: "Rainy", icon: "CloudRain", alert: true };
+  if (code <= 77) return { text: "Snowy", icon: "Snowflake", alert: true };
+  if (code <= 82) return { text: "Showers", icon: "CloudRain", alert: true };
+  if (code <= 99)
+    return { text: "Stormy", icon: "CloudLightning", alert: true };
+  return { text: "Unknown", icon: "Cloud", alert: false };
+};
+
+// Setup Socket.io connection
+const setupSocket = () => {
+  const userId = getUserId();
+  if (!userId) return;
+
+  // Connect to Socket.io server
+  socket.value = io("http://localhost:3000");
+
+  socket.value.on("connect", () => {
+    console.log("Connected to Socket.io server:", socket.value.id);
+    // Join user's personal notification room
+    socket.value.emit("join:notifications", userId);
+  });
+
+  // Listen for new notifications
+  socket.value.on("notification:new", (notification) => {
+    console.log("Received notification:", notification);
+    addNotificationToList(notification);
+  });
+
+  // Listen for weather notifications
+  socket.value.on("notification:weather", (notification) => {
+    console.log("Received weather notification:", notification);
+    addNotificationToList(notification);
+  });
+
+  // Listen for crowd notifications
+  socket.value.on("notification:crowd", (notification) => {
+    console.log("Received crowd notification:", notification);
+    addNotificationToList(notification);
+  });
+
+  socket.value.on("disconnect", () => {
+    console.log("Disconnected from Socket.io server");
+  });
+
+  socket.value.on("connect_error", (error) => {
+    console.error("Socket connection error:", error);
+  });
+};
+
+// Add notification to list (helper for socket events)
+const addNotificationToList = (notification) => {
+  const newNotification = {
+    id: notification.id,
+    type: notification.type,
+    city: notification.city || "N/A",
+    time: new Date(notification.createdAt).toLocaleTimeString(),
+    message: notification.message,
+    icon: notification.icon || "Bell",
+    color: getNotificationColor(notification.type),
+    isRead: notification.isRead,
+    timestamp: new Date(notification.createdAt).getTime(),
+  };
+
+  // Add to beginning of array (most recent first)
+  notifications.value.unshift(newNotification);
+
+  // Keep only last 50 notifications
+  if (notifications.value.length > 50) {
+    notifications.value = notifications.value.slice(0, 50);
+  }
+
+  console.log("✅ Notification added to list:", newNotification.message);
+};
+
+// Lifecycle hooks
+onMounted(() => {
+  fetchUpcomingTrip();
+  fetchNotifications(); // Load notification history
+  checkWeatherAndNotify();
+  checkCrowdAndNotify();
+
+  // Setup Socket.io for real-time push notifications
+  setupSocket();
+
+  window.addEventListener("languageChanged", handleLanguageChange);
+});
+
+onBeforeUnmount(() => {
+  // Disconnect socket
+  if (socket.value) {
+    const userId = getUserId();
+    if (userId) {
+      socket.value.emit("leave:notifications", userId);
+    }
+    socket.value.disconnect();
+  }
+
+  window.removeEventListener("languageChanged", handleLanguageChange);
+});
 </script>
 
 <template>
@@ -295,10 +637,12 @@ export default {
     <div class="bg-amber-50 border border-amber-200 rounded-2xl p-6">
       <div class="flex items-center gap-2 mb-1 text-amber-900">
         <Clock class="w-5 h-5" />
-        <h3 class="font-bold text-lg">{{ t('live.upcomingTravelReminders') }}</h3>
+        <h3 class="font-bold text-lg">
+          {{ t("live.upcomingTravelReminders") }}
+        </h3>
       </div>
       <p class="text-amber-800/70 text-sm mb-6">
-        {{ t('live.dontMissDeparture') }}
+        {{ t("live.dontMissDeparture") }}
       </p>
 
       <div
@@ -312,13 +656,15 @@ export default {
             </div>
             <div>
               <h4 class="font-bold text-gray-900 text-lg">{{ trip.title }}</h4>
-              <p class="text-gray-500 text-sm">{{ t('live.departureIn') }} 24 {{ t('live.hours') }}</p>
+              <p class="text-gray-500 text-sm">
+                {{ t("live.departureIn") }} 24 {{ t("live.hours") }}
+              </p>
             </div>
           </div>
           <span
             class="bg-amber-400 text-white text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1"
           >
-            <Bell class="w-3 h-3 fill-current" /> {{ t('live.new') }}
+            <Bell class="w-3 h-3 fill-current" /> {{ t("live.new") }}
           </span>
         </div>
 
@@ -330,7 +676,7 @@ export default {
               <p
                 class="text-xs font-bold text-emerald-700 flex items-center gap-1 mb-1"
               >
-                <MapPin class="w-3.5 h-3.5" /> {{ t('live.route') }}
+                <MapPin class="w-3.5 h-3.5" /> {{ t("live.route") }}
               </p>
               <div class="flex items-center gap-2 font-semibold text-gray-800">
                 <span>{{ trip.from }}</span>
@@ -343,7 +689,7 @@ export default {
               <p
                 class="text-xs font-bold text-emerald-700 flex items-center gap-1 mb-1"
               >
-                <TrainFront class="w-3.5 h-3.5" /> {{ t('live.transport') }}
+                <TrainFront class="w-3.5 h-3.5" /> {{ t("live.transport") }}
               </p>
               <span
                 class="inline-block bg-emerald-600 text-white text-xs font-bold px-2 py-0.5 rounded"
@@ -356,7 +702,7 @@ export default {
               <p
                 class="text-xs font-bold text-emerald-700 flex items-center gap-1 mb-1"
               >
-                <Calendar class="w-3.5 h-3.5" /> {{ t('live.date') }}
+                <Calendar class="w-3.5 h-3.5" /> {{ t("live.date") }}
               </p>
               <span class="font-semibold text-gray-800">{{ trip.date }}</span>
             </div>
@@ -365,7 +711,7 @@ export default {
               <p
                 class="text-xs font-bold text-emerald-700 flex items-center gap-1 mb-1"
               >
-                <Clock class="w-3.5 h-3.5" /> {{ t('live.time') }}
+                <Clock class="w-3.5 h-3.5" /> {{ t("live.time") }}
               </p>
               <span class="font-semibold text-gray-800">{{ trip.time }}</span>
             </div>
@@ -374,15 +720,16 @@ export default {
 
         <div class="flex gap-3">
           <button
+            @click="viewTripDetails"
             class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-lg transition-colors flex justify-center items-center gap-2"
           >
-            <Info class="w-4 h-4" /> {{ t('live.viewTripDetails') }}
+            <Info class="w-4 h-4" /> {{ t("live.viewTripDetails") }}
           </button>
           <button
             @click="dismissReminder"
             class="px-6 border border-gray-300 hover:bg-gray-50 text-gray-600 font-bold py-2.5 rounded-lg transition-colors"
           >
-            {{ t('live.dismiss') }}
+            {{ t("live.dismiss") }}
           </button>
         </div>
       </div>
@@ -396,9 +743,11 @@ export default {
         >
           <Clock class="w-6 h-6" />
         </div>
-        <p class="text-gray-600 font-medium">{{ t('live.noUpcomingReminders') }}</p>
+        <p class="text-gray-600 font-medium">
+          {{ t("live.noUpcomingReminders") }}
+        </p>
         <p class="text-gray-400 text-sm">
-          {{ t('live.notified24Hours') }}
+          {{ t("live.notified24Hours") }}
         </p>
       </div>
     </div>
@@ -409,28 +758,91 @@ export default {
           <div class="flex items-center gap-2">
             <Bell class="w-5 h-5 text-emerald-600" />
             <h3 class="font-bold text-lg text-gray-900">
-              {{ t('live.notifications') }}
+              {{ t("live.notifications") }}
             </h3>
             <span
               class="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full"
-              >10 {{ t('live.new') }}</span
+              >{{ notificationCounts.all }} {{ t("live.new") }}</span
             >
           </div>
           <p class="text-sm text-gray-500 mt-1">
-            {{ t('live.liveUpdates') }}
+            {{ t("live.liveUpdates") }}
           </p>
+
+          <!-- Filter Buttons -->
+          <div class="flex flex-wrap gap-2 mt-3">
+            <button
+              @click="setFilter('all')"
+              :class="
+                activeFilter === 'all'
+                  ? 'bg-emerald-600 text-white'
+                  : 'bg-white text-gray-700 border border-gray-300'
+              "
+              class="px-3 py-1 rounded-lg text-xs font-medium transition-colors hover:shadow-sm"
+            >
+              All ({{ notificationCounts.all }})
+            </button>
+            <button
+              @click="setFilter('weather')"
+              :class="
+                activeFilter === 'weather'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-white text-gray-700 border border-gray-300'
+              "
+              class="px-3 py-1 rounded-lg text-xs font-medium transition-colors hover:shadow-sm flex items-center gap-1"
+            >
+              <Cloud class="w-3 h-3" />
+              Weather ({{ notificationCounts.weather }})
+            </button>
+            <button
+              @click="setFilter('tourist')"
+              :class="
+                activeFilter === 'tourist'
+                  ? 'bg-yellow-600 text-white'
+                  : 'bg-white text-gray-700 border border-gray-300'
+              "
+              class="px-3 py-1 rounded-lg text-xs font-medium transition-colors hover:shadow-sm flex items-center gap-1"
+            >
+              <User class="w-3 h-3" />
+              Tourist ({{ notificationCounts.tourist }})
+            </button>
+            <button
+              @click="setFilter('social')"
+              :class="
+                activeFilter === 'social'
+                  ? 'bg-purple-600 text-white'
+                  : 'bg-white text-gray-700 border border-gray-300'
+              "
+              class="px-3 py-1 rounded-lg text-xs font-medium transition-colors hover:shadow-sm flex items-center gap-1"
+            >
+              <Bell class="w-3 h-3" />
+              Social ({{ notificationCounts.social }})
+            </button>
+            <button
+              @click="setFilter('location')"
+              :class="
+                activeFilter === 'location'
+                  ? 'bg-emerald-600 text-white'
+                  : 'bg-white text-gray-700 border border-gray-300'
+              "
+              class="px-3 py-1 rounded-lg text-xs font-medium transition-colors hover:shadow-sm flex items-center gap-1"
+            >
+              <MapPin class="w-3 h-3" />
+              Location ({{ notificationCounts.location }})
+            </button>
+          </div>
         </div>
         <button
           @click="markAllRead"
           class="text-xs font-medium text-gray-600 border border-gray-300 rounded px-3 py-1 hover:bg-gray-50 transition-colors"
         >
-          {{ t('live.markAllRead') }}
+          {{ t("live.markAllRead") }}
         </button>
       </div>
 
       <div class="space-y-3">
         <div
-          v-for="item in notifications"
+          v-for="item in filteredNotifications"
           :key="item.id"
           class="flex items-center justify-between p-3 rounded-xl border border-emerald-100 bg-emerald-50/30 hover:bg-emerald-50 transition-colors cursor-pointer group"
         >
@@ -439,7 +851,7 @@ export default {
               class="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
               :class="item.color"
             >
-              <component :is="item.icon" class="w-5 h-5" />
+              <component :is="iconComponents[item.icon]" class="w-5 h-5" />
             </div>
 
             <div>
@@ -458,7 +870,10 @@ export default {
           </div>
 
           <div class="flex items-center pr-2">
-            <div class="w-2 h-2 rounded-full bg-emerald-500"></div>
+            <div
+              class="w-2 h-2 rounded-full"
+              :class="getNotificationDotColor(item.type)"
+            ></div>
           </div>
         </div>
       </div>
@@ -489,9 +904,14 @@ export default {
           class="bg-sky-50 rounded-xl p-3 border border-sky-100 mb-3 flex items-center justify-between"
         >
           <div class="flex items-center gap-3">
-            <component :is="loc.weather.icon" class="w-5 h-5 text-sky-600" />
+            <component
+              :is="iconComponents[loc.weather.icon]"
+              class="w-5 h-5 text-sky-600"
+            />
             <div>
-              <p class="text-xs text-sky-800 font-bold">{{ t('live.weather') }}</p>
+              <p class="text-xs text-sky-800 font-bold">
+                {{ t("live.weather") }}
+              </p>
               <p class="text-sm text-gray-700">{{ loc.weather.condition }}</p>
             </div>
           </div>
@@ -500,7 +920,8 @@ export default {
               v-if="loc.weather.alert"
               class="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded"
             >
-              <AlertTriangle class="w-3 h-3 inline mr-0.5" /> {{ t('live.alert') }}
+              <AlertTriangle class="w-3 h-3 inline mr-0.5" />
+              {{ t("live.alert") }}
             </span>
             <span class="text-xl font-bold text-sky-600">{{
               loc.weather.temp
@@ -513,19 +934,25 @@ export default {
             <div
               class="flex items-center gap-2 text-xs font-bold text-amber-800"
             >
-              <User class="w-3.5 h-3.5" /> {{ t('live.touristAffluence') }}
+              <User class="w-3.5 h-3.5" /> {{ t("live.touristAffluence") }}
             </div>
             <div
               class="flex items-center gap-1 text-[10px] font-medium text-gray-500"
             >
               <component
-                :is="loc.crowd.trendIcon"
+                :is="iconComponents[loc.crowd.trendIcon]"
                 class="w-3 h-3"
                 :class="
                   loc.crowd.trend === 'Up' ? 'text-red-500' : 'text-emerald-500'
                 "
               />
-              {{ loc.crowd.trend === 'Up' ? t('live.up') : loc.crowd.trend === 'Down' ? t('live.down') : t('live.stable') }}
+              {{
+                loc.crowd.trend === "Up"
+                  ? t("live.up")
+                  : loc.crowd.trend === "Down"
+                  ? t("live.down")
+                  : t("live.stable")
+              }}
             </div>
           </div>
 
@@ -540,7 +967,9 @@ export default {
           </div>
 
           <div class="flex justify-between text-[10px] font-bold mt-1">
-            <span :class="loc.crowd.color">{{ t(loc.crowd.levelKey || 'live.mediumDensity') }}</span>
+            <span :class="loc.crowd.color">{{
+              t(loc.crowd.levelKey || "live.mediumDensity")
+            }}</span>
             <span class="text-gray-400">{{ loc.crowd.value + 40 }}.9%</span>
           </div>
         </div>
@@ -553,7 +982,7 @@ export default {
             <CheckCircle class="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
             <div>
               <p class="text-xs font-bold text-emerald-800">
-                {{ t('live.alternativeSuggested') }}
+                {{ t("live.alternativeSuggested") }}
               </p>
               <p class="text-[10px] text-emerald-700 leading-tight mt-0.5">
                 {{ loc.alternative }}
