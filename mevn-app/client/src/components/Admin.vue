@@ -7,6 +7,7 @@ import {
   Save,
   Check,
   X,
+  Flag,
 } from "lucide-vue-next";
 import { getLanguage, t as translate } from "../utils/translations.js";
 
@@ -46,6 +47,10 @@ export default {
       users: [],
       isUsersLoading: false,
 
+      // Reported Users Data
+      reportedFeedback: [],
+      isReportsLoading: false,
+
       // --- NEW: Forum Moderation Data ---
       forumPosts: [],
       isForumLoading: false,
@@ -73,6 +78,7 @@ export default {
     if (this.isGeneralAdmin) {
       this.activeTab = "users";
       this.fetchUsers();
+      this.fetchReportedFeedback();
     }
   },
   beforeUnmount() {
@@ -120,6 +126,41 @@ export default {
         console.error("Error loading users:", error);
       } finally {
         this.isUsersLoading = false;
+      }
+    },
+    async fetchReportedFeedback() {
+      this.isReportsLoading = true;
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) return;
+
+        const response = await fetch(
+          "http://localhost:3000/api/feedback/admin/reports",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch reported users");
+        }
+
+        const data = await response.json();
+        this.reportedFeedback = (data.feedbacks || []).map((feedback) => ({
+          id: feedback._id,
+          reporter: feedback.userName,
+          reportedUserName: feedback.reportedUserName || "Unknown",
+          reportedUserId: feedback.reportedUserId || "",
+          status: feedback.status,
+          createdAt: this.formatDate(feedback.createdAt),
+          subject: feedback.subject,
+        }));
+      } catch (error) {
+        console.error("Error loading reported users:", error);
+      } finally {
+        this.isReportsLoading = false;
       }
     },
     async fetchForumPosts() {
@@ -213,6 +254,18 @@ export default {
       return status === "active"
         ? "bg-green-100 text-green-600"
         : "bg-red-100 text-red-600";
+    },
+    getReportStatusColor(status) {
+      switch (status) {
+        case "Implemented":
+          return "bg-emerald-100 text-emerald-700";
+        case "Reviewing":
+          return "bg-amber-100 text-amber-700";
+        case "Rejected":
+          return "bg-red-100 text-red-700";
+        default:
+          return "bg-gray-100 text-gray-600";
+      }
     },
     // New methods for forum actions
     async approvePost(id) {
@@ -324,6 +377,20 @@ export default {
         >
           <UserCog class="w-4 h-4" />
           {{ t('admin.userManagement') }}
+        </button>
+
+        <button
+          v-if="isGeneralAdmin"
+          @click="activeTab = 'reports'"
+          class="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-sm font-medium transition-colors"
+          :class="
+            activeTab === 'reports'
+              ? 'bg-emerald-50 text-emerald-700 font-bold'
+              : 'text-gray-600 hover:bg-gray-50'
+          "
+        >
+          <Flag class="w-4 h-4" />
+          {{ t('admin.userReports') }}
         </button>
 
         <button
@@ -456,6 +523,56 @@ export default {
           >
             {{ user.status === "active" ? t('admin.suspend') : t('admin.activate') }}
           </button>
+        </div>
+      </div>
+    </div>
+
+    <div
+      v-if="isGeneralAdmin && activeTab === 'reports'"
+      class="bg-white p-6 rounded-2xl border border-green-200 shadow-sm"
+    >
+      <div class="mb-6">
+        <h3 class="text-emerald-700 font-medium">{{ t('admin.userReportsTitle') }}</h3>
+        <p class="text-sm text-gray-500">
+          {{ t('admin.reviewUserReports') }}
+        </p>
+      </div>
+
+      <div v-if="isReportsLoading" class="text-sm text-gray-500">
+        {{ t('admin.loadingReports') }}
+      </div>
+
+      <div v-else class="space-y-4">
+        <div
+          v-for="report in reportedFeedback"
+          :key="report.id"
+          class="p-4 border border-green-200 rounded-xl bg-white"
+        >
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <div class="flex items-center gap-2 mb-1">
+                <span class="text-xs text-gray-500">{{ t('admin.reportedUser') }}:</span>
+                <span class="text-sm font-bold text-gray-900">
+                  {{ report.reportedUserName }}
+                </span>
+              </div>
+              <div class="text-xs text-gray-500">
+                {{ t('admin.reporter') }}: {{ report.reporter }}
+                <span class="mx-1">•</span>
+                {{ t('admin.reportedOn') }} {{ report.createdAt }}
+              </div>
+              <div v-if="report.reportedUserId" class="text-xs text-gray-400 mt-1">
+                ID: {{ report.reportedUserId }}
+              </div>
+            </div>
+
+            <span
+              class="text-[10px] px-2 py-0.5 rounded border border-gray-100"
+              :class="getReportStatusColor(report.status)"
+            >
+              {{ report.status }}
+            </span>
+          </div>
         </div>
       </div>
     </div>
