@@ -21,12 +21,12 @@ router.put("/:cardId", travelCardsController.updateTravelCard);
 router.delete("/:cardId", travelCardsController.deleteTravelCard);
 
 // Like a travel card
-router.post("/:cardId/like", travelCardsController.toggleLikeCard);
+router.put("/:cardId/like", travelCardsController.toggleLikeCard);
 
 // Report a travel card
-router.post("/:cardId/report", travelCardsController.reportTravelCard);
+router.put("/:cardId/report", travelCardsController.reportTravelCard);
 
 // Save/Unsave a travel card
-router.post("/:cardId/save", travelCardsController.toggleSaveCard);
+router.put("/:cardId/save", travelCardsController.toggleSaveCard);
 
 export default router;

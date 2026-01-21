@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, onUnmounted, reactive, watch, computed } from "vue";
+import { ref, onMounted, onUnmounted, watch, computed } from "vue";
 import {
   Plus,
   MapPin,
@@ -12,11 +12,10 @@ import {
   FerrisWheel,
   Mountain,
   X,
-  Image as ImageIcon,
   Flag,
   Search,
   User,
-  User2Icon,
+  Trash2,
 } from "lucide-vue-next";
 import { getLanguage, t as translate } from "../utils/translations.js";
 import { useRouter } from "vue-router";
@@ -44,20 +43,11 @@ const places = ref([]);
 const loading = ref(false);
 const page = ref(1);
 const hasMore = ref(true);
-const activeFilter = ref("All");
+const activeFilter = ref("all");
 const searchQuery = ref("");
 const viewMode = ref("all"); // 'all', 'my-posts', 'saved'
 const observer = ref(null);
 const bottomSentinel = ref(null);
-const newPlace = reactive({
-  title: "",
-  location: "",
-  category: "Activities",
-  price: "",
-  description: "",
-  tags: "",
-  image: null,
-});
 
 // --- STATE MANAGEMENT ---
 const isAddModalOpen = ref(false);
@@ -66,14 +56,14 @@ const selectedPlace = ref(null);
 
 const categories = computed(() => [
   { name: t.value("discover.all"), icon: null, key: "all" },
-  { name: t.value("discover.restaurants"), icon: Utensils, key: "restaurants" },
-  { name: t.value("discover.hotels"), icon: Bed, key: "hotels" },
+  { name: t.value("discover.restaurants"), icon: Utensils, key: "Restaurant" },
+  { name: t.value("discover.hotels"), icon: Bed, key: "Accommodation" },
   {
     name: t.value("discover.attractions"),
     icon: FerrisWheel,
-    key: "attractions",
+    key: "Attraction",
   },
-  { name: t.value("discover.activities"), icon: Mountain, key: "activities" },
+  { name: t.value("discover.activities"), icon: Mountain, key: "Activity" },
 ]);
 
 const getUserId = () => {
@@ -97,11 +87,12 @@ const fetchPlaces = async (reset = false) => {
       page: page.value,
       limit: 6,
       search: searchQuery.value,
-      category: activeFilter.value !== "All" ? activeFilter.value : "",
+      category: activeFilter.value !== "all" ? activeFilter.value : "",
     });
 
     let endpoint = "/discover";
     if (viewMode.value === "my-posts") endpoint = "/myTravelCards";
+
     if (viewMode.value === "saved") endpoint = "/savedTravelCards";
 
     const response = await fetch(
@@ -223,16 +214,14 @@ const handleCardCreated = (newCard) => {
 };
 const reportPlace = async () => {
   if (!selectedPlace.value) return;
-  const reason = prompt("Please provide a reason for reporting this content:");
-  if (!reason) return;
 
   try {
     const response = await fetch(
       `http://localhost:3000/api/travelcards/${selectedPlace.value.id}/report`,
       {
-        method: "POST",
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ reason, userId: getUserId() }),
+        body: JSON.stringify({ userId: getUserId() }),
       },
     );
 
@@ -245,6 +234,39 @@ const reportPlace = async () => {
     }
   } catch (error) {
     console.error(error);
+  }
+};
+
+const deletePlace = async () => {
+  if (!selectedPlace.value) return;
+
+  if (!confirm("Are you sure you want to delete this travel card?")) {
+    return;
+  }
+
+  try {
+    const response = await fetch(
+      `http://localhost:3000/api/travelcards/${selectedPlace.value.id}`,
+      {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ userId: getUserId() }),
+      },
+    );
+
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.message || "Failed to delete");
+    }
+
+    // Remove from UI immediately
+    places.value = places.value.filter((p) => p.id !== selectedPlace.value.id);
+
+    closeDetail();
+  } catch (error) {
+    alert("Error deleting card: " + error.message);
   }
 };
 
@@ -281,14 +303,12 @@ const goToUserProfile = (userId) => {
   router.push("/Rewards");
 };
 
-// Helpers for UI
 const getLeafCount = (likes) => {
   if (likes > 50) return 3;
   if (likes > 20) return 2;
   return 1;
 };
 
-// Infinite Scroll
 const loadMorePlaces = () => fetchPlaces();
 
 onMounted(() => {
@@ -386,10 +406,10 @@ onUnmounted(() => {
         <button
           v-for="cat in categories"
           :key="cat.name"
-          @click="activeFilter = cat.name"
+          @click="activeFilter = cat.key"
           class="btn btn-sm h-9 px-4 rounded-full border transition-all duration-300"
           :class="
-            activeFilter === cat.name
+            activeFilter === cat.key
               ? 'bg-emerald-600 text-white border-emerald-600'
               : 'bg-white text-gray-600 border-gray-200 hover:border-emerald-400'
           "
@@ -661,11 +681,21 @@ onUnmounted(() => {
                 <Navigation class="w-4 h-4" /> Navigate
               </button>
               <button
+                v-if="selectedPlace.user.id !== getUserId()"
                 @click="reportPlace"
                 class="btn btn-ghost text-gray-400 hover:text-red-500 hover:bg-red-50 gap-2"
                 title="Report Issue"
               >
                 <Flag class="w-4 h-4" />
+              </button>
+              <button
+                v-if="selectedPlace.user.id === getUserId()"
+                @click="deletePlace"
+                class="btn bg-red-100 text-red-600 hover:bg-red-200 border-none gap-2"
+                title="Delete Post"
+              >
+                <Trash2 class="w-4 h-4" />
+                Delete
               </button>
             </div>
           </div>
