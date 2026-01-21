@@ -14,7 +14,6 @@ import {
   Euro,
   Leaf,
   Shuffle,
-  X,
   Loader2,
   Hotel,
   Utensils,
@@ -176,6 +175,13 @@ onMounted(async () => {
       }
     });
     resizeObserver.observe(mapContainerRef.value);
+  }
+  if (tripStore.destinationFromDiscoverToPlan !== "") {
+    const dest = tripStore.destinationFromDiscoverToPlan;
+    newSegment.value.toName = dest;
+    if (toSearchBox.value) {
+      toSearchBox.value.value = dest;
+    }
   }
   window.addEventListener("languageChanged", handleLanguageChange);
 });

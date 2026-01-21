@@ -18,10 +18,11 @@ import {
   Trash2,
 } from "lucide-vue-next";
 import { getLanguage, t as translate } from "../utils/translations.js";
-import { useRouter } from "vue-router";
 import { useRewardsStore } from "../data/rewardsStore.js";
 import AddTravelCardModal from "./template/AddTravelCardModal.vue";
+import { useRouter } from "vue-router";
 
+const accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
 const rewardsStore = useRewardsStore();
 const router = useRouter();
 const language = ref(getLanguage());
@@ -270,8 +271,32 @@ const deletePlace = async () => {
   }
 };
 
-const navigateToPlace = (place) => {
-  if (place.coordinates && place.coordinates.length === 2) {
+const navigateToPlace = async (place) => {
+  const [lng, lat] = place.coordinates;
+  try {
+    // Construct the URL: endpoint + coordinates + access token
+    const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${accessToken}`;
+
+    const response = await fetch(url);
+    const data = await response.json();
+
+    // Check if we got valid results
+    if (data.features && data.features.length > 0) {
+      const placeName = data.features[0].place_name;
+
+      console.log("Full Address:", placeName);
+
+      // Use tripStore to set the destination
+      import("../data/tripStore.js").then(({ useTripStore }) => {
+        const tripStore = useTripStore();
+        tripStore.setDestination(placeName);
+      });
+      router.push("/Plan");
+    } else {
+      console.warn("No address found for these coordinates.");
+    }
+  } catch (error) {
+    console.error("Error during reverse geocoding:", error);
   }
 };
 
