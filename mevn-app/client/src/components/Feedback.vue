@@ -73,11 +73,11 @@ const fetchAllUsers = async () => {
   try {
     const response = await fetch("http://localhost:3000/api/users/all");
     const users = await response.json();
-    
+
     // Exclude current user from the list
     const currentUserId = getUserId();
-    allUsers.value = users.filter(u => u._id !== currentUserId);
-    
+    allUsers.value = users.filter((u) => u._id !== currentUserId);
+
     console.log("Loaded users:", allUsers.value.length);
   } catch (error) {
     console.error("Failed to fetch users:", error);
@@ -363,7 +363,9 @@ onBeforeUnmount(() => {
             <div class="relative">
               <select
                 v-model="selectedCategory"
-                @change="selectedCategory === 'feedback.reportUser' && fetchAllUsers()"
+                @change="
+                  selectedCategory === 'feedback.reportUser' && fetchAllUsers()
+                "
                 class="w-full p-3 bg-gray-50 rounded-xl border border-transparent focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all appearance-none cursor-pointer"
                 :class="
                   selectedCategory === '' ? 'text-gray-900' : 'text-gray-900'
@@ -420,7 +422,9 @@ onBeforeUnmount(() => {
 
         <!-- User selector for Report User -->
         <div v-if="isReportUser" class="space-y-1">
-          <label class="text-xs font-bold text-gray-700 ml-1">Select User to Report</label>
+          <label class="text-xs font-bold text-gray-700 ml-1"
+            >Select User to Report</label
+          >
           <div class="relative">
             <select
               v-model="selectedUserToReport"
@@ -428,7 +432,7 @@ onBeforeUnmount(() => {
               required
             >
               <option value="" disabled selected>
-                {{ isLoadingUsers ? 'Loading users...' : 'Select a user' }}
+                {{ isLoadingUsers ? "Loading users..." : "Select a user" }}
               </option>
               <option
                 v-for="user in allUsers"
@@ -479,8 +483,10 @@ onBeforeUnmount(() => {
           type="submit"
           class="w-full py-3 rounded-xl font-bold transition-colors flex justify-center items-center gap-2 shadow-sm"
           :class="[
-            isReportUser ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-emerald-600 hover:bg-emerald-700 text-white',
-            { 'opacity-70 cursor-not-allowed': isSubmitting }
+            isReportUser
+              ? 'bg-red-600 hover:bg-red-700 text-white'
+              : 'bg-emerald-600 hover:bg-emerald-700 text-white',
+            { 'opacity-70 cursor-not-allowed': isSubmitting },
           ]"
           :disabled="isSubmitting"
         >

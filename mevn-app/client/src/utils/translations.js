@@ -1089,7 +1089,7 @@ export const getLanguage = () => {
 export const setLanguage = (lang) => {
   localStorage.setItem("language", lang);
   window.dispatchEvent(
-    new CustomEvent("languageChanged", { detail: { language: lang } }),
+    new CustomEvent("languageChanged", { detail: { language: lang } })
   );
 };
 
