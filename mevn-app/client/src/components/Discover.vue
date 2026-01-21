@@ -21,6 +21,7 @@ import {
 import { getLanguage, t as translate } from "../utils/translations.js";
 import { useRouter } from "vue-router";
 import { useRewardsStore } from "../data/rewardsStore.js";
+import AddTravelCardModal from "./template/AddTravelCardModal.vue";
 
 const rewardsStore = useRewardsStore();
 const router = useRouter();
@@ -42,12 +43,21 @@ onUnmounted(() => {
 const places = ref([]);
 const loading = ref(false);
 const page = ref(1);
-const hasMore = ref(true); // Track if backend has more data
+const hasMore = ref(true);
 const activeFilter = ref("All");
 const searchQuery = ref("");
 const viewMode = ref("all"); // 'all', 'my-posts', 'saved'
 const observer = ref(null);
 const bottomSentinel = ref(null);
+const newPlace = reactive({
+  title: "",
+  location: "",
+  category: "Activities",
+  price: "",
+  description: "",
+  tags: "",
+  image: null,
+});
 
 // --- STATE MANAGEMENT ---
 const isAddModalOpen = ref(false);
@@ -55,16 +65,25 @@ const isDetailOpen = ref(false);
 const selectedPlace = ref(null);
 const isSubmitting = ref(false);
 
-const newPlace = reactive({
-  title: "",
-  location: "",
-  category: "Restaurants",
-  price: "",
-  description: "",
-  tags: "",
-  hasImage: false,
-});
+const priceOptions = ["Free", "$", "$$", "$$$"];
 
+const getPriceLabel = (price) => {
+  const priceOptions = ["Free", "$", "$$", "$$$"];
+
+  switch (true) {
+    case !price || price === 0:
+      return priceOptions[0];
+
+    case price < 30:
+      return priceOptions[1];
+
+    case price < 60:
+      return priceOptions[2];
+
+    default:
+      return priceOptions[3];
+  }
+};
 const categories = computed(() => [
   { name: t.value("discover.all"), icon: null, key: "all" },
   { name: t.value("discover.restaurants"), icon: Utensils, key: "restaurants" },
@@ -77,150 +96,53 @@ const categories = computed(() => [
   { name: t.value("discover.activities"), icon: Mountain, key: "activities" },
 ]);
 
-const priceOptions = ["Free", "$", "$$", "$$$", "$$$$"];
-
-watch(
-  () => isAddModalOpen.value || isDetailOpen.value,
-  (isOpen) => {
-    document.body.style.overflow = isOpen ? "hidden" : "";
-  },
-);
-
-// --- FILTERING LOGIC ---
-const filteredPlaces = computed(() => {
-  return places.value.filter((place) => {
-    // 1. View Mode Filter
-    if (viewMode.value === "my-posts" && place.user.name !== "You")
-      return false;
-    if (viewMode.value === "saved" && !place.saved) return false;
-
-    // 2. Category Filter
-    const matchesCategory =
-      activeFilter.value === "All" || place.category === activeFilter.value;
-
-    // 3. Search Filter
-    const query = searchQuery.value.toLowerCase();
-    const matchesSearch =
-      place.location.toLowerCase().includes(query) ||
-      place.title.toLowerCase().includes(query);
-
-    return matchesCategory && matchesSearch;
-  });
-});
-const cats = ["Restaurants", "Hotels", "Attractions", "Activities"];
-
-/*// --- FAKE DATA ---
-const generateMockData = (count) => {
-  const titles = [
-    "Green Harvest Café",
-    "EcoLodge Mountain Retreat",
-    "Bike Tour Historic District",
-    "Solar Villa",
-    "Ocean Cleanup Hub",
-    "Urban Vertical Garden",
-    "Sustainable Surf School",
-    "Zero Waste Market",
-  ];
-  const locations = [
-    "Amsterdam, Netherlands",
-    "Swiss Alps, Switzerland",
-    "Copenhagen, Denmark",
-    "Kyoto, Japan",
-    "Bali, Indonesia",
-    "Berlin, Germany",
-    "Vancouver, Canada",
-    "Portland, USA",
-  ];
-  const prices = ["$$", "$$$", "$", "Free"];
-  const cats = ["Restaurants", "Hotels", "Attractions", "Activities"];
-
-  return Array.from({ length: count }).map((_, i) => {
-    const randomIdx = Math.floor(Math.random() * titles.length);
-    const likes = 50 + Math.floor(Math.random() * 350);
-
-    return {
-      id: Date.now() + i,
-      title: titles[randomIdx],
-      location: locations[Math.floor(Math.random() * locations.length)],
-      category: cats[Math.floor(Math.random() * cats.length)],
-      price: prices[Math.floor(Math.random() * prices.length)],
-      description:
-        "Experience sustainable living with locally sourced materials and zero-carbon footprint practices designed for the modern eco-traveler.",
-      image: `https://picsum.photos/seed/${Math.random()}/600/400`,
-      score: 85 + Math.floor(Math.random() * 15),
-      tags: ["Organic", "Local", "Zero Waste"],
-      user: {
-        id: 1 + Math.floor(Math.random() * 9000),
-        name: "Sarah M.",
-        avatar: `https://i.pravatar.cc/150?u=${Math.random()}`,
-      },
-      likes: likes,
-      shares: 40 + Math.floor(Math.random() * 200),
-      saved: false,
-    };
-  });
-};*/
-
-/*const loadMorePlaces = async () => {
-  if (loading.value) return;
-  loading.value = true;
-  setTimeout(() => {
-    const newPlaces = generateMockData(6);
-    places.value.push(...newPlaces);
-    page.value++;
-    loading.value = false;
-  }, 800);
-};
-*/
 const getUserId = () => {
   const user = JSON.parse(localStorage.getItem("user") || "{}");
   return user._id || user.id;
 };
-// --- DATA FETCHING ---
+
 const fetchPlaces = async (reset = false) => {
   if (loading.value || (!hasMore.value && !reset)) return;
   loading.value = true;
+
   if (reset) {
     page.value = 1;
     places.value = [];
     hasMore.value = true;
   }
-  const userId = getUserId();
 
   try {
-    let url = "";
     const params = new URLSearchParams({
+      userId: getUserId(),
       page: page.value,
       limit: 6,
       search: searchQuery.value,
       category: activeFilter.value !== "All" ? activeFilter.value : "",
     });
 
-    if (viewMode.value === "my-posts") {
-      url = `http://localhost:3000/api/travelcards/myTravelCards?${params}`;
-    } else if (viewMode.value === "saved") {
-      url = `http://localhost:3000/api/travelcards/savedTravelCards?${params}`;
-    } else {
-      url = `http://localhost:3000/api/travelcards/discover?${params}`;
-    }
+    let endpoint = "/discover";
+    if (viewMode.value === "my-posts") endpoint = "/myTravelCards";
+    if (viewMode.value === "saved") endpoint = "/savedTravelCards";
 
-    const response = await fetch(url, {
-      method: "GET",
-      headers: { "Content-Type": "application/json" },
-    });
+    const response = await fetch(
+      `http://localhost:3000/api/travelcards${endpoint}?${params}`,
+      {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+      },
+    );
 
     if (!response.ok) throw new Error("Failed to fetch places");
 
     const data = await response.json();
 
-    // Map backend data to frontend structure if needed
-    // Assuming backend returns { cards: [], hasMore: bool }
     const newPlaces = data.cards.map((card) => ({
       id: card._id,
       title: card.title,
       location: card.location.address || "Unknown Location",
+      coordinates: card.location.coordinates,
       category: card.category,
-      price: card.price > 0 ? "$".repeat(card.price) : "Free", // Adjust logic based on backend price format
+      price: getPriceLabel(card.price),
       description: card.description,
       image:
         card.images?.[0] || `https://picsum.photos/seed/${card._id}/600/400`,
@@ -232,8 +154,8 @@ const fetchPlaces = async (reset = false) => {
           `https://i.pravatar.cc/150?u=${card.creator._id}`,
       },
       likes: card.numberOfLikes || 0,
-      shares: 0,
-      saved: card.isSaved || false, // Ensure backend sends this boolean
+      saved: card.isSaved || false, // From the map logic we added in backend
+      isLiked: card.isLiked || false, // From the map logic we added in backend
     }));
 
     if (reset) {
@@ -251,13 +173,135 @@ const fetchPlaces = async (reset = false) => {
   }
 };
 
-// Re-fetch when filters change
+const toggleLike = async (place) => {
+  const originalState = { liked: place.isLiked, count: place.likes };
+  place.isLiked = !place.isLiked;
+
+  try {
+    const response = await fetch(
+      `http://localhost:3000/api/travelcards/${place.id}/like`,
+      {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: getUserId() }),
+      },
+    );
+    if (!response.ok) throw new Error("Like failed");
+
+    const data = await response.json();
+    place.likes = data.likesCount;
+  } catch (error) {
+    console.error(error);
+    place.isLiked = originalState.liked;
+    place.likes = originalState.count;
+  }
+};
+
+const toggleSave = async (place) => {
+  place.saved = !place.saved;
+
+  try {
+    const response = await fetch(
+      `http://localhost:3000/api/travelcards/${place.id}/save`,
+      {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: getUserId() }),
+      },
+    );
+    if (!response.ok) throw new Error("Save failed");
+  } catch (error) {
+    console.error(error);
+    place.saved = !place.saved;
+  }
+};
+
+const handleCreatePlace = async (formData) => {
+  isSubmitting.value = true;
+  try {
+    const payload = {
+      ...formData,
+      creator: getUserId(),
+    };
+
+    const response = await fetch("http://localhost:3000/api/travelcards", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) throw new Error("Failed to create");
+
+    const newCard = await response.json();
+
+    // Add to top of list immediately
+    places.value.unshift({
+      id: newCard._id,
+      title: newCard.title,
+      location: newCard.location.address,
+      coordinates: newCard.location.coordinates,
+      category: newCard.category,
+      price: getPriceLabel(newCard.price),
+      description: newCard.description,
+      image:
+        newCard.images?.[0] ||
+        `https://picsum.photos/seed/${newCard._id}/600/400`,
+      user: { name: "You", avatar: "https://i.pravatar.cc/150?u=me" }, // Placeholder until refresh
+      likes: 0,
+      saved: false,
+      isLiked: false,
+    });
+
+    isAddModalOpen.value = false;
+  } catch (error) {
+    alert("Error creating post: " + error.message);
+  } finally {
+    isSubmitting.value = false;
+  }
+};
+
+const reportPlace = async () => {
+  if (!selectedPlace.value) return;
+  const reason = prompt("Please provide a reason for reporting this content:");
+  if (!reason) return;
+
+  try {
+    const response = await fetch(
+      `http://localhost:3000/api/travelcards/${selectedPlace.value.id}/report`,
+      {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ reason, userId: getUserId() }),
+      },
+    );
+
+    if (response.ok) {
+      alert("Report submitted successfully.");
+      closeDetail();
+    } else {
+      const err = await response.json();
+      alert("Error: " + err.message);
+    }
+  } catch (error) {
+    console.error(error);
+  }
+};
+
+const navigateToPlace = (place) => {
+  if (place.coordinates && place.coordinates.length === 2) {
+  }
+};
+
 watch([activeFilter, searchQuery, viewMode], () => {
-  fetchPlaces(true); // Reset and fetch new data
+  fetchPlaces(true);
 });
 
-const loadMorePlaces = () => fetchPlaces();
-// --- ACTIONS ---
+watch(
+  () => isAddModalOpen.value || isDetailOpen.value,
+  (isOpen) => {
+    document.body.style.overflow = isOpen ? "hidden" : "";
+  },
+);
 
 const openDetail = (place) => {
   selectedPlace.value = place;
@@ -271,62 +315,20 @@ const closeDetail = () => {
   }, 300);
 };
 
-const reportPlace = () => {
-  if (confirm("Are you sure you want to report this recommendation?")) {
-    alert("Report submitted.");
-  }
-};
-
-const submitRecommendation = () => {
-  if (!newPlace.title || !newPlace.location || !newPlace.description) {
-    alert("Please fill in all required fields.");
-    return;
-  }
-
-  isSubmitting.value = true;
-
-  setTimeout(() => {
-    const score = 100;
-    const newItem = {
-      id: Date.now(),
-      title: newPlace.title,
-      location: newPlace.location,
-      category: newPlace.category,
-      price: newPlace.price === "Free" ? "Free" : newPlace.price,
-      description: newPlace.description,
-      image: `https://picsum.photos/seed/${Date.now()}/600/400`,
-      score: score,
-      tags: newPlace.tags ? newPlace.tags.split(",").map((t) => t.trim()) : [],
-      user: {
-        name: "You",
-        avatar: "https://i.pravatar.cc/150?u=me",
-      },
-      likes: 0,
-      shares: 0,
-      saved: false,
-    };
-
-    places.value.unshift(newItem);
-
-    // Switch view to 'My Posts' or 'All' so the user sees it immediately
-    viewMode.value = "my-posts";
-
-    Object.assign(newPlace, {
-      title: "",
-      location: "",
-      description: "",
-      tags: "",
-      price: "",
-    });
-    isSubmitting.value = false;
-    isAddModalOpen.value = false;
-  }, 1500);
-};
-
 const goToUserProfile = (userId) => {
   rewardsStore.setTargetUser(userId);
   router.push("/Rewards");
 };
+
+// Helpers for UI
+const getLeafCount = (likes) => {
+  if (likes > 50) return 3;
+  if (likes > 20) return 2;
+  return 1;
+};
+
+// Infinite Scroll
+const loadMorePlaces = () => fetchPlaces();
 
 onMounted(() => {
   loadMorePlaces();
@@ -344,7 +346,6 @@ onUnmounted(() => {
   document.body.style.overflow = "";
 });
 </script>
-
 <template>
   <div class="max-w-7xl mx-auto min-h-screen font-sans relative pb-20">
     <div
@@ -440,7 +441,7 @@ onUnmounted(() => {
 
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       <div
-        v-if="filteredPlaces.length === 0 && !loading"
+        v-if="places.length === 0 && !loading"
         class="col-span-full text-center py-20 text-gray-400 flex flex-col items-center gap-2"
       >
         <div class="bg-gray-100 p-4 rounded-full mb-2">
@@ -457,7 +458,7 @@ onUnmounted(() => {
       </div>
 
       <div
-        v-for="place in filteredPlaces"
+        v-for="place in places"
         :key="place.id"
         @click="openDetail(place)"
         class="card bg-white shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-gray-100 rounded-2xl overflow-hidden cursor-pointer group"
@@ -526,12 +527,12 @@ onUnmounted(() => {
             <div class="flex items-center gap-3">
               <button
                 class="btn btn-circle btn-xs btn-ghost text-gray-400 hover:text-red-500 hover:bg-red-50"
-                @click.stop="place.likes++"
+                @click.stop="toggleLike(place)"
                 title="Like"
               >
                 <Heart
                   class="w-4 h-4"
-                  :class="{ 'fill-current text-red-500': place.likes > 0 }"
+                  :class="{ 'fill-current text-red-500': place.isLiked }"
                 />
               </button>
               <span class="text-xs text-gray-400 font-medium -ml-1 w-6">{{
@@ -540,7 +541,7 @@ onUnmounted(() => {
 
               <button
                 class="btn btn-circle btn-xs btn-ghost text-gray-400 hover:text-emerald-600 hover:bg-emerald-50"
-                @click.stop="place.saved = !place.saved"
+                @click.stop="toggleSave(place)"
                 title="Save"
               >
                 <Bookmark
@@ -551,7 +552,7 @@ onUnmounted(() => {
 
               <button
                 class="btn btn-circle btn-xs btn-ghost text-gray-400 hover:text-blue-500 hover:bg-blue-50"
-                @click.stop
+                @click.stop="navigateToPlace(place)"
                 title="Navigate"
               >
                 <Navigation class="w-4 h-4" />
@@ -803,19 +804,19 @@ onUnmounted(() => {
             <div class="flex gap-2">
               <button
                 class="btn btn-outline border-gray-200 hover:bg-red-50 hover:border-red-200 hover:text-red-500 gap-2"
-                @click="selectedPlace.likes++"
+                @click="toggleLike(selectedPlace)"
               >
                 <Heart
                   class="w-4 h-4"
                   :class="{
-                    'fill-current text-red-500': selectedPlace.likes > 0,
+                    'fill-current text-red-500': selectedPlace.isLiked,
                   }"
                 />
                 {{ selectedPlace.likes }}
               </button>
               <button
                 class="btn btn-outline border-gray-200 hover:bg-emerald-50 hover:border-emerald-200 hover:text-emerald-600 gap-2"
-                @click="selectedPlace.saved = !selectedPlace.saved"
+                @click="toggleSave(selectedPlace)"
               >
                 <Bookmark
                   class="w-4 h-4"
@@ -826,6 +827,7 @@ onUnmounted(() => {
                 Save
               </button>
               <button
+                @click="navigateToPlace(selectedPlace)"
                 class="btn bg-blue-600 hover:bg-blue-700 text-white border-none gap-2 px-6"
               >
                 <Navigation class="w-4 h-4" /> Navigate

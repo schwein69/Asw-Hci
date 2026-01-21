@@ -8,6 +8,7 @@ import mongoose from "mongoose";
 export const createTravelCard = async (req, res) => {
   try {
     const data = req.body;
+    const coordinates = await getCoordinatesFromAddress(data.address);
     const newCard = new TravelCard({
       creator: data.creator,
       title: data.title,
@@ -17,7 +18,7 @@ export const createTravelCard = async (req, res) => {
       price: data.price,
       location: {
         type: "Point",
-        coordinates: [data.longitude, data.latitude], // Order: [Longitude, Latitude]
+        coordinates: [coordinates.longitude, coordinates.latitude], // Order: [Longitude, Latitude]
         address: data.address,
       },
     });
@@ -71,6 +72,17 @@ export const getTravelCards = async (req, res) => {
       path: "creator",
       select: "_id username profileImage",
     });
+
+    // If a user is logged in, calculate if they have liked/saved these cards
+    if (userId) {
+      cards = cards.map((card) => {
+        return {
+          ...card,
+          isLiked: likesStrings.includes(userId.toString()),
+          isSaved: savesStrings.includes(userId.toString()),
+        };
+      });
+    }
 
     // Pagination Counts
     const total = await TravelCard.countDocuments(matchStage);
@@ -165,7 +177,16 @@ export const getSavedTravelCards = async (req, res) => {
       .limit(limit);
 
     const total = await TravelCard.countDocuments(query);
-
+    // If a user is logged in, calculate if they have liked/saved these cards
+    if (userId) {
+      cards = cards.map((card) => {
+        return {
+          ...card,
+          isLiked: likesStrings.includes(userId.toString()),
+          isSaved: savesStrings.includes(userId.toString()),
+        };
+      });
+    }
     res.status(200).json({
       cards,
       currentPage: page,
@@ -246,7 +267,7 @@ export const deleteTravelCard = async (req, res) => {
 export const toggleLikeCard = async (req, res) => {
   try {
     const { cardId } = req.params;
-    const userId = req.userId;
+    const userId = req.body.userId;
 
     const card = await TravelCard.findById(cardId);
     if (!card) return res.status(404).json({ message: "Card not found" });
@@ -355,8 +376,7 @@ export const toggleSaveCard = async (req, res) => {
 export const reportTravelCard = async (req, res) => {
   try {
     const { cardId } = req.params;
-    const userId = req.userId; // reporter's ID
-    const { reason } = req.body;
+    const { reason, userId } = req.body;
 
     // Find the card
     const card = await TravelCard.findById(cardId);
@@ -364,7 +384,7 @@ export const reportTravelCard = async (req, res) => {
       return res.status(404).json({ message: "Card not found" });
     }
 
-    // 2. Prevent Duplicate Reporting
+    // Prevent Duplicate Reporting
     const alreadyReported = card.reports.some(
       (r) => r.user.toString() === userId,
     );
