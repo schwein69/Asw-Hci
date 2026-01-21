@@ -432,6 +432,7 @@ const translations = {
       weekAgo: "week ago",
       dayAgo: "day ago",
       pleaseSelectCategory: "Please select a category and a rating.",
+      messageTooShort: "Message must be at least 5 characters",
       thankYouSubmitted: "Thank you! Your feedback has been submitted.",
     },
     plan: {
@@ -986,6 +987,7 @@ const translations = {
       weekAgo: "settimana fa",
       dayAgo: "giorno fa",
       pleaseSelectCategory: "Seleziona una categoria e una valutazione.",
+      messageTooShort: "Il messaggio deve avere almeno 5 caratteri",
       thankYouSubmitted: "Grazie! Il tuo feedback è stato inviato.",
     },
     plan: {
