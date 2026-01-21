@@ -15,15 +15,18 @@ router.get("/myTravelCards", travelCardsController.getUserTravelCards);
 router.get("/savedTravelCards", travelCardsController.getSavedTravelCards);
 
 // Update a travel card
-router.put("/:id", travelCardsController.updateTravelCard);
+router.put("/:cardId", travelCardsController.updateTravelCard);
 
 // Delete a travel card
-router.delete("/:id", travelCardsController.deleteTravelCard);
+router.delete("/:cardId", travelCardsController.deleteTravelCard);
 
 // Like a travel card
-router.post("/:id/like", travelCardsController.toggleLikeCard);
+router.post("/:cardId/like", travelCardsController.toggleLikeCard);
 
 // Report a travel card
 router.post("/:cardId/report", travelCardsController.reportTravelCard);
+
+// Save/Unsave a travel card
+router.post("/:cardId/save", travelCardsController.toggleSaveCard);
 
 export default router;

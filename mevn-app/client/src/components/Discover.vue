@@ -86,12 +86,6 @@ watch(
   },
 );
 
-const getLeafCount = (likes) => {
-  if (likes > 300) return 3;
-  if (likes >= 100) return 2;
-  return 1;
-};
-
 // --- FILTERING LOGIC ---
 const filteredPlaces = computed(() => {
   return places.value.filter((place) => {
@@ -113,8 +107,9 @@ const filteredPlaces = computed(() => {
     return matchesCategory && matchesSearch;
   });
 });
+const cats = ["Restaurants", "Hotels", "Attractions", "Activities"];
 
-// --- FAKE DATA ---
+/*// --- FAKE DATA ---
 const generateMockData = (count) => {
   const titles = [
     "Green Harvest Café",
@@ -136,7 +131,7 @@ const generateMockData = (count) => {
     "Vancouver, Canada",
     "Portland, USA",
   ];
-  const prices = ["$$", "$$$", "$", "Free", null];
+  const prices = ["$$", "$$$", "$", "Free"];
   const cats = ["Restaurants", "Hotels", "Attractions", "Activities"];
 
   return Array.from({ length: count }).map((_, i) => {
@@ -164,9 +159,9 @@ const generateMockData = (count) => {
       saved: false,
     };
   });
-};
+};*/
 
-const loadMorePlaces = async () => {
+/*const loadMorePlaces = async () => {
   if (loading.value) return;
   loading.value = true;
   setTimeout(() => {
@@ -176,7 +171,92 @@ const loadMorePlaces = async () => {
     loading.value = false;
   }, 800);
 };
+*/
+const getUserId = () => {
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  return user._id || user.id;
+};
+// --- DATA FETCHING ---
+const fetchPlaces = async (reset = false) => {
+  if (loading.value || (!hasMore.value && !reset)) return;
+  loading.value = true;
+  if (reset) {
+    page.value = 1;
+    places.value = [];
+    hasMore.value = true;
+  }
+  const userId = getUserId();
 
+  try {
+    let url = "";
+    const params = new URLSearchParams({
+      page: page.value,
+      limit: 6,
+      search: searchQuery.value,
+      category: activeFilter.value !== "All" ? activeFilter.value : "",
+    });
+
+    if (viewMode.value === "my-posts") {
+      url = `http://localhost:3000/api/travelcards/myTravelCards?${params}`;
+    } else if (viewMode.value === "saved") {
+      url = `http://localhost:3000/api/travelcards/savedTravelCards?${params}`;
+    } else {
+      url = `http://localhost:3000/api/travelcards/discover?${params}`;
+    }
+
+    const response = await fetch(url, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+    });
+
+    if (!response.ok) throw new Error("Failed to fetch places");
+
+    const data = await response.json();
+
+    // Map backend data to frontend structure if needed
+    // Assuming backend returns { cards: [], hasMore: bool }
+    const newPlaces = data.cards.map((card) => ({
+      id: card._id,
+      title: card.title,
+      location: card.location.address || "Unknown Location",
+      category: card.category,
+      price: card.price > 0 ? "$".repeat(card.price) : "Free", // Adjust logic based on backend price format
+      description: card.description,
+      image:
+        card.images?.[0] || `https://picsum.photos/seed/${card._id}/600/400`,
+      user: {
+        id: card.creator._id,
+        name: card.creator.username,
+        avatar:
+          card.creator.profileImage ||
+          `https://i.pravatar.cc/150?u=${card.creator._id}`,
+      },
+      likes: card.numberOfLikes || 0,
+      shares: 0,
+      saved: card.isSaved || false, // Ensure backend sends this boolean
+    }));
+
+    if (reset) {
+      places.value = newPlaces;
+    } else {
+      places.value.push(...newPlaces);
+    }
+
+    hasMore.value = data.hasMore;
+    if (hasMore.value) page.value++;
+  } catch (error) {
+    console.error("Error loading places:", error);
+  } finally {
+    loading.value = false;
+  }
+};
+
+// Re-fetch when filters change
+watch([activeFilter, searchQuery, viewMode], () => {
+  fetchPlaces(true); // Reset and fetch new data
+});
+
+const loadMorePlaces = () => fetchPlaces();
 // --- ACTIONS ---
 
 const openDetail = (place) => {

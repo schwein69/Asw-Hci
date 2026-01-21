@@ -29,27 +29,41 @@ export const createTravelCard = async (req, res) => {
   }
 };
 
-// Get ALL travel cards (Randomized Feed) excluding the current user's posts
+// Get ALL travel cards (Randomized Feed) with Search & Category
 export const getTravelCards = async (req, res) => {
   try {
     const userId = req.userId;
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 6;
 
-    // Approved status AND not created by current user
+    // Extract new query params
+    const { search, category } = req.query;
+
+    // Build the Filter Object
     const matchStage = {
       status: "Approved",
     };
 
-    // Exclude user's posts
+    // Exclude current user's posts
     if (userId) {
       matchStage.creator = { $ne: new mongoose.Types.ObjectId(userId) };
     }
 
-    // Random Selection using aggregation Pipeline
+    // Filter by Category (if provided and not "All")
+    if (category && category !== "All") {
+      matchStage.category = category;
+    }
+
+    // Filter by Search
+    if (search) {
+      // $regex allows partial matching, $options: "i" makes it case-insensitive
+      matchStage.title = { $regex: search, $options: "i" };
+    }
+
+    //  Aggregation
     const cards = await TravelCard.aggregate([
-      { $match: matchStage },
-      { $sample: { size: limit } },
+      { $match: matchStage }, // Apply filters first
+      { $sample: { size: limit } }, // Then pick random documents from the result
     ]);
 
     // Populate user details
@@ -58,7 +72,7 @@ export const getTravelCards = async (req, res) => {
       select: "_id username profileImage",
     });
 
-    // Pagination Logic
+    // Pagination Counts
     const total = await TravelCard.countDocuments(matchStage);
     const skippedSoFar = (page - 1) * limit;
 
@@ -73,15 +87,29 @@ export const getTravelCards = async (req, res) => {
   }
 };
 
-// Get only the current user's travel cards
+// Get only the current user's travel cards (With Search & Category)
 export const getUserTravelCards = async (req, res) => {
   try {
     const userId = req.userId;
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 6;
+    const { search, category } = req.query; // Extract params
+
     const skip = (page - 1) * limit;
 
+    // Build Base Query
     const query = { creator: userId };
+
+    // Category Filter
+    if (category && category !== "All") {
+      query.category = category;
+    }
+
+    // Search Filter (Title)
+    if (search) {
+      query.title = { $regex: search, $options: "i" };
+    }
+
     // Fetch cards created by this user
     const cards = await TravelCard.find(query)
       .populate("creator", "username profileImage")
@@ -104,19 +132,31 @@ export const getUserTravelCards = async (req, res) => {
   }
 };
 
-// Get cards that the user has Saved
+// Get cards that the user has Saved (With Search & Category)
 export const getSavedTravelCards = async (req, res) => {
   try {
     const userId = req.userId;
     const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
+    const limit = parseInt(req.query.limit) || 6;
+    const { search, category } = req.query; // Extract params
+
     const skip = (page - 1) * limit;
 
-    // Find cards where the 'likes' array contains the userId
+    // Build Base Query (Liked + Approved)
     const query = {
       likes: userId,
       status: "Approved",
     };
+
+    // Add Category Filter
+    if (category && category !== "All") {
+      query.category = category;
+    }
+
+    // Add Search Filter (Title)
+    if (search) {
+      query.title = { $regex: search, $options: "i" };
+    }
 
     const cards = await TravelCard.find(query)
       .populate("creator", "username profileImage")
@@ -269,6 +309,46 @@ export const toggleLikeCard = async (req, res) => {
     }
   } catch (error) {
     res.status(500).json({ message: `Error toggling like: ${error.message}` });
+  }
+};
+// Toggle save/unsave travel card
+export const toggleSaveCard = async (req, res) => {
+  try {
+    const { cardId } = req.params;
+    const userId = req.userId;
+
+    const card = await TravelCard.findById(cardId);
+    if (!card) return res.status(404).json({ message: "Card not found" });
+
+    const isSaved = card.saves.includes(userId);
+
+    if (isSaved) {
+      // --- UNSAVE ---
+      await TravelCard.findByIdAndUpdate(
+        cardId,
+        { $pull: { saves: userId } }, // Remove user ID from saves array
+        { new: true },
+      );
+
+      return res.status(200).json({
+        message: "Removed from saves",
+        isSaved: false,
+      });
+    } else {
+      // --- SAVE ---
+      await TravelCard.findByIdAndUpdate(
+        cardId,
+        { $addToSet: { saves: userId } }, // Add user ID
+        { new: true },
+      );
+
+      return res.status(200).json({
+        message: "Card saved",
+        isSaved: true,
+      });
+    }
+  } catch (error) {
+    res.status(500).json({ message: `Error toggling save: ${error.message}` });
   }
 };
 // Report a travel card
