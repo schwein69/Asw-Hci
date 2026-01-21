@@ -5,7 +5,6 @@ import {
   getActiveTrips,
   getCompletedTripsAuth,
   getTripById,
-  updateTrip,
   deleteTrip,
   markTripCompleted,
 } from "../controllers/tripController.js";

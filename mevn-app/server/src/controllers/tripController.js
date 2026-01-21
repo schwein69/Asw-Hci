@@ -116,63 +116,6 @@ export const getTripById = async (req, res) => {
   }
 };
 
-// Update trip
-export const updateTrip = async (req, res) => {
-  try {
-    const { tripId } = req.params;
-    const updateData = req.body;
-
-    // Recalculate totals if itinerary is updated
-    if (updateData.itinerary) {
-      let totalDurationHours = 0;
-      let totalDistanceKm = 0;
-      let totalPrice = 0;
-      let totalCo2Emission = 0;
-      const transportModeBreakdown = new Map();
-
-      updateData.itinerary.forEach((segment) => {
-        if (segment.durationHours) totalDurationHours += segment.durationHours;
-        if (segment.distanceKm) totalDistanceKm += segment.distanceKm;
-        if (segment.price) totalPrice += segment.price;
-        if (segment.co2) totalCo2Emission += segment.co2;
-
-        if (segment.category === "Transport" && segment.transportMode) {
-          const mode = segment.transportMode;
-          const current = transportModeBreakdown.get(mode) || 0;
-          transportModeBreakdown.set(mode, current + (segment.distanceKm || 0));
-        }
-      });
-
-      const avgCarCo2PerKm = 0.171;
-      const carCo2 = totalDistanceKm * avgCarCo2PerKm;
-
-      updateData.totalDurationHours = totalDurationHours;
-      updateData.totalDistanceKm = totalDistanceKm;
-      updateData.totalPrice = totalPrice;
-      updateData.totalCo2Emission = totalCo2Emission;
-      updateData.transportModeBreakdown = Object.fromEntries(
-        transportModeBreakdown,
-      );
-    }
-
-    const updatedTrip = await Trip.findByIdAndUpdate(tripId, updateData, {
-      new: true,
-      runValidators: true,
-    });
-
-    if (!updatedTrip) {
-      return res.status(404).json({ message: "Trip not found" });
-    }
-
-    res.status(200).json(updatedTrip);
-  } catch (error) {
-    console.error("Error updating trip:", error);
-    res
-      .status(500)
-      .json({ message: "Failed to update trip", error: error.message });
-  }
-};
-
 // Delete trip
 export const deleteTrip = async (req, res) => {
   try {
