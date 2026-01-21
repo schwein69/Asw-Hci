@@ -20,6 +20,9 @@ import {
   AlertCircle,
   Edit,
   Calendar,
+  Bed,
+  Flag,
+  Utensils,
 } from "lucide-vue-next";
 import actualMap from "./maps/actualMap.vue";
 import * as turf from "@turf/turf";
@@ -442,7 +445,15 @@ onUnmounted(() => {
                       class="w-5 h-5"
                     />
                     <Bus v-else-if="segment.type === 'Bus'" class="w-5 h-5" />
-                    <Car v-else class="w-5 h-5" />
+                    <Bed
+                      v-else-if="segment.type === 'Accommodation'"
+                      class="w-5 h-5"
+                    />
+                    <Utensils
+                      v-else-if="segment.type === 'Restaurant'"
+                      class="w-5 h-5"
+                    />
+                    <Flag v-else class="w-5 h-5" />
                   </div>
                   <div>
                     <div
