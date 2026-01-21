@@ -75,9 +75,13 @@ export const getActiveTrips = async (req, res) => {
 };
 
 // Get completed trips for PastTrips page
-export const getCompletedTrips = async (req, res) => {
+export const getCompletedTripsAuth = async (req, res) => {
   try {
-    const { userId } = req.params;
+    const userId = req.userId;
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
     const trips = await Trip.find({
       user: userId,
       status: "completed",
