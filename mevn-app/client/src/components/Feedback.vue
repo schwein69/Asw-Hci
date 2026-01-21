@@ -188,6 +188,15 @@ const submitFeedback = async () => {
 
   isSubmitting.value = true;
   try {
+    // Get the reported user's name if reporting
+    let reportedUserName = "";
+    if (isReportUser.value) {
+      const reportedUser = allUsers.value.find(
+        (u) => u._id === selectedUserToReport.value
+      );
+      reportedUserName = reportedUser ? reportedUser.username : "Unknown User";
+    }
+
     const response = await fetch("http://localhost:3000/api/feedback", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -195,11 +204,11 @@ const submitFeedback = async () => {
         userId,
         category: selectedCategory.value,
         subject: isReportUser.value
-          ? `Report User: ${selectedUserToReport.value}`
+          ? `Report User: ${reportedUserName}`
           : subject.value || "Feedback",
         message: isReportUser.value
           ? `User ID: ${selectedUserToReport.value}`
-          : message.value,
+          : message.value || "No additional comments provided.",
         rating: isReportUser.value ? 1 : userRating.value,
       }),
     });
