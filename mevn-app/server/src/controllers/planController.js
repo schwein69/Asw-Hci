@@ -48,13 +48,21 @@ export const saveTrip = async (req, res) => {
         .status(400)
         .json({ message: "No itinerary segments provided" });
 
-    // HELPER: Parse "1 hours 30 minutes" ---
+    // Parse time
     const parseDuration = (timeStr) => {
       if (!timeStr) return 0;
-      // Regex handles "hour", "hours", "h", "mins", "minute", "m"
-      const h = (timeStr.match(/(\d+)\s*(h|hour)/i) || [])[1] || 0;
-      const m = (timeStr.match(/(\d+)\s*(m|min)/i) || [])[1] || 0;
-      return parseInt(h) * 60 + parseInt(m);
+
+      // Matches: "1h", "1 h", "1 hour", "1 hours"
+      const hoursMatch = timeStr.match(/(\d+)\s*(h|hour|hours)/i);
+      // Matches: "45m", "45 m", "45 min", "45 minutes", "45 mins"
+      const minutesMatch = timeStr.match(
+        /(\d+)\s*(m|min|mins|minute|minutes)/i,
+      );
+
+      const hours = hoursMatch ? parseInt(hoursMatch[1]) : 0;
+      const minutes = minutesMatch ? parseInt(minutesMatch[1]) : 0;
+
+      return hours * 60 + minutes;
     };
 
     let totalDistanceKm = 0;
@@ -69,7 +77,7 @@ export const saveTrip = async (req, res) => {
     const itinerary = segments.map((seg, index) => {
       const typeLower = (seg.type || "transport").toLowerCase();
 
-      // Map Transport Mode
+      //  Map Transport Mode
       const modeMap = {
         airplane: "airplane",
         car: "car",
@@ -87,34 +95,35 @@ export const saveTrip = async (req, res) => {
       else if (["restaurant", "bar", "food"].some((t) => typeLower.includes(t)))
         category = "Restaurant";
 
-      // 3. Parse Numbers (Force Number to prevent Schema casting errors)
+      //  Parse Numbers
       const dist = Number(seg.distance) || 0;
       const cost = Number(seg.cost) || 0;
       const co2 = Number(seg.co2) || 0;
-      const durationMins = parseDuration(seg.time);
+      const durationMins = parseDuration(seg.time); // Uses safe parser
 
-      // 4. Update Totals
+      // Update Totals
       totalDistanceKm += dist;
       totalPrice += cost;
       totalCo2Emission += co2;
       totalDurationMinutes += durationMins;
 
       if (transportMode) {
-        // Increment breakdown for Charts
         transportModeBreakdown[transportMode] =
           (transportModeBreakdown[transportMode] || 0) + dist;
       }
 
-      // 5. Smart Time Logic (The "Same Time" Fix)
       let startDateTime;
+
       if (seg.date) {
-        // If frontend gave a specific date, use it
-        const dateStr = seg.departureTime
-          ? `${seg.date}T${seg.departureTime}`
-          : seg.date;
-        startDateTime = new Date(dateStr);
+        // CASE A: Date AND Time provided (e.g., "2023-01-01" and "14:30")
+        if (seg.departureTime) {
+          startDateTime = new Date(`${seg.date}T${seg.departureTime}`);
+        }
+        // CASE B: Only Date provided
+        else {
+          startDateTime = new Date(`${seg.date}T00:00:00`);
+        }
       } else {
-        // If NO date, chain it to the previous segment's end
         startDateTime = index === 0 ? new Date() : new Date(previousEndTime);
       }
 
