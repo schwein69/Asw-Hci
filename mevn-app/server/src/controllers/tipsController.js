@@ -1,4 +1,7 @@
-import { generateDailyTips } from "../services/gemini.js";
+import {
+  generateDailyTips,
+  generateKnowledgeTips,
+} from "../services/gemini.js";
 
 export const getDailyTips = async (req, res) => {
   try {
@@ -15,7 +18,7 @@ export const getDailyTips = async (req, res) => {
 
 export const getKnowledgeTips = async (req, res) => {
   try {
-    const tips = await getKnowledgeTips();
+    const tips = await generateKnowledgeTips();
     res.status(200).json(tips);
   } catch (error) {
     console.error("Route Error:", error);
