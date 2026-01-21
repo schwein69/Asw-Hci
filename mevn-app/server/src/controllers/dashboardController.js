@@ -12,12 +12,19 @@ export const getDashboardSummary = async (req, res) => {
     const trips = await Trip.find({ user: userId }).select(
       "totalDistanceKm totalCo2Emission co2Saved transportModeBreakdown"
     );
+    const avgCarCo2PerKm = 0.171;
 
     const totals = trips.reduce(
       (acc, trip) => {
         acc.totalDistanceKm += trip.totalDistanceKm || 0;
-        acc.totalCo2SavedKg += trip.co2Saved || 0;
-        acc.totalCo2Emission += trip.totalCo2Emission || 0;
+        const tripCo2Emission = trip.totalCo2Emission || 0;
+        acc.totalCo2Emission += tripCo2Emission;
+
+        const co2Saved =
+          typeof trip.co2Saved === "number"
+            ? trip.co2Saved
+            : Math.max(0, (trip.totalDistanceKm || 0) * avgCarCo2PerKm - tripCo2Emission);
+        acc.totalCo2SavedKg += co2Saved;
 
         const breakdown = trip.transportModeBreakdown || {};
         acc.greenDistanceKm +=
@@ -186,9 +193,19 @@ export const getEnvironmentalImpact = async (req, res) => {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const trips = await Trip.find({ user: userId }).select("co2Saved");
+    const trips = await Trip.find({ user: userId }).select(
+      "co2Saved totalDistanceKm totalCo2Emission"
+    );
+    const avgCarCo2PerKm = 0.171;
     const totalCo2SavedKg = trips.reduce(
-      (sum, trip) => sum + (trip.co2Saved || 0),
+      (sum, trip) => {
+        const tripCo2Emission = trip.totalCo2Emission || 0;
+        const co2Saved =
+          typeof trip.co2Saved === "number"
+            ? trip.co2Saved
+            : Math.max(0, (trip.totalDistanceKm || 0) * avgCarCo2PerKm - tripCo2Emission);
+        return sum + co2Saved;
+      },
       0
     );
 
