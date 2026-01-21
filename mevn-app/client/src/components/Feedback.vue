@@ -162,8 +162,21 @@ const getCategoryIcon = (categoryKey) => {
 };
 
 const submitFeedback = async () => {
-  if (!userRating.value || !selectedCategory.value) {
+  // Validation: check if category is selected
+  if (!selectedCategory.value) {
     alert(t.value("feedback.pleaseSelectCategory"));
+    return;
+  }
+
+  // For normal feedback (not report user), require rating
+  if (!isReportUser.value && !userRating.value) {
+    alert(t.value("feedback.pleaseSelectCategory"));
+    return;
+  }
+
+  // For report user, require user selection
+  if (isReportUser.value && !selectedUserToReport.value) {
+    alert("Please select a user to report");
     return;
   }
 
@@ -181,9 +194,13 @@ const submitFeedback = async () => {
       body: JSON.stringify({
         userId,
         category: selectedCategory.value,
-        subject: subject.value || "Feedback",
-        message: message.value,
-        rating: userRating.value,
+        subject: isReportUser.value
+          ? `Report User: ${selectedUserToReport.value}`
+          : subject.value || "Feedback",
+        message: isReportUser.value
+          ? `User ID: ${selectedUserToReport.value}`
+          : message.value,
+        rating: isReportUser.value ? 1 : userRating.value,
       }),
     });
 
@@ -196,6 +213,7 @@ const submitFeedback = async () => {
       selectedCategory.value = "";
       subject.value = "";
       message.value = "";
+      selectedUserToReport.value = "";
       // Reload feedback list
       fetchCommunityFeedback();
     } else {
