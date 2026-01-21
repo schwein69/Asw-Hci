@@ -13,10 +13,10 @@ import {
   Mountain,
   X,
   Image as ImageIcon,
-  Loader2,
   Flag,
   Search,
   User,
+  User2Icon,
 } from "lucide-vue-next";
 import { getLanguage, t as translate } from "../utils/translations.js";
 import { useRouter } from "vue-router";
@@ -115,6 +115,7 @@ const fetchPlaces = async (reset = false) => {
     if (!response.ok) throw new Error("Failed to fetch places");
 
     const data = await response.json();
+    const defaultAvatar = "https://ui-avatars.com/api/?name=";
 
     const newPlaces = data.cards.map((card) => ({
       id: card._id,
@@ -131,7 +132,7 @@ const fetchPlaces = async (reset = false) => {
         name: card.creator.username,
         avatar:
           card.creator.profileImage ||
-          `https://i.pravatar.cc/150?u=${card.creator._id}`,
+          defaultAvatar + encodeURIComponent(card.creator.username),
       },
       likes: card.numberOfLikes || 0,
       saved: card.isSaved || false, // From the map logic we added in backend
@@ -196,6 +197,7 @@ const toggleSave = async (place) => {
   }
 };
 const handleCardCreated = (newCard) => {
+  const defaultAvatar = "https://ui-avatars.com/api/?name=";
   places.value.unshift({
     id: newCard._id,
     title: newCard.title,
@@ -207,7 +209,12 @@ const handleCardCreated = (newCard) => {
     image:
       newCard.images?.[0] ||
       `https://picsum.photos/seed/${newCard._id}/600/400`,
-    user: { name: "You", avatar: "https://i.pravatar.cc/150?u=me" },
+    user: {
+      name: "You",
+      avatar:
+        newCard.creator.profileImage ||
+        defaultAvatar + encodeURIComponent(newCard.creator.username),
+    },
     likes: 0,
     saved: false,
     isLiked: false,

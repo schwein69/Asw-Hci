@@ -33,7 +33,7 @@ const categoryOptions = computed(() => [
 
 const newPlace = reactive({
   title: "",
-  address: "",
+  location: "",
   category: "Activity",
   price: "Free",
   description: "",
@@ -48,7 +48,7 @@ const getUserId = () => {
 const resetForm = () => {
   Object.assign(newPlace, {
     title: "",
-    address: "",
+    location: "",
     category: "Activity",
     price: "Free",
     description: "",

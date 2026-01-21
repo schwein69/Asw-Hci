@@ -8,7 +8,23 @@ import mongoose from "mongoose";
 export const createTravelCard = async (req, res) => {
   try {
     const data = req.body;
-    const coordinates = await getCoordinatesFromAddress(data.address);
+    if (!data.creator) {
+      console.error("Missing Creator ID");
+      return res
+        .status(400)
+        .json({ message: "User ID (creator) is missing. Are you logged in?" });
+    }
+    let coordinates = { longitude: 0, latitude: 0 }; // Default Fallback
+    try {
+      if (data.address) {
+        const geoResult = await getCoordinatesFromAddress(data.address);
+        if (geoResult && typeof geoResult.latitude === "number") {
+          coordinates = geoResult;
+        }
+      }
+    } catch (geoError) {
+      console.warn("Geocoding failed, using default (0,0):", geoError.message);
+    }
     const newCard = new TravelCard({
       creator: data.creator,
       title: data.title,
