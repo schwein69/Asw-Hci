@@ -28,9 +28,6 @@ router.get("/completed", authenticate, getCompletedTripsAuth);
 // Get single trip by ID
 router.get("/:tripId", getTripById);
 
-// Update trip
-router.put("/:tripId", updateTrip);
-
 // Mark trip as completed
 router.put("/:tripId/complete", markTripCompleted);
 

@@ -578,33 +578,47 @@ const saveTripToDB = async () => {
   }
 
   const userId = getUserId();
+  // Check if we are editing an existing trip
+  const tripId = tripStore.currentTrip?.id;
 
   try {
     const lastDest = savedSegments.value[savedSegments.value.length - 1].to;
     const fromSegment = savedSegments.value[0].from;
-    const cleanSegments = savedSegments.value.map((segment) => {
-      const { markers, ...rest } = segment;
-      return rest;
-    });
-    console.log("Payload Segments:", cleanSegments);
+    const cleanSegments = savedSegments.value.map(
+      ({ markers, ...rest }) => rest,
+    );
+
     const payload = {
       userId: userId,
       title: `${fromSegment} to ${lastDest} Trip`,
       segments: cleanSegments,
     };
 
-    const response = await fetch("http://localhost:3000/api/plan/save", {
-      method: "POST",
+    console.log("Saving trip with payload:", payload);
+    let url = "http://localhost:3000/api/plan/save";
+    let method = "POST";
+
+    if (tripId) {
+      url = `http://localhost:3000/api/plan/${tripId}`;
+      method = "PUT";
+    }
+
+    const response = await fetch(url, {
+      method: method,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
 
-    if (response.status === 201) {
-      console.log("Saved Trip Data:", response);
+    if (response.ok) {
+      const result = await response.json();
+      console.log("Success:", result);
       router.push("/World");
+    } else {
+      const errorData = await response.json();
+      console.error("Server Error:", errorData);
     }
   } catch (err) {
-    console.error("Error saving trip:", err);
+    console.error("Network Error:", err);
     alert("Failed to save trip. Check console for details.");
   }
 };

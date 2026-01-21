@@ -93,7 +93,7 @@ const fetchActiveTrips = async () => {
               hour: "2-digit",
               minute: "2-digit",
             }),
-            duration: `${Math.round(segment.estimatedDurationMinutes / 60)}h ${
+            duration: `${Math.floor(segment.estimatedDurationMinutes / 60)}h ${
               segment.estimatedDurationMinutes % 60
             }m`,
             distance: segment.distanceKm,
@@ -233,6 +233,24 @@ function completeTrip(tripId) {
   if (
     confirm(`Are you sure you want to complete and archive "${trip.name}"?`)
   ) {
+    try {
+      fetch(`http://localhost:3000/api/trips/complete/${tripId}`, {
+        method: "POST",
+      })
+        .then((res) => {
+          if (!res.ok) {
+            throw new Error("Failed to complete trip");
+          }
+          alert(`Trip "${trip.name}" marked as completed!`);
+        })
+        .catch((err) => {
+          console.error(err);
+          alert("Error completing trip: " + err.message);
+        });
+    } catch (error) {
+      console.error("Error completing trip:", error);
+      alert("Error completing trip: " + error.message);
+    }
     trips.value = trips.value.filter((t) => t.id !== tripId);
   }
 }

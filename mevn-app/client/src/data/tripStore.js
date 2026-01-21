@@ -7,31 +7,51 @@ export const useTripStore = defineStore("trip", () => {
     name: "",
     routes: [],
   });
-  const savedTrips = ref([]);
   const destinationFromDiscoverToPlan = ref("");
   function setDestination(address) {
     destinationFromDiscoverToPlan.value = address;
   }
   function setTripToEdit(tripFromDashboard) {
-    const convertedRoutes = tripFromDashboard.routes.map((route) => ({
-      id: route.id,
-      from: route.from,
-      to: route.to,
-      fromCoords: route.startCoords,
-      toCoords: route.endCoords,
-      type: route.type,
-      date: "",
-      departureTime: route.depTime,
-      arrivalTime: route.arrTime,
-      gate: route.gate,
-      transportNumber: route.transportCode,
-      cost: route.cost,
-      co2: route.co2,
-      time: route.duration,
-      distance: route.distance,
-      seatNumber: route.seat,
-      class: route.class,
-    }));
+    const convertedRoutes = tripFromDashboard.routes.map((route) => {
+      // --- FIX: Parse dates for form inputs ---
+      let dateStr = "";
+      let depTimeStr = "";
+      let arrTimeStr = "";
+
+      // If World.vue passed raw ISO strings (Recommended), use them:
+      if (route.rawStartTime) {
+        const start = new Date(route.rawStartTime);
+        dateStr = start.toISOString().split("T")[0]; // "YYYY-MM-DD"
+        depTimeStr = start.toTimeString().slice(0, 5); // "HH:mm"
+      }
+      if (route.rawEndTime) {
+        const end = new Date(route.rawEndTime);
+        arrTimeStr = end.toTimeString().slice(0, 5); // "HH:mm"
+      }
+
+      return {
+        id: route.id,
+        from: route.from,
+        to: route.to,
+        fromCoords: route.startCoords,
+        toCoords: route.endCoords,
+        type: route.type,
+
+        date: dateStr,
+        departureTime: depTimeStr || route.depTime,
+        arrivalTime: arrTimeStr || route.arrTime,
+
+        gate: route.gate,
+        transportNumber: route.transportCode,
+        cost: route.cost,
+        co2: route.co2,
+        time: route.duration,
+        distance: route.distance,
+        seat: route.seat,
+        class: route.class,
+        travelClass: route.class,
+      };
+    });
 
     currentTrip.value = {
       ...tripFromDashboard,
@@ -39,29 +59,9 @@ export const useTripStore = defineStore("trip", () => {
     };
   }
 
-  // Salva i dati dal Planner
-  function saveTrip(tripData) {
-    // Controlla se stiamo aggiornando un viaggio esistente o creandone uno nuovo
-    const index = savedTrips.value.findIndex((t) => t.id === tripData.id);
-
-    if (index !== -1) {
-      // Aggiorna esistente
-      savedTrips.value[index] = tripData;
-    } else {
-      // Crea nuovo
-      savedTrips.value.push(tripData);
-    }
-  }
-
-  function clearTrip() {
-    currentTrip.value = { id: null, name: "", routes: [] };
-  }
-
   return {
     currentTrip,
     setTripToEdit,
-    clearTrip,
-    saveTrip,
     setDestination,
     destinationFromDiscoverToPlan,
   };
