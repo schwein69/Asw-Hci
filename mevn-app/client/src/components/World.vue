@@ -93,7 +93,7 @@ const fetchActiveTrips = async () => {
               hour: "2-digit",
               minute: "2-digit",
             }),
-            duration: `${Math.floor(segment.estimatedDurationMinutes / 60)}h ${
+            duration: `${Math.round(segment.estimatedDurationMinutes / 60)}h ${
               segment.estimatedDurationMinutes % 60
             }m`,
             distance: segment.distanceKm,
@@ -324,7 +324,7 @@ onUnmounted(() => {
             Total Km
           </div>
           <div class="text-4xl font-extrabold text-blue-600 mt-2">
-            {{ getTripStats(trip).totalDistance }}
+            {{ Number(getTripStats(trip).totalDistance).toFixed(2) }}
           </div>
         </div>
 
