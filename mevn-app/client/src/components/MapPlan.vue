@@ -84,7 +84,6 @@ const draggableMarkers = ref([
   { id: "purple", color: "#8b5cf6", label: "Purple" },
 ]);
 
-// --- AGGIORNATO: Aggiunti nuovi campi allo stato ---
 const newSegment = ref({
   fromName: "",
   fromCoords: null,
@@ -95,10 +94,10 @@ const newSegment = ref({
   date: "",
   departureTime: "",
   arrivalTime: "",
-  gate: "", // Partenza
-  arrivalGate: "", // Arrivo (Nuovo)
-  seat: "", // Posto (Nuovo)
-  travelClass: "", // Classe (Nuovo)
+  gate: "",
+  arrivalGate: "",
+  seat: "",
+  travelClass: "",
   transportNumber: "",
   ecoScore: null,
 });
@@ -230,12 +229,6 @@ function handleMyLocation() {
       (err) => console.warn("Location denied:", err),
     );
   }
-}
-
-function areCoordsEqual(c1, c2) {
-  if (!c1 || !c2) return false;
-  const epsilon = 0.000001;
-  return Math.abs(c1[0] - c2[0]) < epsilon && Math.abs(c1[1] - c2[1]) < epsilon;
 }
 
 function onDragStart(event, markerItem) {
@@ -460,7 +453,6 @@ async function addSegment() {
   const nextStartName = newSegment.value.toName;
   const nextStartCoords = newSegment.value.toCoords;
 
-  // --- AGGIORNATO: Salvataggio nuovi campi ---
   const segment = {
     id: segmentId,
     from: newSegment.value.fromName,
@@ -473,10 +465,10 @@ async function addSegment() {
     date: newSegment.value.date,
     departureTime: newSegment.value.departureTime,
     arrivalTime: newSegment.value.arrivalTime,
-    gate: newSegment.value.gate, // Gate Partenza
-    arrivalGate: newSegment.value.arrivalGate, // Gate Arrivo
-    seat: newSegment.value.seat, // Posto
-    travelClass: newSegment.value.travelClass, // Classe
+    gate: newSegment.value.gate,
+    arrivalGate: newSegment.value.arrivalGate,
+    seat: newSegment.value.seat,
+    travelClass: newSegment.value.travelClass,
     transportNumber: newSegment.value.transportNumber,
     markers: [...tempMarkers],
     cost: geminiData.cost,
@@ -501,9 +493,9 @@ async function addSegment() {
   newSegment.value.departureTime = "";
   newSegment.value.arrivalTime = "";
   newSegment.value.gate = "";
-  newSegment.value.arrivalGate = ""; // Reset
-  newSegment.value.seat = ""; // Reset
-  newSegment.value.travelClass = ""; // Reset
+  newSegment.value.arrivalGate = "";
+  newSegment.value.seat = "";
+  newSegment.value.travelClass = "";
   newSegment.value.transportNumber = "";
 }
 
@@ -722,6 +714,23 @@ function handleSaveEdit(updatedData) {
 
 function closeEditModal() {
   editingSegmentIndex.value = null;
+}
+
+function handleMapClear() {
+  if (tempMarkers.length > 0) {
+    tempMarkers.forEach((marker) => marker.remove());
+    tempMarkers = [];
+  }
+
+  newSegment.value.fromName = "";
+  newSegment.value.fromCoords = null;
+  newSegment.value.toName = "";
+  newSegment.value.toCoords = null;
+  newSegment.value.ecoScore = null;
+  currentEcoRating.value = null;
+
+  if (fromSearchBox.value) fromSearchBox.value.value = "";
+  if (toSearchBox.value) toSearchBox.value.value = "";
 }
 </script>
 
@@ -1121,6 +1130,7 @@ function closeEditModal() {
             :center="mapCenter"
             :zoom="mapZoom"
             class="w-full h-full"
+            @clear="handleMapClear"
           />
           <div
             class="absolute top-4 left-1/2 -translate-x-1/2 pointer-events-none"
