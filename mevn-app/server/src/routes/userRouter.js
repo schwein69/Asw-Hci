@@ -300,7 +300,7 @@ router.delete("/account", authenticate, async (req, res) => {
 router.get("/admin/users", authenticate, authorize("AdminGeneral"), async (req, res) => {
   try {
     const users = await User.find()
-      .select("_id username email role status createdAt")
+      .select("_id username email role status createdAt numberOfReports")
       .sort({ createdAt: -1 });
     res.status(200).json(users);
   } catch (err) {
