@@ -34,6 +34,11 @@ const statsData = ref({
   greenDistanceKm: 0,
   ecoScore: 0,
   zeroTrips: 0,
+  ranking: {
+    position: 0,
+    totalUsers: 0,
+    topPercent: 0.0,
+  },
 });
 
 const formatNumber = (value) => {
@@ -65,6 +70,11 @@ const fetchDashboardSummary = async () => {
       greenDistanceKm: data.greenDistanceKm || 0,
       ecoScore: data.ecoScore || 0,
       zeroTrips: data.zeroTrips || 0,
+      ranking: {
+        position: data.ranking.position,
+        totalUsers: data.ranking.totalUsers,
+        topPercent: data.ranking.topPercent,
+      },
     };
   } catch (error) {
     console.error("Failed to fetch dashboard summary:", error);
@@ -126,7 +136,22 @@ const stats = computed(() => [
   {
     label: t("dashboard.ecoScore"),
     value: `${formatNumber(statsData.value.ecoScore)}`,
-    subtitle: t("dashboard.topGlobally"),
+    subtitle:
+      t("dashboard.topGlobally") +
+      " " +
+      statsData.value.ranking.topPercent +
+      "%",
+    icon: Gauge,
+  },
+  {
+    label: t("dashboard.position"),
+    value: statsData.value.ranking.position,
+    subtitle:
+      t("dashboard.position") +
+      " " +
+      statsData.value.ranking.position +
+      "/" +
+      statsData.value.ranking.totalUsers,
     icon: Gauge,
   },
   {
