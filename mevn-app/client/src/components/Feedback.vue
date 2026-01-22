@@ -74,7 +74,6 @@ const fetchAllUsers = async () => {
     const response = await fetch("http://localhost:3000/api/users/all");
     const users = await response.json();
 
-    // Exclude current user from the list
     const currentUserId = getUserId();
     allUsers.value = users.filter((u) => u._id !== currentUserId);
 
@@ -202,7 +201,7 @@ const submitFeedback = async () => {
     let reportedUserName = "";
     if (isReportUser.value) {
       const reportedUser = allUsers.value.find(
-        (u) => u._id === selectedUserToReport.value
+        (u) => u._id === selectedUserToReport.value,
       );
       reportedUserName = reportedUser ? reportedUser.username : "Unknown User";
     }
@@ -260,7 +259,7 @@ const handleUpvote = async (id) => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId }),
-      }
+      },
     );
 
     const data = await response.json();
@@ -477,7 +476,7 @@ onBeforeUnmount(() => {
                 :value="user._id"
                 class="text-gray-900"
               >
-                {{ user.username }} ({{ user.email }})
+                {{ user.username }} --- {{ user.email }} --- {{ user.role }}
               </option>
             </select>
             <div
@@ -532,8 +531,8 @@ onBeforeUnmount(() => {
             isSubmitting
               ? t("feedback.submitting")
               : isReportUser
-              ? "Report User"
-              : t("feedback.submitFeedbackButton")
+                ? "Report User"
+                : t("feedback.submitFeedbackButton")
           }}
         </button>
       </form>
