@@ -45,11 +45,14 @@ const fetchDashboardSummary = async () => {
     const token = localStorage.getItem("token");
     if (!token) return;
 
-    const response = await fetch("http://localhost:3000/api/dashboard/summary", {
-      headers: {
-        Authorization: `Bearer ${token}`,
+    const response = await fetch(
+      "http://localhost:3000/api/dashboard/summary",
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       },
-    });
+    );
 
     if (!response.ok) {
       throw new Error("Failed to fetch dashboard summary");
@@ -111,13 +114,13 @@ const stats = computed(() => [
   {
     label: t("dashboard.totalDistance"),
     value: `${formatNumber(statsData.value.totalDistanceKm)} km`,
-    subtitle: t("dashboard.thisMonth"),
+    subtitle: "",
     icon: Sprout,
   },
   {
     label: t("dashboard.greenDistance"),
     value: `${formatNumber(statsData.value.greenDistanceKm)} km`,
-    subtitle: t("dashboard.thisMonthGreen"),
+    subtitle: t("dashboard.zeroTripsBanner"),
     icon: TrendingUp,
   },
   {
@@ -149,15 +152,15 @@ const environmentalImpactRaw = ref({
 
 const environmentalImpact = computed(() => ({
   trees: `${environmentalImpactRaw.value.treesValue} ${t(
-    environmentalImpactRaw.value.treesKey
+    environmentalImpactRaw.value.treesKey,
   )}`,
   treesDesc: t(environmentalImpactRaw.value.treesDescKey),
   energy: `${environmentalImpactRaw.value.energyValue} ${t(
-    environmentalImpactRaw.value.energyKey
+    environmentalImpactRaw.value.energyKey,
   )}`,
   energyDesc: t(environmentalImpactRaw.value.energyDescKey),
   distance: `${environmentalImpactRaw.value.distanceValue} ${t(
-    environmentalImpactRaw.value.distanceKey
+    environmentalImpactRaw.value.distanceKey,
   )}`,
   distanceDesc: t(environmentalImpactRaw.value.distanceDescKey),
 }));
@@ -166,9 +169,9 @@ const environmentalImpact = computed(() => ({
 <template>
   <div class="space-y-6 overflow-hidden">
     <div
-      class="stats stats-vertical md:stats-horizontal shadow-sm border border-green-100 bg-white w-full md:grid-cols-2 lg:grid-cols-4"
+      class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 w-full bg-white shadow-sm border border-green-100 rounded-2xl divide-y md:divide-y-0 md:divide-x divide-green-100"
     >
-      <div v-for="(stat, idx) in stats" :key="idx" class="stat">
+      <div v-for="(stat, idx) in stats" :key="idx" class="stat p-6">
         <div class="stat-figure text-success">
           <component :is="stat.icon" class="w-6 h-6" />
         </div>

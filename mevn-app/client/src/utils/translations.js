@@ -84,8 +84,6 @@ const translations = {
       ecoScore: "Eco Score",
       monthlyGoal: "Monthly Goal",
       monthlyOverview: "Monthly Overview",
-      thisMonthGreen: "600 this month",
-      thisMonth: "1,200 this month",
       topGlobally: "🏆 Top 10% globally",
       progressBar: "Progress bar visualization",
       environmentalImpact: "Your Environmental Impact",
@@ -95,7 +93,7 @@ const translations = {
       energy: "kWh",
       energyValue: "340 kWh",
       energyDesc: "Energy saved equals",
-      miles: "miles",
+      distance: "km",
       milesValue: "458 miles",
       milesDesc: "Car miles avoided",
       carbonFootprintTrend: "Carbon Footprint Trend monthly",
@@ -638,8 +636,6 @@ const translations = {
       ecoScore: "Punteggio Eco",
       monthlyGoal: "Obiettivo Mensile",
       monthlyOverview: "Panoramica Mensile",
-      thisMonthGreen: "600 questo mese",
-      thisMonth: "1.200 questo mese",
       topGlobally: "🏆 Top 10% globalmente",
       progressBar: "Visualizzazione barra di progresso",
       environmentalImpact: "Il Tuo Impatto Ambientale",
@@ -649,7 +645,7 @@ const translations = {
       energy: "kWh",
       energyValue: "340 kWh",
       energyDesc: "Energia risparmiata equivale a",
-      miles: "miglia",
+      miles: "Km",
       milesValue: "458 miglia",
       milesDesc: "Miglia in auto evitate",
       carbonFootprintTrend: "Tendenza emissioni mensili",
@@ -1125,7 +1121,7 @@ export const getLanguage = () => {
 export const setLanguage = (lang) => {
   localStorage.setItem("language", lang);
   window.dispatchEvent(
-    new CustomEvent("languageChanged", { detail: { language: lang } })
+    new CustomEvent("languageChanged", { detail: { language: lang } }),
   );
 };
 
