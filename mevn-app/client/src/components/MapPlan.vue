@@ -1202,11 +1202,11 @@ function handleMapClear() {
             v-if="activeTab === 'city'"
             class="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-2"
           >
-            <button
+            <!-- <button
               class="btn btn-sm text-gray-800 gap-2 rounded-full shadow-lg"
             >
               {{ t("common.save") }}
-            </button>
+            </button> -->
           </div>
         </div>
       </div>
