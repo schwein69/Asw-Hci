@@ -149,6 +149,7 @@ const translateTransportType = (type) => {
                 "
               >
                 {{ segment.from }}
+
                 <span
                   :class="
                     segment.completed ? 'text-gray-400' : 'text-green-400'

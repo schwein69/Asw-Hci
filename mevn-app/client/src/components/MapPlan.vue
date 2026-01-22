@@ -578,7 +578,6 @@ const saveTripToDB = async () => {
   }
 
   const userId = getUserId();
-  // Check if we are editing an existing trip
   const tripId = tripStore.currentTrip?.id;
 
   try {

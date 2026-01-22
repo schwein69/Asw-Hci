@@ -4,6 +4,7 @@ import {
   getUpcomingTrips,
   getActiveTrips,
   getCompletedTripsAuth,
+  updateSegment,
   getTripById,
   deleteTrip,
   markTripCompleted,
@@ -27,10 +28,14 @@ router.get("/completed", authenticate, getCompletedTripsAuth);
 // Get single trip by ID
 router.get("/:tripId", getTripById);
 
-// Mark trip as completed
-router.put("/:tripId/complete", markTripCompleted);
+// ----- Active trips actions -----
+// Mark segment as completed
+router.put("/:tripId/update", updateSegment);
 
-// Delete trip
+// Mark trip as completed
+router.put("/complete/:tripId", markTripCompleted);
+
+// Delete trip or delete segment
 router.delete("/:tripId", deleteTrip);
 
 export default router;

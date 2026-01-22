@@ -55,7 +55,7 @@ const fetchActiveTrips = async () => {
             rawMode.charAt(0).toUpperCase() + rawMode.slice(1);
 
           return {
-            id: `${trip._id}-${index}`,
+            id: segment._id,
             from: segment.fromLocation.name,
             to: segment.toLocation.name,
             type: displayMode,
@@ -78,7 +78,7 @@ const fetchActiveTrips = async () => {
             cost: segment.price,
             startCoords: segment.fromLocation.coordinates,
             endCoords: segment.toLocation.coordinates,
-            completed: false,
+            completed: segment.isCompleted,
             seat: segment.seatNumber || null,
             gate: segment.gate || null,
             arrivalGate: segment.arrivalGate || null,
@@ -170,20 +170,46 @@ function removeRoute(tripId, routeId) {
   }
 }
 
-function toggleComplete(tripId, routeId) {
+const toggleComplete = async (tripId, segmentId) => {
   const trip = trips.value.find((t) => t.id === tripId);
-  if (trip) {
-    const seg = trip.routes.find((s) => s.id === routeId);
-    if (seg) seg.completed = !seg.completed;
+  if (!trip) return;
+  const seg = trip.routes.find((t) => t.id === segmentId);
+  if (!seg) return;
+  const previousState = seg.completed;
+  seg.completed = !seg.completed;
+
+  try {
+    const response = await fetch(
+      `http://localhost:3000/api/trips/${tripId}/update`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          segmentId: seg.id,
+        }),
+      },
+    );
+
+    if (!response.ok) {
+      throw new Error("Failed to update segment");
+    }
+  } catch (error) {
+    console.error("Error toggling status:", error);
+    seg.completed = previousState;
   }
-}
+};
 
 function completeTrip(tripId) {
   const trip = trips.value.find((t) => t.id === tripId);
   if (!trip || !isTripComplete(trip)) return;
   if (confirm(`Are you sure you want to complete "${trip.name}"?`)) {
     fetch(`http://localhost:3000/api/trips/complete/${tripId}`, {
-      method: "POST",
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
     })
       .then((res) => {
         if (!res.ok) throw new Error("Failed to complete trip");

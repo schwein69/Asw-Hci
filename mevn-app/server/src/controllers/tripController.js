@@ -116,24 +116,109 @@ export const getTripById = async (req, res) => {
   }
 };
 
-// Delete trip
+// Update a specific segment inside the itinerary
+export const updateSegment = async (req, res) => {
+  try {
+    const { tripId } = req.params;
+    const { segmentId } = req.body;
+
+    // Fetch the Trip to check current state
+    const trip = await Trip.findById(tripId);
+
+    if (!trip) {
+      return res.status(404).json({ message: "Trip not found" });
+    }
+
+    // Find the specific segment within the itinerary array
+    const segment = trip.itinerary.id(segmentId);
+
+    if (!segment) {
+      return res.status(404).json({ message: "Segment not found" });
+    }
+
+    // Check current state (default to false if undefined)
+    const isCompleted = segment.isCompleted;
+
+    if (isCompleted) {
+      // --- UNCHECK (Set to false) ---
+      const updatedTrip = await Trip.findOneAndUpdate(
+        { _id: tripId, "itinerary._id": segmentId },
+        {
+          $set: { "itinerary.$.isCompleted": false },
+        },
+        { new: true },
+      );
+
+      return res.status(200).json({
+        message: "Segment unchecked",
+        trip: updatedTrip,
+      });
+    } else {
+      const updatedTrip = await Trip.findOneAndUpdate(
+        { _id: tripId, "itinerary._id": segmentId },
+        {
+          $set: { "itinerary.$.isCompleted": true },
+        },
+        { new: true },
+      );
+
+      return res.status(200).json({
+        message: "Segment checked",
+        isChecked: true,
+        trip: updatedTrip,
+      });
+    }
+  } catch (error) {
+    console.error("Error updating segment:", error);
+    res
+      .status(500)
+      .json({ message: `Error updating segment: ${error.message}` });
+  }
+};
+
+// Delete entire Trip OR a specific Segment
 export const deleteTrip = async (req, res) => {
   try {
     const { tripId } = req.params;
+    const { segmentId } = req.body; // Check body for segmentId
+
+    // CASE A: Delete ONLY a specific segment
+    if (segmentId) {
+      const updatedTrip = await Trip.findByIdAndUpdate(
+        tripId,
+        {
+          // $pull removes the item with matching _id from the 'itinerary' array
+          $pull: { itinerary: { _id: segmentId } },
+        },
+        { new: true },
+      );
+
+      if (!updatedTrip) {
+        return res.status(404).json({ message: "Trip not found" });
+      }
+
+      // Note: You might want to recalculate totals (CO2/Price) here since a segment was removed
+
+      return res.status(200).json({
+        message: "Segment deleted successfully",
+        trip: updatedTrip,
+      });
+    }
+
+    // CASE B: Delete the ENTIRE Trip
     const deletedTrip = await Trip.findByIdAndDelete(tripId);
 
     if (!deletedTrip) {
       return res.status(404).json({ message: "Trip not found" });
     }
 
-    res
-      .status(200)
-      .json({ message: "Trip deleted successfully", trip: deletedTrip });
+    res.status(200).json({
+      message: "Trip deleted successfully",
+      trip: deletedTrip,
+    });
   } catch (error) {
-    console.error("Error deleting trip:", error);
-    res
-      .status(500)
-      .json({ message: "Failed to delete trip", error: error.message });
+    console.error("Error deleting:", error);
+    res.status(500).json({ message: "Failed to delete", error: error.message });
   }
 };
 
