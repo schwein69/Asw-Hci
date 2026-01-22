@@ -180,14 +180,13 @@ export const updateSegment = async (req, res) => {
 export const deleteTrip = async (req, res) => {
   try {
     const { tripId } = req.params;
-    const { segmentId } = req.body; // Check body for segmentId
+    const { segmentId } = req.body;
 
-    // CASE A: Delete ONLY a specific segment
+    // CASE A: Delete a specific segment
     if (segmentId) {
       const updatedTrip = await Trip.findByIdAndUpdate(
         tripId,
         {
-          // $pull removes the item with matching _id from the 'itinerary' array
           $pull: { itinerary: { _id: segmentId } },
         },
         { new: true },
@@ -197,15 +196,12 @@ export const deleteTrip = async (req, res) => {
         return res.status(404).json({ message: "Trip not found" });
       }
 
-      // Note: You might want to recalculate totals (CO2/Price) here since a segment was removed
-
       return res.status(200).json({
         message: "Segment deleted successfully",
-        trip: updatedTrip,
       });
     }
 
-    // CASE B: Delete the ENTIRE Trip
+    // CASE B: Delete the Trip
     const deletedTrip = await Trip.findByIdAndDelete(tripId);
 
     if (!deletedTrip) {
@@ -214,7 +210,6 @@ export const deleteTrip = async (req, res) => {
 
     res.status(200).json({
       message: "Trip deleted successfully",
-      trip: deletedTrip,
     });
   } catch (error) {
     console.error("Error deleting:", error);

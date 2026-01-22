@@ -96,7 +96,7 @@ const translateTransportType = (type) => {
         <div
           class="text-4xl font-extrabold text-gray-800 mt-2 flex justify-center items-center"
         >
-          €{{ stats.totalCost }}
+          €{{ Number(stats.totalCost).toFixed(2) }}
         </div>
       </div>
     </div>

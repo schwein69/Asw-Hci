@@ -162,13 +162,58 @@ function toggle3D() {
   }
 }
 
-// --- ACTIONS ---
-function removeRoute(tripId, routeId) {
-  const trip = trips.value.find((t) => t.id === tripId);
-  if (trip) {
-    trip.routes = trip.routes.filter((s) => s.id !== routeId);
+const removeRoute = async (tripId, routeId) => {
+  const tripIndex = trips.value.findIndex((t) => t.id === tripId);
+  if (tripIndex === -1) return;
+
+  const trip = trips.value[tripIndex];
+
+  // Check if this is the last segment
+  const isLastSegment = trip.routes.length === 1;
+
+  //  Snapshot for rollback
+  const originalRoutes = [...trip.routes];
+  const originalTrip = trip;
+  if (confirm(`Are you sure you want to delete?`)) {
+    if (isLastSegment) {
+      // Remove the ENTIRE TRIP from the list
+      trips.value.splice(tripIndex, 1);
+    } else {
+      // Remove ONLY the segment
+      trip.routes = trip.routes.filter((s) => s.id !== routeId);
+    }
+
+    try {
+      const response = await fetch(
+        `http://localhost:3000/api/trips/${tripId}`,
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            segmentId: isLastSegment ? null : routeId,
+          }),
+        },
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to delete");
+      }
+
+      console.log(isLastSegment ? "Trip deleted" : "Segment deleted");
+    } catch (error) {
+      console.error("Error removing:", error);
+
+      if (isLastSegment) {
+        trips.value.splice(tripIndex, 0, originalTrip);
+      } else {
+        trip.routes = originalRoutes;
+      }
+      alert("Failed to delete. Please check connection.");
+    }
   }
-}
+};
 
 const toggleComplete = async (tripId, segmentId) => {
   const trip = trips.value.find((t) => t.id === tripId);
