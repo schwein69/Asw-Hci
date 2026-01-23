@@ -1,0 +1,20 @@
+version: "3.9"
+
+services:
+  server:
+    build: ./server
+    container_name: Ecogo-server
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./server/.env
+    restart: always
+
+  client:
+    build: ./client
+    container_name: Ecogo-client
+    ports:
+      - "80:80"
+    depends_on:
+      - server
+    restart: always
