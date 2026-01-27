@@ -14,7 +14,6 @@ import {
   Euro,
   Leaf,
   Shuffle,
-  X,
   Loader2,
   Hotel,
   Utensils,
@@ -34,18 +33,17 @@ import { getLanguage, t as translate } from "../utils/translations.js";
 import { useTripStore } from "../data/tripStore";
 import EditTripModal from "./template/EditTripModal.vue";
 import ComparisonModal from "./template/ComparisonModal.vue";
+import { useRouter } from "vue-router";
 
 const tripStore = useTripStore();
-
+const router = useRouter();
 const language = ref(getLanguage());
+const accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
 
 const t = computed(() => (key) => translate(key, language.value));
-
 const handleLanguageChange = (event) => {
   language.value = event.detail.language;
 };
-
-const accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
 
 const mapboxMapRef = ref(null);
 const mapContainerRef = ref(null);
@@ -85,7 +83,6 @@ const draggableMarkers = ref([
   { id: "purple", color: "#8b5cf6", label: "Purple" },
 ]);
 
-// --- AGGIORNATO: Aggiunti nuovi campi allo stato ---
 const newSegment = ref({
   fromName: "",
   fromCoords: null,
@@ -96,10 +93,10 @@ const newSegment = ref({
   date: "",
   departureTime: "",
   arrivalTime: "",
-  gate: "", // Partenza
-  arrivalGate: "", // Arrivo (Nuovo)
-  seat: "", // Posto (Nuovo)
-  travelClass: "", // Classe (Nuovo)
+  gate: "",
+  arrivalGate: "",
+  seat: "",
+  travelClass: "",
   transportNumber: "",
   ecoScore: null,
 });
@@ -149,7 +146,7 @@ onMounted(async () => {
     tripStore.currentTrip.routes.length > 0
   ) {
     savedSegments.value = JSON.parse(
-      JSON.stringify(tripStore.currentTrip.routes)
+      JSON.stringify(tripStore.currentTrip.routes),
     );
 
     const lastSeg = savedSegments.value[savedSegments.value.length - 1];
@@ -176,6 +173,13 @@ onMounted(async () => {
       }
     });
     resizeObserver.observe(mapContainerRef.value);
+  }
+  if (tripStore.destinationFromDiscoverToPlan !== "") {
+    const dest = tripStore.destinationFromDiscoverToPlan;
+    newSegment.value.toName = dest;
+    if (toSearchBox.value) {
+      toSearchBox.value.value = dest;
+    }
   }
   window.addEventListener("languageChanged", handleLanguageChange);
 });
@@ -221,15 +225,9 @@ function handleMyLocation() {
           mapboxMapRef.value.flyTo(coords, 15);
         }
       },
-      (err) => console.warn("Location denied:", err)
+      (err) => console.warn("Location denied:", err),
     );
   }
-}
-
-function areCoordsEqual(c1, c2) {
-  if (!c1 || !c2) return false;
-  const epsilon = 0.000001;
-  return Math.abs(c1[0] - c2[0]) < epsilon && Math.abs(c1[1] - c2[1]) < epsilon;
 }
 
 function onDragStart(event, markerItem) {
@@ -340,7 +338,7 @@ async function getEcoRating(name, category) {
     currentEcoRating.value = score;
     newSegment.value.ecoScore = score;
     isCalculatingEco.value = false;
-  }, 800);
+  }, 500);
 }
 
 async function geminiEstimation(mode, distanceKm, fuelType) {
@@ -349,7 +347,7 @@ async function geminiEstimation(mode, distanceKm, fuelType) {
     if (mode === "Car") payload.fuel_type = fuelType;
     const response = await axios.post(
       "http://localhost:3000/api/plan/estimate",
-      payload
+      payload,
     );
     return response.data;
   } catch (err) {
@@ -361,7 +359,7 @@ async function geocodeText(searchText) {
   if (!searchText) return null;
   try {
     const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
-      searchText
+      searchText,
     )}.json?access_token=${accessToken}&limit=1`;
     const res = await fetch(url);
     const data = await res.json();
@@ -405,7 +403,7 @@ async function addSegment() {
       segment.toCoords,
       segment.toCoords,
       segment.type,
-      segment.id
+      segment.id,
     );
     if (toSearchBox.value) toSearchBox.value.value = "";
     newSegment.value.toName = "";
@@ -442,19 +440,18 @@ async function addSegment() {
   const rawDistance = turf.distance(
     newSegment.value.fromCoords,
     newSegment.value.toCoords,
-    { units: "kilometers" }
+    { units: "kilometers" },
   );
   const distanceKm = parseFloat(rawDistance.toFixed(2));
   const geminiData = await geminiEstimation(
     newSegment.value.type,
     distanceKm,
-    newSegment.value.fuelType
+    newSegment.value.fuelType,
   );
   const segmentId = Date.now();
   const nextStartName = newSegment.value.toName;
   const nextStartCoords = newSegment.value.toCoords;
 
-  // --- AGGIORNATO: Salvataggio nuovi campi ---
   const segment = {
     id: segmentId,
     from: newSegment.value.fromName,
@@ -467,10 +464,10 @@ async function addSegment() {
     date: newSegment.value.date,
     departureTime: newSegment.value.departureTime,
     arrivalTime: newSegment.value.arrivalTime,
-    gate: newSegment.value.gate, // Gate Partenza
-    arrivalGate: newSegment.value.arrivalGate, // Gate Arrivo
-    seat: newSegment.value.seat, // Posto
-    travelClass: newSegment.value.travelClass, // Classe
+    gate: newSegment.value.gate,
+    arrivalGate: newSegment.value.arrivalGate,
+    seat: newSegment.value.seat,
+    travelClass: newSegment.value.travelClass,
     transportNumber: newSegment.value.transportNumber,
     markers: [...tempMarkers],
     cost: geminiData.cost,
@@ -484,7 +481,7 @@ async function addSegment() {
     segment.fromCoords,
     segment.toCoords,
     segment.type,
-    segment.id
+    segment.id,
   );
   newSegment.value.fromName = nextStartName;
   newSegment.value.fromCoords = nextStartCoords;
@@ -495,9 +492,9 @@ async function addSegment() {
   newSegment.value.departureTime = "";
   newSegment.value.arrivalTime = "";
   newSegment.value.gate = "";
-  newSegment.value.arrivalGate = ""; // Reset
-  newSegment.value.seat = ""; // Reset
-  newSegment.value.travelClass = ""; // Reset
+  newSegment.value.arrivalGate = "";
+  newSegment.value.seat = "";
+  newSegment.value.travelClass = "";
   newSegment.value.transportNumber = "";
 }
 
@@ -511,7 +508,7 @@ async function openComparisonModal(index) {
   try {
     const response = await axios.post(
       "http://localhost:3000/api/plan/compare",
-      { distance_km: segment.distance }
+      { distance_km: segment.distance },
     );
     const allOptions = response.data;
     const alternatives = allOptions.filter((opt) => opt.mode !== segment.type);
@@ -535,7 +532,7 @@ async function confirmRouteSelection(selectionData) {
     segment.fromCoords,
     segment.toCoords,
     segment.type,
-    segment.id
+    segment.id,
   );
   comparisonModalOpen.value = false;
   targetSegmentIndex.value = null;
@@ -569,9 +566,62 @@ function removeSegment(index) {
   }
 }
 
-function saveTripToDB() {
-  alert("Trip Saved!");
-}
+const getUserId = () => {
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  return user._id || user.id;
+};
+
+const saveTripToDB = async () => {
+  if (savedSegments.value.length === 0) {
+    alert("Please add at least one segment to your trip.");
+    return;
+  }
+
+  const userId = getUserId();
+  // Check if we are editing an existing trip
+  const tripId = tripStore.currentTrip?.id;
+
+  try {
+    const lastDest = savedSegments.value[savedSegments.value.length - 1].to;
+    const fromSegment = savedSegments.value[0].from;
+    const cleanSegments = savedSegments.value.map(
+      ({ markers, ...rest }) => rest,
+    );
+
+    const payload = {
+      userId: userId,
+      title: `${fromSegment} to ${lastDest} Trip`,
+      segments: cleanSegments,
+    };
+
+    console.log("Saving trip with payload:", payload);
+    let url = "http://localhost:3000/api/plan/save";
+    let method = "POST";
+
+    if (tripId) {
+      url = `http://localhost:3000/api/plan/${tripId}`;
+      method = "PUT";
+    }
+
+    const response = await fetch(url, {
+      method: method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (response.ok) {
+      const result = await response.json();
+      console.log("Success:", result);
+      router.push("/World");
+    } else {
+      const errorData = await response.json();
+      console.error("Server Error:", errorData);
+    }
+  } catch (err) {
+    console.error("Network Error:", err);
+    alert("Failed to save trip. Check console for details.");
+  }
+};
 
 async function visualizeRoute(startCoords, endCoords, type, segmentId) {
   const map = mapboxMapRef.value?.map;
@@ -619,7 +669,7 @@ async function visualizeRoute(startCoords, endCoords, type, segmentId) {
       if (type === "Cycling") profile = "cycling";
       if (type === "Train" || type === "Bus") profile = "driving";
       const res = await fetch(
-        `https://api.mapbox.com/directions/v5/mapbox/${profile}/${startCoords[0]},${startCoords[1]};${endCoords[0]},${endCoords[1]}?steps=true&geometries=geojson&access_token=${accessToken}`
+        `https://api.mapbox.com/directions/v5/mapbox/${profile}/${startCoords[0]},${startCoords[1]};${endCoords[0]},${endCoords[1]}?steps=true&geometries=geojson&access_token=${accessToken}`,
       );
       const json = await res.json();
       if (json.routes?.[0]) routeGeoJSON = json.routes[0].geometry;
@@ -715,6 +765,23 @@ function handleSaveEdit(updatedData) {
 
 function closeEditModal() {
   editingSegmentIndex.value = null;
+}
+
+function handleMapClear() {
+  if (tempMarkers.length > 0) {
+    tempMarkers.forEach((marker) => marker.remove());
+    tempMarkers = [];
+  }
+
+  newSegment.value.fromName = "";
+  newSegment.value.fromCoords = null;
+  newSegment.value.toName = "";
+  newSegment.value.toCoords = null;
+  newSegment.value.ecoScore = null;
+  currentEcoRating.value = null;
+
+  if (fromSearchBox.value) fromSearchBox.value.value = "";
+  if (toSearchBox.value) toSearchBox.value.value = "";
 }
 </script>
 
@@ -1114,6 +1181,7 @@ function closeEditModal() {
             :center="mapCenter"
             :zoom="mapZoom"
             class="w-full h-full"
+            @clear="handleMapClear"
           />
           <div
             class="absolute top-4 left-1/2 -translate-x-1/2 pointer-events-none"

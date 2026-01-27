@@ -4,6 +4,10 @@ import planRoutes from "./planRouter.js";
 import userRoutes from "./userRouter.js";
 import notificationRoutes from "./notificationRouter.js";
 import tripRoutes from "./tripRouter.js";
+import feedbackRoutes from "./feedbackRouter.js";
+import achievementRoutes from "./achievementRouter.js";
+import travelcardRouter from "./travelcardRouter.js";
+import dashboardRoutes from "./dashboardRouter.js";
 
 const router = express.Router();
 
@@ -12,5 +16,9 @@ router.use("/plan", planRoutes);
 router.use("/users", userRoutes);
 router.use("/notifications", notificationRoutes);
 router.use("/trips", tripRoutes);
+router.use("/feedback", feedbackRoutes);
+router.use("/achievements", achievementRoutes);
+router.use("/travelcards", travelcardRouter);
+router.use("/dashboard", dashboardRoutes);
 
 export default router;

@@ -23,6 +23,11 @@ const UserSchema = new mongoose.Schema({
     enum: ["Standard", "AdminGeneral", "AdminForum"],
     default: "Standard",
   },
+  status: {
+    type: String,
+    enum: ["active", "suspended"],
+    default: "active",
+  },
 
   profileImage: { type: String },
 
@@ -44,11 +49,20 @@ const UserSchema = new mongoose.Schema({
     },
   },
 
+  numberOfReports: {
+    type: Number,
+    default: 0,
+  },
   // --- GAMIFICATION & ECO STATS ---
   ecoLevel: { type: Number, default: 1 },
   ecoPoints: { type: Number, default: 0 },
   totalCo2Saved: { type: Number, default: 0 },
   badges: [{ type: String }],
+
+  // Streak tracking
+  currentStreak: { type: Number, default: 0 }, // Consecutive days of eco-friendly trips
+  longestStreak: { type: Number, default: 0 },
+  lastTripDate: { type: Date }, // To calculate streak continuity
 
   // --- RELATIONS ---
   travelCards: [{ type: mongoose.Schema.Types.ObjectId, ref: "TravelCard" }],
