@@ -187,7 +187,7 @@ export const getTripEfficiency = async (req, res) => {
           return from && to ? `${from}→${to}` : "";
         })
         .filter(Boolean)
-        .join(", ");
+        .join(".");
 
       const myTotal = Math.round(trip.totalCo2Emission || 0);
       const avgTotal = Math.round((trip.totalDistanceKm || 0) * avgCarCo2PerKm);
