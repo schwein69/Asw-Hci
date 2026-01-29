@@ -26,24 +26,24 @@ Execute the following command in your terminal, replacing `YOUR_SERVICE_TOKEN` w
 
 **Recommended usage with Git bash**
 
-export DOPPLER_TOKEN=YOUR_SERVICE_TOKEN
+export DOPPLER_TOKEN=YOUR_SERVICE_TOKEN  
 doppler run -- docker-compose up --build
 
 **For macOS and Linux (Bash/Zsh):**
 
-export DOPPLER_TOKEN=YOUR_SERVICE_TOKEN
+export DOPPLER_TOKEN=YOUR_SERVICE_TOKEN  
 doppler run -- docker-compose up --build
 
 **For Windows (PowerShell):**
 
-$env:DOPPLER_TOKEN="YOUR_SERVICE_TOKEN"
+$env:DOPPLER_TOKEN="YOUR_SERVICE_TOKEN"  
 doppler run -- docker-compose up --build
 
 ### Step 3: Access the Application
 
 Once the initialization process is complete, the services will be available at the following addresses:
 
-* Frontend Application: http://localhost:80
+* Frontend Application: http://localhost:80  
 * Backend API: http://localhost:3000
 
 ## Troubleshooting
