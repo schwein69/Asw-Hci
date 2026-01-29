@@ -647,7 +647,7 @@ const translations = {
       energy: "kWh",
       energyValue: "340 kWh",
       energyDesc: "Energia risparmiata equivale a",
-      miles: "Km",
+      distance: "Km",
       milesValue: "458 miglia",
       milesDesc: "Miglia in auto evitate",
       carbonFootprintTrend: "Tendenza emissioni mensili",

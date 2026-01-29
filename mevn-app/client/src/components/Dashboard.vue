@@ -171,7 +171,7 @@ const environmentalImpactRaw = ref({
   energyKey: "dashboard.energy",
   energyDescKey: "dashboard.energyDesc",
   distanceValue: 0,
-  distanceKey: "dashboard.miles",
+  distanceKey: "dashboard.distance",
   distanceDescKey: "dashboard.milesDesc",
 });
 
