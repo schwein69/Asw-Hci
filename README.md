@@ -17,12 +17,17 @@ To start the application, you require a Service Token. Please request the "Publi
 
 Clone the project files to your local machine:
 
-git clone https://github.com/schwein69/Asw-Hci.git
+git clone https://github.com/schwein69/Asw-Hci.git\
 cd to the root path (mevn-app)
 
 ### Step 2: Run the Application
 
 Execute the following command in your terminal, replacing `YOUR_SERVICE_TOKEN` with the actual token provided by the administrator.
+
+**Recommended usage with Git bash**
+
+export DOPPLER_TOKEN=YOUR_SERVICE_TOKEN
+doppler run -- docker-compose up --build
 
 **For macOS and Linux (Bash/Zsh):**
 
