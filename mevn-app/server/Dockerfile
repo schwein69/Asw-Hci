@@ -1,4 +1,4 @@
-FROM node:20-alpine AS build
+FROM node:20-alpine
 
 WORKDIR /app
 
@@ -8,5 +8,4 @@ RUN npm install --production
 COPY . .
 
 EXPOSE 3000
-
-CMD ["npm", "start"]
+CMD ["node", "index.js"]

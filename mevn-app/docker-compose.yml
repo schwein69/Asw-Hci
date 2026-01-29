@@ -6,12 +6,21 @@ services:
     container_name: Ecogo-server
     ports:
       - "3000:3000"
-    env_file:
-      - ./server/.env
     restart: always
+    environment:
+      - MONGO_URI
+      - PORT
+      - MAPBOX_TOKEN
+      - EMAIL_SERVICE
+      - EMAIL_USER
+      - EMAIL_PASSWORD
+      - GEMINI_API_KEY
 
   client:
-    build: ./client
+    build:
+      context: ./client
+      args:
+        - VITE_MAPBOX_TOKEN=${VITE_MAPBOX_TOKEN}
     container_name: Ecogo-client
     ports:
       - "80:80"
