@@ -17,7 +17,7 @@ To start the application, you require a Service Token. Please request the "Publi
 
 Clone the project files to your local machine:
 
-git clone https://github.com/schwein69/Asw-Hci.git\
+git clone https://github.com/schwein69/Asw-Hci.git 
 cd to the root path (mevn-app)
 
 ### Step 2: Run the Application
