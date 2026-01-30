@@ -112,96 +112,23 @@ const notifications = ref([
   },
 ]);
 
-const locations = ref([
-  {
-    id: 1,
-    name: "Amsterdam",
-    lat: 52.3676,
-    lon: 4.9041,
-    live: true,
-    weather: {
-      condition: "Loading...",
-      temp: "--",
-      icon: "Cloud",
-      alert: false,
-    },
-    crowd: {
-      levelKey: "live.lowDensity",
-      value: 45,
-      trend: "Up",
-      trendIcon: "TrendingUp",
-      color: "text-emerald-600",
-      barColor: "bg-emerald-300",
-    },
-    alternative: null,
-  },
-  {
-    id: 2,
-    name: "Barcelona",
-    lat: 41.3851,
-    lon: 2.1734,
-    live: true,
-    weather: {
-      condition: "Loading...",
-      temp: "--",
-      icon: "Cloud",
-      alert: false,
-    },
-    crowd: {
-      levelKey: "live.highDensity",
-      value: 81,
-      trend: "Stable",
-      trendIcon: "Minus",
-      color: "text-red-500",
-      barColor: "bg-red-300",
-    },
-    alternative: "Visit during off-peak hours (early morning or evening)",
-  },
-  {
-    id: 3,
-    name: "Copenhagen",
-    lat: 55.6761,
-    lon: 12.5683,
-    live: true,
-    weather: {
-      condition: "Loading...",
-      temp: "--",
-      icon: "Cloud",
-      alert: false,
-    },
-    crowd: {
-      levelKey: "live.mediumDensity",
-      value: 56,
-      trend: "Up",
-      trendIcon: "TrendingUp",
-      color: "text-orange-500",
-      barColor: "bg-orange-300",
-    },
-    alternative: "Consider indoor activities or postpone visit",
-  },
-  {
-    id: 4,
-    name: "Berlin",
-    lat: 52.52,
-    lon: 13.405,
-    live: true,
-    weather: {
-      condition: "Loading...",
-      temp: "--",
-      icon: "Cloud",
-      alert: false,
-    },
-    crowd: {
-      levelKey: "live.mediumDensity",
-      value: 61,
-      trend: "Down",
-      trendIcon: "TrendingDown",
-      color: "text-orange-500",
-      barColor: "bg-orange-300",
-    },
-    alternative: null,
-  },
-]);
+// Complete list of available cities
+const ALL_LOCATIONS = [
+  { name: "Amsterdam", lat: 52.3676, lon: 4.9041 },
+  { name: "Barcelona", lat: 41.3851, lon: 2.1734 },
+  { name: "Copenhagen", lat: 55.6761, lon: 12.5683 },
+  { name: "Berlin", lat: 52.52, lon: 13.405 },
+  { name: "Paris", lat: 48.8566, lon: 2.3522 },
+  { name: "Rome", lat: 41.9028, lon: 12.4964 },
+  { name: "Vienna", lat: 48.2082, lon: 16.3738 },
+  { name: "Prague", lat: 50.0755, lon: 14.4378 },
+  { name: "Madrid", lat: 40.4168, lon: -3.7038 },
+  { name: "Lisbon", lat: 38.7223, lon: -9.1393 },
+  { name: "Brussels", lat: 50.8503, lon: 4.3517 },
+  { name: "Budapest", lat: 47.4979, lon: 19.0402 },
+];
+
+const locations = ref([]);
 
 // Icon mapping for dynamic components
 const iconComponents = {
@@ -273,7 +200,7 @@ const markAllRead = async () => {
   try {
     const response = await fetch(
       `http://localhost:3000/api/notifications/mark-all-read/${userId}`,
-      { method: "PUT" }
+      { method: "PUT" },
     );
 
     if (response.ok) {
@@ -301,7 +228,7 @@ const fetchUpcomingTrip = async () => {
 
   try {
     const response = await fetch(
-      `http://localhost:3000/api/trips/upcoming/${userId}`
+      `http://localhost:3000/api/trips/upcoming/${userId}`,
     );
     const trips = await response.json();
     console.log("📦 Received trips:", trips);
@@ -350,12 +277,28 @@ const fetchNotifications = async () => {
 
   try {
     const response = await fetch(
-      `http://localhost:3000/api/notifications/${userId}?limit=30`
+      `http://localhost:3000/api/notifications/${userId}?limit=30`,
     );
     const data = await response.json();
 
     if (data.success) {
       console.log("📥 Received notifications:", data.notifications.length);
+
+      // Get current location names
+      const currentCities = locations.value.map((loc) => loc.name);
+      console.log("🏙️ Current cities:", currentCities);
+
+      // Filter notifications to show only those for current locations
+      const filtered = data.notifications.filter((n) =>
+        currentCities.includes(n.city),
+      );
+
+      console.log(
+        "Filtered notifications:",
+        filtered.length,
+        "for cities:",
+        currentCities,
+      );
 
       // Create a balanced mix of notification types
       const byType = {
@@ -367,7 +310,7 @@ const fetchNotifications = async () => {
       };
 
       // Group notifications by type
-      data.notifications.forEach((n) => {
+      filtered.forEach((n) => {
         const type = n.type;
         if (byType[type]) {
           byType[type].push(n);
@@ -378,7 +321,7 @@ const fetchNotifications = async () => {
       const balanced = [];
       const maxPerType = 3;
       const types = Object.keys(byType).filter(
-        (type) => byType[type].length > 0
+        (type) => byType[type].length > 0,
       );
 
       for (let i = 0; i < maxPerType; i++) {
@@ -427,7 +370,7 @@ const checkWeatherAndNotify = async () => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ locations: locs }),
-      }
+      },
     );
 
     const data = await response.json();
@@ -473,7 +416,7 @@ const checkCrowdAndNotify = async () => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ locations: locs }),
-      }
+      },
     );
 
     const data = await response.json();
@@ -523,6 +466,68 @@ const getNotificationDotColor = (type) => {
     location: "bg-emerald-500",
   };
   return colors[type] || "bg-emerald-500";
+};
+
+// Select 4 random locations from the complete list
+const selectRandomLocations = () => {
+  const shuffled = [...ALL_LOCATIONS].sort(() => Math.random() - 0.5);
+  const selected = shuffled.slice(0, 4);
+
+  // Generate random crowd data for each location
+  const crowdLevels = [
+    {
+      levelKey: "live.lowDensity",
+      value: 30 + Math.floor(Math.random() * 20),
+      color: "text-emerald-600",
+      barColor: "bg-emerald-300",
+      trend: "Down",
+      trendIcon: "TrendingDown",
+      alternative: null,
+    },
+    {
+      levelKey: "live.mediumDensity",
+      value: 50 + Math.floor(Math.random() * 20),
+      color: "text-orange-500",
+      barColor: "bg-orange-300",
+      trend: "Up",
+      trendIcon: "TrendingUp",
+      alternative: "Consider indoor activities or postpone visit",
+    },
+    {
+      levelKey: "live.highDensity",
+      value: 70 + Math.floor(Math.random() * 20),
+      color: "text-red-500",
+      barColor: "bg-red-300",
+      trend: "Stable",
+      trendIcon: "Minus",
+      alternative: "Visit during off-peak hours (early morning or evening)",
+    },
+  ];
+
+  locations.value = selected.map((loc, index) => {
+    const randomCrowd =
+      crowdLevels[Math.floor(Math.random() * crowdLevels.length)];
+    return {
+      id: index + 1,
+      name: loc.name,
+      lat: loc.lat,
+      lon: loc.lon,
+      live: true,
+      weather: {
+        condition: "Loading...",
+        temp: "--",
+        icon: "Cloud",
+        alert: false,
+      },
+      crowd: { ...randomCrowd },
+      alternative: randomCrowd.alternative,
+    };
+  });
+
+  console.log(
+    "Selected random locations:",
+    locations.value.map((l) => l.name).join(", "),
+  );
 };
 
 // changing codes to icons ---
@@ -607,6 +612,10 @@ const addNotificationToList = (notification) => {
 
 // Lifecycle hooks
 onMounted(() => {
+  // First select random locations
+  selectRandomLocations();
+
+  // Then fetch data for those locations
   fetchUpcomingTrip();
   fetchNotifications(); // Load notification history
   checkWeatherAndNotify();
@@ -950,8 +959,8 @@ onBeforeUnmount(() => {
                 loc.crowd.trend === "Up"
                   ? t("live.up")
                   : loc.crowd.trend === "Down"
-                  ? t("live.down")
-                  : t("live.stable")
+                    ? t("live.down")
+                    : t("live.stable")
               }}
             </div>
           </div>
