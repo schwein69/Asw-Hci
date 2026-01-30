@@ -217,6 +217,41 @@ const markAllRead = async () => {
   }
 };
 
+// Toggle individual notification read status
+const toggleNotificationRead = async (notificationId) => {
+  const userId = getUserId();
+  if (!userId) return;
+
+  // Find the notification in local state
+  const notification = notifications.value.find((n) => n.id === notificationId);
+  if (!notification) return;
+
+  const newReadStatus = !notification.isRead;
+
+  try {
+    const response = await fetch(
+      `http://localhost:3000/api/notifications/${notificationId}/read`,
+      {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isRead: newReadStatus }),
+      },
+    );
+
+    if (response.ok) {
+      // Update local state
+      notifications.value = notifications.value.map((n) =>
+        n.id === notificationId ? { ...n, isRead: newReadStatus } : n,
+      );
+      console.log(
+        `✓ Notification ${newReadStatus ? "marked as read" : "marked as unread"}`,
+      );
+    }
+  } catch (error) {
+    console.error("Failed to toggle notification read status:", error);
+  }
+};
+
 // Refresh notifications and locations
 const refreshNotifications = async () => {
   console.log("Refreshing notifications and locations...");
@@ -892,12 +927,14 @@ onBeforeUnmount(() => {
         <div
           v-for="item in filteredNotifications"
           :key="item.id"
+          @click="toggleNotificationRead(item.id)"
           class="flex items-center justify-between p-3 rounded-xl border transition-colors cursor-pointer group"
           :class="
             item.isRead
-              ? 'border-gray-200 bg-gray-50/50 opacity-60'
+              ? 'border-gray-200 bg-gray-50/50 opacity-60 hover:opacity-80'
               : 'border-emerald-100 bg-emerald-50/30 hover:bg-emerald-50'
           "
+          :title="item.isRead ? 'Click to mark as unread' : 'Click to mark as read'"
         >
           <div class="flex items-center gap-4">
             <div
