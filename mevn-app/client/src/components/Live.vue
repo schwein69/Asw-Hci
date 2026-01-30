@@ -21,6 +21,7 @@ import {
   CloudSun,
   Snowflake, // Added for snow
   CloudLightning, // Added for storm
+  RefreshCw, // Added for refresh button
 } from "lucide-vue-next";
 import { getLanguage, t as translate } from "../utils/translations.js";
 import { useRouter } from "vue-router";
@@ -112,96 +113,23 @@ const notifications = ref([
   },
 ]);
 
-const locations = ref([
-  {
-    id: 1,
-    name: "Amsterdam",
-    lat: 52.3676,
-    lon: 4.9041,
-    live: true,
-    weather: {
-      condition: "Loading...",
-      temp: "--",
-      icon: "Cloud",
-      alert: false,
-    },
-    crowd: {
-      levelKey: "live.lowDensity",
-      value: 45,
-      trend: "Up",
-      trendIcon: "TrendingUp",
-      color: "text-emerald-600",
-      barColor: "bg-emerald-300",
-    },
-    alternative: null,
-  },
-  {
-    id: 2,
-    name: "Barcelona",
-    lat: 41.3851,
-    lon: 2.1734,
-    live: true,
-    weather: {
-      condition: "Loading...",
-      temp: "--",
-      icon: "Cloud",
-      alert: false,
-    },
-    crowd: {
-      levelKey: "live.highDensity",
-      value: 81,
-      trend: "Stable",
-      trendIcon: "Minus",
-      color: "text-red-500",
-      barColor: "bg-red-300",
-    },
-    alternative: "Visit during off-peak hours (early morning or evening)",
-  },
-  {
-    id: 3,
-    name: "Copenhagen",
-    lat: 55.6761,
-    lon: 12.5683,
-    live: true,
-    weather: {
-      condition: "Loading...",
-      temp: "--",
-      icon: "Cloud",
-      alert: false,
-    },
-    crowd: {
-      levelKey: "live.mediumDensity",
-      value: 56,
-      trend: "Up",
-      trendIcon: "TrendingUp",
-      color: "text-orange-500",
-      barColor: "bg-orange-300",
-    },
-    alternative: "Consider indoor activities or postpone visit",
-  },
-  {
-    id: 4,
-    name: "Berlin",
-    lat: 52.52,
-    lon: 13.405,
-    live: true,
-    weather: {
-      condition: "Loading...",
-      temp: "--",
-      icon: "Cloud",
-      alert: false,
-    },
-    crowd: {
-      levelKey: "live.mediumDensity",
-      value: 61,
-      trend: "Down",
-      trendIcon: "TrendingDown",
-      color: "text-orange-500",
-      barColor: "bg-orange-300",
-    },
-    alternative: null,
-  },
-]);
+// Complete list of available cities
+const ALL_LOCATIONS = [
+  { name: "Amsterdam", lat: 52.3676, lon: 4.9041 },
+  { name: "Barcelona", lat: 41.3851, lon: 2.1734 },
+  { name: "Copenhagen", lat: 55.6761, lon: 12.5683 },
+  { name: "Berlin", lat: 52.52, lon: 13.405 },
+  { name: "Paris", lat: 48.8566, lon: 2.3522 },
+  { name: "Rome", lat: 41.9028, lon: 12.4964 },
+  { name: "Vienna", lat: 48.2082, lon: 16.3738 },
+  { name: "Prague", lat: 50.0755, lon: 14.4378 },
+  { name: "Madrid", lat: 40.4168, lon: -3.7038 },
+  { name: "Lisbon", lat: 38.7223, lon: -9.1393 },
+  { name: "Brussels", lat: 50.8503, lon: 4.3517 },
+  { name: "Budapest", lat: 47.4979, lon: 19.0402 },
+];
+
+const locations = ref([]);
 
 // Icon mapping for dynamic components
 const iconComponents = {
@@ -236,6 +164,7 @@ const filteredNotifications = computed(() => {
 const notificationCounts = computed(() => {
   const counts = {
     all: notifications.value.length,
+    unread: notifications.value.filter((n) => !n.isRead).length,
     weather: 0,
     tourist: 0,
     social: 0,
@@ -273,7 +202,7 @@ const markAllRead = async () => {
   try {
     const response = await fetch(
       `http://localhost:3000/api/notifications/mark-all-read/${userId}`,
-      { method: "PUT" }
+      { method: "PUT" },
     );
 
     if (response.ok) {
@@ -286,6 +215,28 @@ const markAllRead = async () => {
   } catch (error) {
     console.error("Failed to mark all as read:", error);
   }
+};
+
+// Refresh notifications and locations
+const refreshNotifications = async () => {
+  console.log("Refreshing notifications and locations...");
+
+  // Clear current notifications
+  notifications.value = [];
+
+  // Select new random locations
+  selectRandomLocations();
+
+  // Reload all data for new locations (this creates new notifications)
+  await Promise.all([checkWeatherAndNotify(), checkCrowdAndNotify()]);
+
+  // Small delay to ensure notifications are created in DB
+  await new Promise((resolve) => setTimeout(resolve, 500));
+
+  // Fetch updated notifications and FORCE them as unread
+  await fetchNotifications(true);
+
+  console.log("Refresh complete!");
 };
 
 const getUserId = () => {
@@ -301,7 +252,7 @@ const fetchUpcomingTrip = async () => {
 
   try {
     const response = await fetch(
-      `http://localhost:3000/api/trips/upcoming/${userId}`
+      `http://localhost:3000/api/trips/upcoming/${userId}`,
     );
     const trips = await response.json();
     console.log("📦 Received trips:", trips);
@@ -344,18 +295,34 @@ const fetchUpcomingTrip = async () => {
 };
 
 // Fetch notifications from backend
-const fetchNotifications = async () => {
+const fetchNotifications = async (forceUnread = false) => {
   const userId = getUserId();
   if (!userId) return;
 
   try {
     const response = await fetch(
-      `http://localhost:3000/api/notifications/${userId}?limit=30`
+      `http://localhost:3000/api/notifications/${userId}?limit=30`,
     );
     const data = await response.json();
 
     if (data.success) {
       console.log("📥 Received notifications:", data.notifications.length);
+
+      // Get current location names
+      const currentCities = locations.value.map((loc) => loc.name);
+      console.log("🏙️ Current cities:", currentCities);
+
+      // Filter notifications to show only those for current locations
+      const filtered = data.notifications.filter((n) =>
+        currentCities.includes(n.city),
+      );
+
+      console.log(
+        "Filtered notifications:",
+        filtered.length,
+        "for cities:",
+        currentCities,
+      );
 
       // Create a balanced mix of notification types
       const byType = {
@@ -367,7 +334,7 @@ const fetchNotifications = async () => {
       };
 
       // Group notifications by type
-      data.notifications.forEach((n) => {
+      filtered.forEach((n) => {
         const type = n.type;
         if (byType[type]) {
           byType[type].push(n);
@@ -378,7 +345,7 @@ const fetchNotifications = async () => {
       const balanced = [];
       const maxPerType = 3;
       const types = Object.keys(byType).filter(
-        (type) => byType[type].length > 0
+        (type) => byType[type].length > 0,
       );
 
       for (let i = 0; i < maxPerType; i++) {
@@ -397,7 +364,7 @@ const fetchNotifications = async () => {
         message: n.message,
         icon: n.icon || "Bell",
         color: getNotificationColor(n.type),
-        isRead: n.isRead,
+        isRead: forceUnread ? false : n.isRead, // Force unread if refresh
         timestamp: new Date(n.createdAt).getTime(),
       }));
 
@@ -427,7 +394,7 @@ const checkWeatherAndNotify = async () => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ locations: locs }),
-      }
+      },
     );
 
     const data = await response.json();
@@ -473,7 +440,7 @@ const checkCrowdAndNotify = async () => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ locations: locs }),
-      }
+      },
     );
 
     const data = await response.json();
@@ -523,6 +490,68 @@ const getNotificationDotColor = (type) => {
     location: "bg-emerald-500",
   };
   return colors[type] || "bg-emerald-500";
+};
+
+// Select 4 random locations from the complete list
+const selectRandomLocations = () => {
+  const shuffled = [...ALL_LOCATIONS].sort(() => Math.random() - 0.5);
+  const selected = shuffled.slice(0, 4);
+
+  // Generate random crowd data for each location
+  const crowdLevels = [
+    {
+      levelKey: "live.lowDensity",
+      value: 30 + Math.floor(Math.random() * 20),
+      color: "text-emerald-600",
+      barColor: "bg-emerald-300",
+      trend: "Down",
+      trendIcon: "TrendingDown",
+      alternative: null,
+    },
+    {
+      levelKey: "live.mediumDensity",
+      value: 50 + Math.floor(Math.random() * 20),
+      color: "text-orange-500",
+      barColor: "bg-orange-300",
+      trend: "Up",
+      trendIcon: "TrendingUp",
+      alternative: "Consider indoor activities or postpone visit",
+    },
+    {
+      levelKey: "live.highDensity",
+      value: 70 + Math.floor(Math.random() * 20),
+      color: "text-red-500",
+      barColor: "bg-red-300",
+      trend: "Stable",
+      trendIcon: "Minus",
+      alternative: "Visit during off-peak hours (early morning or evening)",
+    },
+  ];
+
+  locations.value = selected.map((loc, index) => {
+    const randomCrowd =
+      crowdLevels[Math.floor(Math.random() * crowdLevels.length)];
+    return {
+      id: index + 1,
+      name: loc.name,
+      lat: loc.lat,
+      lon: loc.lon,
+      live: true,
+      weather: {
+        condition: "Loading...",
+        temp: "--",
+        icon: "Cloud",
+        alert: false,
+      },
+      crowd: { ...randomCrowd },
+      alternative: randomCrowd.alternative,
+    };
+  });
+
+  console.log(
+    "Selected random locations:",
+    locations.value.map((l) => l.name).join(", "),
+  );
 };
 
 // changing codes to icons ---
@@ -607,8 +636,12 @@ const addNotificationToList = (notification) => {
 
 // Lifecycle hooks
 onMounted(() => {
+  // First select random locations
+  selectRandomLocations();
+
+  // Then fetch data for those locations
   fetchUpcomingTrip();
-  fetchNotifications(); // Load notification history
+  fetchNotifications(true); // Force unread on initial load too
   checkWeatherAndNotify();
   checkCrowdAndNotify();
 
@@ -761,8 +794,14 @@ onBeforeUnmount(() => {
               {{ t("live.notifications") }}
             </h3>
             <span
+              v-if="notificationCounts.unread > 0"
               class="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full"
-              >{{ notificationCounts.all }} {{ t("live.new") }}</span
+              >{{ notificationCounts.unread }} {{ t("live.new") }}</span
+            >
+            <span
+              v-else
+              class="bg-gray-300 text-gray-600 text-[10px] font-bold px-2 py-0.5 rounded-full"
+              >All Read ✓</span
             >
           </div>
           <p class="text-sm text-gray-500 mt-1">
@@ -832,19 +871,33 @@ onBeforeUnmount(() => {
             </button>
           </div>
         </div>
-        <button
-          @click="markAllRead"
-          class="text-xs font-medium text-gray-600 border border-gray-300 rounded px-3 py-1 hover:bg-gray-50 transition-colors"
-        >
-          {{ t("live.markAllRead") }}
-        </button>
+        <div class="flex gap-2">
+          <button
+            @click="refreshNotifications"
+            class="text-xs font-medium text-emerald-600 border border-emerald-300 rounded px-3 py-1 hover:bg-emerald-50 transition-colors flex items-center gap-1"
+            title="Refresh locations and notifications"
+          >
+            <RefreshCw class="w-3.5 h-3.5" />
+          </button>
+          <button
+            @click="markAllRead"
+            class="text-xs font-medium text-gray-600 border border-gray-300 rounded px-3 py-1 hover:bg-gray-50 transition-colors"
+          >
+            {{ t("live.markAllRead") }}
+          </button>
+        </div>
       </div>
 
       <div class="space-y-3">
         <div
           v-for="item in filteredNotifications"
           :key="item.id"
-          class="flex items-center justify-between p-3 rounded-xl border border-emerald-100 bg-emerald-50/30 hover:bg-emerald-50 transition-colors cursor-pointer group"
+          class="flex items-center justify-between p-3 rounded-xl border transition-colors cursor-pointer group"
+          :class="
+            item.isRead
+              ? 'border-gray-200 bg-gray-50/50 opacity-60'
+              : 'border-emerald-100 bg-emerald-50/30 hover:bg-emerald-50'
+          "
         >
           <div class="flex items-center gap-4">
             <div
@@ -869,7 +922,7 @@ onBeforeUnmount(() => {
             </div>
           </div>
 
-          <div class="flex items-center pr-2">
+          <div v-if="!item.isRead" class="flex items-center pr-2">
             <div
               class="w-2 h-2 rounded-full"
               :class="getNotificationDotColor(item.type)"
@@ -950,8 +1003,8 @@ onBeforeUnmount(() => {
                 loc.crowd.trend === "Up"
                   ? t("live.up")
                   : loc.crowd.trend === "Down"
-                  ? t("live.down")
-                  : t("live.stable")
+                    ? t("live.down")
+                    : t("live.stable")
               }}
             </div>
           </div>
