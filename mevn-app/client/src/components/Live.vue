@@ -164,6 +164,7 @@ const filteredNotifications = computed(() => {
 const notificationCounts = computed(() => {
   const counts = {
     all: notifications.value.length,
+    unread: notifications.value.filter((n) => !n.isRead).length,
     weather: 0,
     tourist: 0,
     social: 0,
@@ -220,14 +221,20 @@ const markAllRead = async () => {
 const refreshNotifications = async () => {
   console.log("Refreshing notifications and locations...");
 
+  // Clear current notifications
+  notifications.value = [];
+
   // Select new random locations
   selectRandomLocations();
 
-  // Reload all data for new locations
+  // Reload all data for new locations (this creates new notifications)
   await Promise.all([checkWeatherAndNotify(), checkCrowdAndNotify()]);
 
-  // Fetch updated notifications
-  await fetchNotifications();
+  // Small delay to ensure notifications are created in DB
+  await new Promise((resolve) => setTimeout(resolve, 500));
+
+  // Fetch updated notifications and FORCE them as unread
+  await fetchNotifications(true);
 
   console.log("Refresh complete!");
 };
@@ -288,7 +295,7 @@ const fetchUpcomingTrip = async () => {
 };
 
 // Fetch notifications from backend
-const fetchNotifications = async () => {
+const fetchNotifications = async (forceUnread = false) => {
   const userId = getUserId();
   if (!userId) return;
 
@@ -357,7 +364,7 @@ const fetchNotifications = async () => {
         message: n.message,
         icon: n.icon || "Bell",
         color: getNotificationColor(n.type),
-        isRead: n.isRead,
+        isRead: forceUnread ? false : n.isRead, // Force unread if refresh
         timestamp: new Date(n.createdAt).getTime(),
       }));
 
@@ -634,7 +641,7 @@ onMounted(() => {
 
   // Then fetch data for those locations
   fetchUpcomingTrip();
-  fetchNotifications(); // Load notification history
+  fetchNotifications(true); // Force unread on initial load too
   checkWeatherAndNotify();
   checkCrowdAndNotify();
 
@@ -787,8 +794,14 @@ onBeforeUnmount(() => {
               {{ t("live.notifications") }}
             </h3>
             <span
+              v-if="notificationCounts.unread > 0"
               class="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full"
-              >{{ notificationCounts.all }} {{ t("live.new") }}</span
+              >{{ notificationCounts.unread }} {{ t("live.new") }}</span
+            >
+            <span
+              v-else
+              class="bg-gray-300 text-gray-600 text-[10px] font-bold px-2 py-0.5 rounded-full"
+              >All Read ✓</span
             >
           </div>
           <p class="text-sm text-gray-500 mt-1">
@@ -879,7 +892,12 @@ onBeforeUnmount(() => {
         <div
           v-for="item in filteredNotifications"
           :key="item.id"
-          class="flex items-center justify-between p-3 rounded-xl border border-emerald-100 bg-emerald-50/30 hover:bg-emerald-50 transition-colors cursor-pointer group"
+          class="flex items-center justify-between p-3 rounded-xl border transition-colors cursor-pointer group"
+          :class="
+            item.isRead
+              ? 'border-gray-200 bg-gray-50/50 opacity-60'
+              : 'border-emerald-100 bg-emerald-50/30 hover:bg-emerald-50'
+          "
         >
           <div class="flex items-center gap-4">
             <div
@@ -904,7 +922,7 @@ onBeforeUnmount(() => {
             </div>
           </div>
 
-          <div class="flex items-center pr-2">
+          <div v-if="!item.isRead" class="flex items-center pr-2">
             <div
               class="w-2 h-2 rounded-full"
               :class="getNotificationDotColor(item.type)"
