@@ -21,6 +21,7 @@ import {
   CloudSun,
   Snowflake, // Added for snow
   CloudLightning, // Added for storm
+  RefreshCw, // Added for refresh button
 } from "lucide-vue-next";
 import { getLanguage, t as translate } from "../utils/translations.js";
 import { useRouter } from "vue-router";
@@ -213,6 +214,22 @@ const markAllRead = async () => {
   } catch (error) {
     console.error("Failed to mark all as read:", error);
   }
+};
+
+// Refresh notifications and locations
+const refreshNotifications = async () => {
+  console.log("Refreshing notifications and locations...");
+
+  // Select new random locations
+  selectRandomLocations();
+
+  // Reload all data for new locations
+  await Promise.all([checkWeatherAndNotify(), checkCrowdAndNotify()]);
+
+  // Fetch updated notifications
+  await fetchNotifications();
+
+  console.log("Refresh complete!");
 };
 
 const getUserId = () => {
@@ -841,12 +858,21 @@ onBeforeUnmount(() => {
             </button>
           </div>
         </div>
-        <button
-          @click="markAllRead"
-          class="text-xs font-medium text-gray-600 border border-gray-300 rounded px-3 py-1 hover:bg-gray-50 transition-colors"
-        >
-          {{ t("live.markAllRead") }}
-        </button>
+        <div class="flex gap-2">
+          <button
+            @click="refreshNotifications"
+            class="text-xs font-medium text-emerald-600 border border-emerald-300 rounded px-3 py-1 hover:bg-emerald-50 transition-colors flex items-center gap-1"
+            title="Refresh locations and notifications"
+          >
+            <RefreshCw class="w-3.5 h-3.5" />
+          </button>
+          <button
+            @click="markAllRead"
+            class="text-xs font-medium text-gray-600 border border-gray-300 rounded px-3 py-1 hover:bg-gray-50 transition-colors"
+          >
+            {{ t("live.markAllRead") }}
+          </button>
+        </div>
       </div>
 
       <div class="space-y-3">
