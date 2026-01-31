@@ -12,7 +12,7 @@ const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: {
-    origin: "http://localhost:5173", // Vite dev server
+    origin: ["http://localhost:5173", "http://localhost"],
     methods: ["GET", "POST"],
   },
 });
@@ -36,8 +36,8 @@ mongoose
   .connect(MONGO_URI)
   .then(() =>
     httpServer.listen(PORT, () =>
-      console.log(`🚀 Server running on http://localhost:${PORT}`)
-    )
+      console.log(`🚀 Server running on http://localhost:${PORT}`),
+    ),
   )
   .catch((err) => console.error("DB connection error:", err));
 
