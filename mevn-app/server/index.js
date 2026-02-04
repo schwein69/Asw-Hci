@@ -6,6 +6,7 @@ import mongoose from "mongoose";
 import dotenv from "dotenv";
 import apiRoutes from "./src/routes/index.js";
 import { setupNotificationSocket } from "./src/socket/notificationSocket.js";
+import { initializeScheduler } from "./src/services/notificationScheduler.js";
 
 dotenv.config();
 const app = express();
@@ -35,6 +36,9 @@ app.use("/api", apiRoutes);
 
 // Setup Socket.io notification handlers
 setupNotificationSocket(io);
+
+// Initialize automatic notification scheduler (PUSH every 60 seconds)
+initializeScheduler(io);
 
 mongoose
   .connect(MONGO_URI)
