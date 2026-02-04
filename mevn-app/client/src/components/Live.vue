@@ -130,6 +130,8 @@ const ALL_LOCATIONS = [
 ];
 
 const locations = ref([]);
+const countdown = ref(60); // Countdown timer for next automatic check
+let countdownInterval = null;
 
 // Icon mapping for dynamic components
 const iconComponents = {
@@ -256,27 +258,43 @@ const toggleNotificationRead = async (notificationId) => {
 const refreshNotifications = async () => {
   console.log("Refreshing notifications and locations...");
 
-  // Clear current notifications
-  notifications.value = [];
-
   // Select new random locations
   selectRandomLocations();
 
-  // Reload all data for new locations (this creates new notifications)
-  await Promise.all([checkWeatherAndNotify(), checkCrowdAndNotify()]);
-
-  // Small delay to ensure notifications are created in DB
-  await new Promise((resolve) => setTimeout(resolve, 500));
-
-  // Fetch updated notifications and FORCE them as unread
+  // Just fetch existing notifications from DB
+  // removing pulling now Server automatically checks weather/crowd every 60s and pushes via Socket.io
   await fetchNotifications(true);
 
-  console.log("Refresh complete!");
+  console.log("Refresh complete");
 };
 
 const getUserId = () => {
   const user = JSON.parse(localStorage.getItem("user") || "{}");
   return user._id || user.id;
+};
+
+// Start countdown timer
+const startCountdown = () => {
+  // Clear existing interval if any
+  if (countdownInterval) {
+    clearInterval(countdownInterval);
+  }
+
+  // Reset to 60 seconds
+  countdown.value = 60;
+
+  // Start countdown
+  countdownInterval = setInterval(() => {
+    countdown.value--;
+
+    // When countdown reaches 0, notifications will arrive automatically via Socket.io
+    if (countdown.value <= 0) {
+      console.log(
+        "[TIMER] Countdown reached 0, resetting to 60s. Waiting for server PUSH...",
+      );
+      countdown.value = 60; // Reset for next cycle
+    }
+  }, 1000);
 };
 
 // Fetch upcoming trip (within 24 hours)
@@ -411,99 +429,19 @@ const fetchNotifications = async (forceUnread = false) => {
   }
 };
 
+// DEPRECATED: No longer needed - server checks automatically every 60s
 // Check weather and create notifications
-const checkWeatherAndNotify = async () => {
-  const userId = getUserId();
-  if (!userId) return;
+// const checkWeatherAndNotify = async () => {
+//   Server now handles this automatically via scheduler
+//   Notifications arrive via Socket.io PUSH
+// };
 
-  const locs = locations.value.map((loc) => ({
-    name: loc.name,
-    lat: loc.lat,
-    lon: loc.lon,
-  }));
-
-  try {
-    const response = await fetch(
-      `http://localhost:3000/api/notifications/weather/${userId}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ locations: locs }),
-      },
-    );
-
-    const data = await response.json();
-
-    if (data.success && data.weatherData) {
-      // Update locations with weather data
-      data.weatherData.forEach((weather) => {
-        const loc = locations.value.find((l) => l.name === weather.city);
-        if (loc && !weather.error) {
-          loc.weather.temp = `${weather.temperature}°C`;
-          loc.weather.condition = weather.condition;
-          loc.weather.windSpeed = weather.windSpeed || null;
-          loc.weather.icon = weather.icon;
-          loc.weather.alert = weather.alert;
-        }
-      });
-
-      // Refresh notifications if new alerts were created
-      if (data.alertsCreated > 0) {
-        fetchNotifications();
-      }
-    }
-  } catch (error) {
-    console.error("Failed to check weather:", error);
-  }
-};
-
+// DEPRECATED: No longer needed - server checks automatically every 60s
 // Check crowd density and create notifications
-const checkCrowdAndNotify = async () => {
-  const userId = getUserId();
-  if (!userId) return;
-
-  const locs = locations.value.map((loc) => ({
-    name: loc.name,
-    lat: loc.lat,
-    lon: loc.lon,
-  }));
-
-  try {
-    const response = await fetch(
-      `http://localhost:3000/api/notifications/crowd/${userId}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ locations: locs }),
-      },
-    );
-
-    const data = await response.json();
-
-    if (data.success && data.crowdData) {
-      // Update locations with crowd data
-      data.crowdData.forEach((crowd) => {
-        const loc = locations.value.find((l) => l.name === crowd.location);
-        if (loc) {
-          loc.crowd.value = crowd.density;
-          loc.crowd.levelKey = crowd.levelKey;
-          loc.crowd.trend = crowd.trend;
-          loc.crowd.trendIcon = crowd.icon;
-          loc.crowd.color = crowd.color;
-          loc.crowd.barColor = crowd.barColor;
-          loc.alternative = crowd.alternative;
-        }
-      });
-
-      // Refresh notifications if new alerts were created
-      if (data.alertsCreated > 0) {
-        fetchNotifications();
-      }
-    }
-  } catch (error) {
-    console.error("Failed to check crowd density:", error);
-  }
-};
+// const checkCrowdAndNotify = async () => {
+//   Server now handles this automatically via scheduler
+//   Notifications arrive via Socket.io PUSH
+// };
 
 const getNotificationColor = (type) => {
   const colors = {
@@ -625,13 +563,17 @@ const setupSocket = () => {
 
   // Listen for weather notifications
   socket.value.on("notification:weather", (notification) => {
-    console.log("Received weather notification:", notification);
+    console.log("[PUSH RECEIVED] Weather notification:", notification);
+    console.log("   → City:", notification.city);
+    console.log("   → Message:", notification.message);
     addNotificationToList(notification);
   });
 
   // Listen for crowd notifications
   socket.value.on("notification:crowd", (notification) => {
-    console.log("Received crowd notification:", notification);
+    console.log("[PUSH RECEIVED] Crowd notification:", notification);
+    console.log("   → City:", notification.city);
+    console.log("   → Message:", notification.message);
     addNotificationToList(notification);
   });
 
@@ -666,6 +608,14 @@ const addNotificationToList = (notification) => {
     notifications.value = notifications.value.slice(0, 50);
   }
 
+  // Reset countdown timer when new notification arrives from server
+  // This syncs the timer with server's automatic checks
+  const oldCountdown = countdown.value;
+  countdown.value = 60;
+  console.log(
+    `[PUSH SYNC] Timer reset: ${oldCountdown}s → 60s (notification received)`,
+  );
+
   console.log("✅ Notification added to list:", newNotification.message);
 };
 
@@ -676,12 +626,16 @@ onMounted(() => {
 
   // Then fetch data for those locations
   fetchUpcomingTrip();
-  fetchNotifications(true); // Force unread on initial load too
-  checkWeatherAndNotify();
-  checkCrowdAndNotify();
+  fetchNotifications(true); // Load notification history
+
+  // NO MORE PULL! Weather/crowd checks happen automatically every 60s on server
+  // Notifications arrive via Socket.io PUSH in real-time
 
   // Setup Socket.io for real-time push notifications
   setupSocket();
+
+  // Start countdown timer for automatic updates
+  startCountdown();
 
   window.addEventListener("languageChanged", handleLanguageChange);
 });
@@ -694,6 +648,11 @@ onBeforeUnmount(() => {
       socket.value.emit("leave:notifications", userId);
     }
     socket.value.disconnect();
+  }
+
+  // Clear countdown interval
+  if (countdownInterval) {
+    clearInterval(countdownInterval);
   }
 
   window.removeEventListener("languageChanged", handleLanguageChange);
@@ -821,6 +780,46 @@ onBeforeUnmount(() => {
     </div>
 
     <div class="bg-white rounded-2xl p-6 border border-green-200 shadow-sm">
+      <!-- Automatic Update Timer -->
+      <div
+        class="mb-4 bg-gradient-to-r from-emerald-50 to-blue-50 border border-emerald-200 rounded-xl p-4"
+      >
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="relative">
+              <div
+                class="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center"
+              >
+                <Clock class="w-6 h-6 text-emerald-600" />
+              </div>
+              <div
+                class="absolute -top-1 -right-1 w-5 h-5 bg-emerald-500 rounded-full animate-pulse flex items-center justify-center"
+              >
+                <span class="text-white text-[10px] font-bold">!</span>
+              </div>
+            </div>
+            <div>
+              <p class="text-sm font-bold text-gray-800">
+                Automatic Push Updates
+              </p>
+              <p class="text-xs text-gray-600">
+                Server checking all cities every 60 seconds
+              </p>
+            </div>
+          </div>
+          <div class="text-center">
+            <div
+              class="bg-white rounded-lg px-4 py-2 border-2 border-emerald-300 shadow-sm"
+            >
+              <p class="text-xs text-gray-500 mb-1">Next check in</p>
+              <p class="text-2xl font-bold text-emerald-600">
+                {{ countdown }}s
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div class="flex items-center justify-between mb-4">
         <div>
           <div class="flex items-center gap-2">
@@ -934,7 +933,9 @@ onBeforeUnmount(() => {
               ? 'border-gray-200 bg-gray-50/50 opacity-60 hover:opacity-80'
               : 'border-emerald-100 bg-emerald-50/30 hover:bg-emerald-50'
           "
-          :title="item.isRead ? 'Click to mark as unread' : 'Click to mark as read'"
+          :title="
+            item.isRead ? 'Click to mark as unread' : 'Click to mark as read'
+          "
         >
           <div class="flex items-center gap-4">
             <div
