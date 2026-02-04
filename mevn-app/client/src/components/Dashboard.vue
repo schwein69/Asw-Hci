@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from "vue";
+import { ref, computed, onMounted, onUnmounted, inject } from "vue";
 import {
   Leaf,
   Zap,
@@ -17,7 +17,7 @@ import DestinationChart from "./charts/DestinationChart.vue";
 import { getLanguage, t as translate } from "../utils/translations.js";
 
 const language = ref(getLanguage());
-
+const apiBase = inject("apiBase");
 const handleLanguageChange = (event) => {
   language.value = event.detail.language;
 };
@@ -50,14 +50,11 @@ const fetchDashboardSummary = async () => {
     const token = localStorage.getItem("token");
     if (!token) return;
 
-    const response = await fetch(
-      "http://localhost:3000/api/dashboard/summary",
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+    const response = await fetch(`${apiBase}/dashboard/summary`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
       },
-    );
+    });
 
     if (!response.ok) {
       throw new Error("Failed to fetch dashboard summary");
@@ -86,7 +83,7 @@ const fetchEnvironmentalImpact = async () => {
     const token = localStorage.getItem("token");
     if (!token) return;
 
-    const response = await fetch("http://localhost:3000/api/dashboard/impact", {
+    const response = await fetch(`${apiBase}/dashboard/impact`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },

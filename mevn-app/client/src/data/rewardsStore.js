@@ -11,7 +11,7 @@ const defaultUserStats = {
 export const useRewardsStore = defineStore("rewards", () => {
   const isLoading = ref(false);
   const error = ref(null);
-
+  const apiBase = `http://localhost:${import.meta.env.VITE_API_PORT || 4000}/api`;
   // Dati Utente
   const targetUserId = ref(null);
   const userStats = ref({ ...defaultUserStats });
@@ -20,7 +20,7 @@ export const useRewardsStore = defineStore("rewards", () => {
   const leaderboard = ref([]);
 
   const achievementsUnlocked = computed(
-    () => achievements.value.filter((a) => !a.locked).length
+    () => achievements.value.filter((a) => !a.locked).length,
   );
 
   const totalAchievements = computed(() => achievements.value.length);
@@ -46,7 +46,7 @@ export const useRewardsStore = defineStore("rewards", () => {
 
       // Call the complete rewards endpoint (gets everything in one call)
       const response = await fetch(
-        `http://localhost:3000/api/achievements/${userId}/complete`
+        `${apiBase}/achievements/${userId}/complete`,
       );
 
       if (!response.ok) {
@@ -116,7 +116,7 @@ export const useRewardsStore = defineStore("rewards", () => {
       console.log(`  - Points: ${userStats.value.ecoPoints}`);
       console.log(`  - Achievements: ${achievements.value.length}`);
       console.log(
-        `  - Unlocked: ${achievementsUnlocked.value}/${totalAchievements.value}`
+        `  - Unlocked: ${achievementsUnlocked.value}/${totalAchievements.value}`,
       );
     } catch (err) {
       error.value = "Failed to load rewards data.";

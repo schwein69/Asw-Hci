@@ -1,5 +1,5 @@
 <script setup>
-import { ref, reactive, computed } from "vue";
+import { ref, reactive, computed, inject } from "vue";
 import { X, Image as ImageIcon, Loader2 } from "lucide-vue-next";
 import { getLanguage, t as translate } from "../../utils/translations.js";
 import { Trash2 } from "lucide-vue-next";
@@ -11,6 +11,7 @@ const props = defineProps({
   },
 });
 
+const apiBase = inject("apiBase");
 const emit = defineEmits(["close", "create"]);
 
 const isSubmitting = ref(false);
@@ -108,7 +109,7 @@ const submitRecommendation = async () => {
       image: newPlace.image ? [newPlace.image] : [],
     };
 
-    const response = await fetch("http://localhost:3000/api/travelcards", {
+    const response = await fetch(`${apiBase}/travelcards`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),

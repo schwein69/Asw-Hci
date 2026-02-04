@@ -1,13 +1,14 @@
 # Asw-Hci
+
 EcoGo is a MEVN stack application (MongoDB, Express, Vue, Node) for the ASW course of University of Bologna.
 
 ## Prerequisites
 
 Ensure that the following software is installed on your machine before proceeding:
 
-* **Docker Desktop**
-* **Doppler CLI** : https://github.com/DopplerHQ/cli/blob/master/INSTALL.md
-* **Git bash**
+- **Docker Desktop**
+- **Doppler CLI** : https://github.com/DopplerHQ/cli/blob/master/INSTALL.md
+- **Git bash**
 
 ## Installation
 
@@ -17,7 +18,7 @@ To start the application, you require a Service Token. Please request the "Publi
 
 Clone the project files to your local machine:
 
-git clone https://github.com/schwein69/Asw-Hci.git   
+git clone https://github.com/schwein69/Asw-Hci.git  
 cd to the root path (mevn-app)
 
 ### Step 2: Run the Application
@@ -43,15 +44,16 @@ doppler run -- docker-compose up --build
 
 Once the initialization process is complete, the services will be available at the following addresses:
 
-* Frontend Application: http://localhost:80  
-* Backend API: http://localhost:3000
+- Frontend Application: http://localhost:8080
+- Backend API: http://localhost:4000
 
 ## Troubleshooting
 
 If you encounter connection errors, please verify that:
+
 1.  Docker Desktop is running.
 2.  The DOPPLER_TOKEN environment variable was set correctly before running the command.
-3.  Port 3000 and Port 80 are not occupied by other applications.
+3.  Port 4000 and Port 8080 are not occupied by other applications.
 
 ## Maintainer Access
 

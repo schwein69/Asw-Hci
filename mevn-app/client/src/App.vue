@@ -3,6 +3,7 @@ import { Leaf, Moon, Sun, User, LogOut } from "lucide-vue-next";
 import TheNavigation from "./components/NavigationBar.vue";
 import { useRoute, useRouter } from "vue-router";
 import { getLanguage, t as translate } from "./utils/translations.js";
+import { provide } from "vue";
 
 export default {
   name: "App",
@@ -17,6 +18,8 @@ export default {
   setup() {
     const route = useRoute();
     const router = useRouter();
+    const apiBase = `http://localhost:${import.meta.env.VITE_API_PORT}/api`;
+    provide("apiBase", apiBase);
     return { route, router };
   },
   data() {
@@ -64,7 +67,7 @@ export default {
 
     const userPref = localStorage.theme;
     const systemPref = window.matchMedia(
-      "(prefers-color-scheme: dark)"
+      "(prefers-color-scheme: dark)",
     ).matches;
 
     if (userPref === "dark" || (!userPref && systemPref)) {
@@ -139,12 +142,12 @@ export default {
         document.body.style.setProperty(
           "background-color",
           "#f0fdf4",
-          "important"
+          "important",
         );
         document.documentElement.style.setProperty(
           "background-color",
           "#f0fdf4",
-          "important"
+          "important",
         );
         // Also set on the app div
         const appDiv = document.getElementById("app");

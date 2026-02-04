@@ -11,6 +11,7 @@ import {
 import { getLanguage, t as translate } from "../utils/translations.js";
 import actualMap from "./maps/actualMap.vue";
 import * as turf from "@turf/turf";
+import { inject } from "vue";
 
 export default {
   name: "PastTrips",
@@ -24,6 +25,7 @@ export default {
     X,
     actualMap,
   },
+  inject: ["apiBase"],
   data() {
     return {
       language: getLanguage(),
@@ -141,7 +143,10 @@ export default {
       if (!value) return "";
       const date = new Date(value);
       if (Number.isNaN(date.getTime())) return "";
-      return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+      return date.toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
     },
     formatDuration(hours) {
       if (!Number.isFinite(hours)) return "";
@@ -158,12 +163,9 @@ export default {
         const token = localStorage.getItem("token");
         if (!token) return;
 
-        const response = await fetch(
-          "http://localhost:3000/api/trips/completed",
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
+        const response = await fetch(`${this.apiBase}/trips/completed`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
 
         if (!response.ok) {
           throw new Error("Failed to fetch completed trips");
@@ -184,9 +186,11 @@ export default {
               departureType: segment.gate || segment.departureGate || "",
               arrival: this.formatTime(segment.endTime || trip.endTime),
               arrivalType: segment.arrivalGate || "",
-              time: this.formatDuration(segment.estimatedDurationMinutes
-                ? segment.estimatedDurationMinutes / 60
-                : segment.durationHours),
+              time: this.formatDuration(
+                segment.estimatedDurationMinutes
+                  ? segment.estimatedDurationMinutes / 60
+                  : segment.durationHours,
+              ),
               co2: `${Math.round(segment.co2 || 0)}kg`,
               cost: this.formatMoney(segment.price || 0),
               type: segment.transportMode || segment.category || "travel",
@@ -264,7 +268,7 @@ export default {
       }
 
       const cityKey = Object.keys(cityCoords).find(
-        (key) => key.toLowerCase() === cityName.toLowerCase()
+        (key) => key.toLowerCase() === cityName.toLowerCase(),
       );
       if (cityKey) {
         return cityCoords[cityKey];

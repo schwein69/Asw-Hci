@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount } from "vue";
+import { ref, computed, onMounted, onBeforeUnmount, inject } from "vue";
 import {
   Star,
   TrendingUp,
@@ -11,6 +11,9 @@ import {
   Zap,
 } from "lucide-vue-next";
 import { getLanguage, t as translate } from "../utils/translations.js";
+
+// Injected API base URL
+const apiBase = inject("apiBase");
 
 // Reactive state
 const language = ref(getLanguage());
@@ -71,7 +74,7 @@ const getUserId = () => {
 const fetchAllUsers = async () => {
   isLoadingUsers.value = true;
   try {
-    const response = await fetch("http://localhost:3000/api/users/all");
+    const response = await fetch(`${apiBase}/users/all`);
     const users = await response.json();
 
     const currentUserId = getUserId();
@@ -89,7 +92,7 @@ const fetchAllUsers = async () => {
 const fetchCommunityFeedback = async () => {
   isLoading.value = true;
   try {
-    const response = await fetch("http://localhost:3000/api/feedback?limit=20");
+    const response = await fetch(`${apiBase}/feedback?limit=20`);
     const data = await response.json();
 
     if (data.success) {
@@ -206,7 +209,7 @@ const submitFeedback = async () => {
       reportedUserName = reportedUser ? reportedUser.username : "Unknown User";
     }
 
-    const response = await fetch("http://localhost:3000/api/feedback", {
+    const response = await fetch(`${apiBase}/feedback`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -253,14 +256,11 @@ const handleUpvote = async (id) => {
   }
 
   try {
-    const response = await fetch(
-      `http://localhost:3000/api/feedback/${id}/upvote`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId }),
-      },
-    );
+    const response = await fetch(`${apiBase}/feedback/${id}/upvote`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId }),
+    });
 
     const data = await response.json();
 

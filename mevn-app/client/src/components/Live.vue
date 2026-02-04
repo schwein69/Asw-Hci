@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount } from "vue";
+import { ref, computed, onMounted, onBeforeUnmount, inject } from "vue";
 import { io } from "socket.io-client";
 import {
   Clock,
@@ -25,6 +25,8 @@ import {
 } from "lucide-vue-next";
 import { getLanguage, t as translate } from "../utils/translations.js";
 import { useRouter } from "vue-router";
+
+const apiBase = inject("apiBase");
 
 // Router
 const router = useRouter();
@@ -201,7 +203,7 @@ const markAllRead = async () => {
 
   try {
     const response = await fetch(
-      `http://localhost:3000/api/notifications/mark-all-read/${userId}`,
+      `${apiBase}/notifications/mark-all-read/${userId}`,
       { method: "PUT" },
     );
 
@@ -230,7 +232,7 @@ const toggleNotificationRead = async (notificationId) => {
 
   try {
     const response = await fetch(
-      `http://localhost:3000/api/notifications/${notificationId}/read`,
+      `${apiBase}/notifications/${notificationId}/read`,
       {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -286,9 +288,7 @@ const fetchUpcomingTrip = async () => {
   if (!userId) return;
 
   try {
-    const response = await fetch(
-      `http://localhost:3000/api/trips/upcoming/${userId}`,
-    );
+    const response = await fetch(`${apiBase}/trips/upcoming/${userId}`);
     const trips = await response.json();
     console.log("📦 Received trips:", trips);
 
@@ -335,9 +335,7 @@ const fetchNotifications = async (forceUnread = false) => {
   if (!userId) return;
 
   try {
-    const response = await fetch(
-      `http://localhost:3000/api/notifications/${userId}?limit=30`,
-    );
+    const response = await fetch(`${apiBase}/notifications/${userId}?limit=30`);
     const data = await response.json();
 
     if (data.success) {
@@ -423,14 +421,11 @@ const checkWeatherAndNotify = async () => {
   }));
 
   try {
-    const response = await fetch(
-      `http://localhost:3000/api/notifications/weather/${userId}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ locations: locs }),
-      },
-    );
+    const response = await fetch(`${apiBase}/notifications/weather/${userId}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ locations: locs }),
+    });
 
     const data = await response.json();
 
@@ -469,14 +464,11 @@ const checkCrowdAndNotify = async () => {
   }));
 
   try {
-    const response = await fetch(
-      `http://localhost:3000/api/notifications/crowd/${userId}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ locations: locs }),
-      },
-    );
+    const response = await fetch(`${apiBase}/notifications/crowd/${userId}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ locations: locs }),
+    });
 
     const data = await response.json();
 
@@ -609,7 +601,7 @@ const setupSocket = () => {
   if (!userId) return;
 
   // Connect to Socket.io server
-  socket.value = io("http://localhost:3000");
+  socket.value = io(`http://localhost:${import.meta.env.VITE_API_PORT}`);
 
   socket.value.on("connect", () => {
     console.log("Connected to Socket.io server:", socket.value.id);
@@ -934,7 +926,9 @@ onBeforeUnmount(() => {
               ? 'border-gray-200 bg-gray-50/50 opacity-60 hover:opacity-80'
               : 'border-emerald-100 bg-emerald-50/30 hover:bg-emerald-50'
           "
-          :title="item.isRead ? 'Click to mark as unread' : 'Click to mark as read'"
+          :title="
+            item.isRead ? 'Click to mark as unread' : 'Click to mark as read'
+          "
         >
           <div class="flex items-center gap-4">
             <div

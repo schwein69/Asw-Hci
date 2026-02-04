@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from "vue";
+import { ref, computed, onMounted, onUnmounted, inject } from "vue";
 import {
   CheckCircle2,
   Clock,
@@ -17,6 +17,7 @@ import { useRouter } from "vue-router";
 import { useTripStore } from "../data/tripStore.js";
 import TripStats from "./template/TripStats.vue";
 
+const apiBase = inject("apiBase");
 const router = useRouter();
 const tripStore = useTripStore();
 const language = ref(getLanguage());
@@ -39,9 +40,7 @@ const fetchActiveTrips = async () => {
   if (!userId) return;
 
   try {
-    const response = await fetch(
-      `http://localhost:3000/api/trips/active/${userId}`,
-    );
+    const response = await fetch(`${apiBase}/trips/active/${userId}`);
     const activeTrips = await response.json();
 
     if (activeTrips && activeTrips.length > 0) {
@@ -184,18 +183,15 @@ const removeRoute = async (tripId, routeId) => {
     }
 
     try {
-      const response = await fetch(
-        `http://localhost:3000/api/trips/${tripId}`,
-        {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            segmentId: isLastSegment ? null : routeId,
-          }),
+      const response = await fetch(`${apiBase}/trips/${tripId}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
         },
-      );
+        body: JSON.stringify({
+          segmentId: isLastSegment ? null : routeId,
+        }),
+      });
 
       if (!response.ok) {
         throw new Error("Failed to delete");
@@ -224,18 +220,15 @@ const toggleComplete = async (tripId, segmentId) => {
   seg.completed = !seg.completed;
 
   try {
-    const response = await fetch(
-      `http://localhost:3000/api/trips/${tripId}/update`,
-      {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          segmentId: seg.id,
-        }),
+    const response = await fetch(`${apiBase}/trips/${tripId}/update`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
       },
-    );
+      body: JSON.stringify({
+        segmentId: seg.id,
+      }),
+    });
 
     if (!response.ok) {
       throw new Error("Failed to update segment");
@@ -250,7 +243,7 @@ function completeTrip(tripId) {
   const trip = trips.value.find((t) => t.id === tripId);
   if (!trip || !isTripComplete(trip)) return;
   if (confirm(`Are you sure you want to complete "${trip.name}"?`)) {
-    fetch(`http://localhost:3000/api/trips/complete/${tripId}`, {
+    fetch(`${apiBase}/trips/complete/${tripId}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
