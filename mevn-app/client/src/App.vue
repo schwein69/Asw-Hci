@@ -3,6 +3,9 @@ import { Leaf, Moon, Sun, User, LogOut } from "lucide-vue-next";
 import TheNavigation from "./components/NavigationBar.vue";
 import { useRoute, useRouter } from "vue-router";
 import { getLanguage, t as translate } from "./utils/translations.js";
+import { provide } from "vue";
+import { io } from "socket.io-client";
+import { setSocket, addNotification } from "./data/notificationStore.js";
 
 export default {
   name: "App",
@@ -17,6 +20,9 @@ export default {
   setup() {
     const route = useRoute();
     const router = useRouter();
+
+    const apiBase = `http://localhost:${import.meta.env.VITE_API_PORT || "3000"}/api`;
+    provide("apiBase", apiBase);
     return { route, router };
   },
   data() {
@@ -26,6 +32,7 @@ export default {
       user: null,
       profileImageUrl: null,
       language: getLanguage(),
+      socket: null,
     };
   },
   computed: {
@@ -62,9 +69,12 @@ export default {
     // Load user from localStorage
     this.loadUser();
 
+    // Setup global Socket.io connection
+    this.setupGlobalSocket();
+
     const userPref = localStorage.theme;
     const systemPref = window.matchMedia(
-      "(prefers-color-scheme: dark)"
+      "(prefers-color-scheme: dark)",
     ).matches;
 
     if (userPref === "dark" || (!userPref && systemPref)) {
@@ -89,12 +99,68 @@ export default {
     window.addEventListener("languageChanged", this.handleLanguageChange);
   },
   beforeUnmount() {
+    // DO NOT disconnect socket - keep it alive for the entire app lifecycle
+    // Socket will naturally disconnect when browser closes/user logs out
     document.removeEventListener("click", this.handleClickOutside);
     window.removeEventListener("storage", this.handleStorageChange);
     window.removeEventListener("profileImageUpdated", this.loadUser);
     window.removeEventListener("languageChanged", this.handleLanguageChange);
   },
   methods: {
+    setupGlobalSocket() {
+      // Only setup socket if user is logged in
+      const userData = localStorage.getItem("user");
+      if (!userData) return;
+
+      const user = JSON.parse(userData);
+      const userId = user._id || user.id;
+      if (!userId) return;
+
+      console.log("[GLOBAL SOCKET] Setting up global socket connection...");
+
+      // Connect to Socket.io server
+      this.socket = io("http://localhost:3000");
+
+      // Listen for connection
+      this.socket.on("connect", () => {
+        console.log("[GLOBAL SOCKET] Connected:", this.socket.id);
+        // Join user's personal notification room
+        this.socket.emit("join:notifications", userId);
+      });
+
+      // Listen for all notification types and add to global store
+      this.socket.on("notification:new", (notification) => {
+        console.log("[GLOBAL SOCKET] New notification received:", notification);
+        addNotification(notification);
+      });
+
+      this.socket.on("notification:weather", (notification) => {
+        console.log(
+          "[GLOBAL SOCKET] Weather notification received:",
+          notification,
+        );
+        addNotification(notification);
+      });
+
+      this.socket.on("notification:crowd", (notification) => {
+        console.log(
+          "[GLOBAL SOCKET] Crowd notification received:",
+          notification,
+        );
+        addNotification(notification);
+      });
+
+      this.socket.on("disconnect", () => {
+        console.log("[GLOBAL SOCKET] Disconnected");
+      });
+
+      this.socket.on("connect_error", (error) => {
+        console.error("[GLOBAL SOCKET] Connection error:", error);
+      });
+
+      // Save socket to global store
+      setSocket(this.socket);
+    },
     loadUser() {
       const userData = localStorage.getItem("user");
       if (userData) {
@@ -139,12 +205,12 @@ export default {
         document.body.style.setProperty(
           "background-color",
           "#f0fdf4",
-          "important"
+          "important",
         );
         document.documentElement.style.setProperty(
           "background-color",
           "#f0fdf4",
-          "important"
+          "important",
         );
         // Also set on the app div
         const appDiv = document.getElementById("app");
