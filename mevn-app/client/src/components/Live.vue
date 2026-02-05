@@ -21,6 +21,7 @@ import {
   CloudSun,
   Snowflake, // Added for snow
   CloudLightning, // Added for storm
+  RefreshCw, // Added for refresh button
 } from "lucide-vue-next";
 import { getLanguage, t as translate } from "../utils/translations.js";
 import { useRouter } from "vue-router";
@@ -112,96 +113,25 @@ const notifications = ref([
   },
 ]);
 
-const locations = ref([
-  {
-    id: 1,
-    name: "Amsterdam",
-    lat: 52.3676,
-    lon: 4.9041,
-    live: true,
-    weather: {
-      condition: "Loading...",
-      temp: "--",
-      icon: "Cloud",
-      alert: false,
-    },
-    crowd: {
-      levelKey: "live.lowDensity",
-      value: 45,
-      trend: "Up",
-      trendIcon: "TrendingUp",
-      color: "text-emerald-600",
-      barColor: "bg-emerald-300",
-    },
-    alternative: null,
-  },
-  {
-    id: 2,
-    name: "Barcelona",
-    lat: 41.3851,
-    lon: 2.1734,
-    live: true,
-    weather: {
-      condition: "Loading...",
-      temp: "--",
-      icon: "Cloud",
-      alert: false,
-    },
-    crowd: {
-      levelKey: "live.highDensity",
-      value: 81,
-      trend: "Stable",
-      trendIcon: "Minus",
-      color: "text-red-500",
-      barColor: "bg-red-300",
-    },
-    alternative: "Visit during off-peak hours (early morning or evening)",
-  },
-  {
-    id: 3,
-    name: "Copenhagen",
-    lat: 55.6761,
-    lon: 12.5683,
-    live: true,
-    weather: {
-      condition: "Loading...",
-      temp: "--",
-      icon: "Cloud",
-      alert: false,
-    },
-    crowd: {
-      levelKey: "live.mediumDensity",
-      value: 56,
-      trend: "Up",
-      trendIcon: "TrendingUp",
-      color: "text-orange-500",
-      barColor: "bg-orange-300",
-    },
-    alternative: "Consider indoor activities or postpone visit",
-  },
-  {
-    id: 4,
-    name: "Berlin",
-    lat: 52.52,
-    lon: 13.405,
-    live: true,
-    weather: {
-      condition: "Loading...",
-      temp: "--",
-      icon: "Cloud",
-      alert: false,
-    },
-    crowd: {
-      levelKey: "live.mediumDensity",
-      value: 61,
-      trend: "Down",
-      trendIcon: "TrendingDown",
-      color: "text-orange-500",
-      barColor: "bg-orange-300",
-    },
-    alternative: null,
-  },
-]);
+// Complete list of available cities
+const ALL_LOCATIONS = [
+  { name: "Amsterdam", lat: 52.3676, lon: 4.9041 },
+  { name: "Barcelona", lat: 41.3851, lon: 2.1734 },
+  { name: "Copenhagen", lat: 55.6761, lon: 12.5683 },
+  { name: "Berlin", lat: 52.52, lon: 13.405 },
+  { name: "Paris", lat: 48.8566, lon: 2.3522 },
+  { name: "Rome", lat: 41.9028, lon: 12.4964 },
+  { name: "Vienna", lat: 48.2082, lon: 16.3738 },
+  { name: "Prague", lat: 50.0755, lon: 14.4378 },
+  { name: "Madrid", lat: 40.4168, lon: -3.7038 },
+  { name: "Lisbon", lat: 38.7223, lon: -9.1393 },
+  { name: "Brussels", lat: 50.8503, lon: 4.3517 },
+  { name: "Budapest", lat: 47.4979, lon: 19.0402 },
+];
+
+const locations = ref([]);
+const countdown = ref(60); // Countdown timer for next automatic check
+let countdownInterval = null;
 
 // Icon mapping for dynamic components
 const iconComponents = {
@@ -236,6 +166,7 @@ const filteredNotifications = computed(() => {
 const notificationCounts = computed(() => {
   const counts = {
     all: notifications.value.length,
+    unread: notifications.value.filter((n) => !n.isRead).length,
     weather: 0,
     tourist: 0,
     social: 0,
@@ -273,7 +204,7 @@ const markAllRead = async () => {
   try {
     const response = await fetch(
       `http://localhost:3000/api/notifications/mark-all-read/${userId}`,
-      { method: "PUT" }
+      { method: "PUT" },
     );
 
     if (response.ok) {
@@ -288,9 +219,82 @@ const markAllRead = async () => {
   }
 };
 
+// Toggle individual notification read status
+const toggleNotificationRead = async (notificationId) => {
+  const userId = getUserId();
+  if (!userId) return;
+
+  // Find the notification in local state
+  const notification = notifications.value.find((n) => n.id === notificationId);
+  if (!notification) return;
+
+  const newReadStatus = !notification.isRead;
+
+  try {
+    const response = await fetch(
+      `http://localhost:3000/api/notifications/${notificationId}/read`,
+      {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isRead: newReadStatus }),
+      },
+    );
+
+    if (response.ok) {
+      // Update local state
+      notifications.value = notifications.value.map((n) =>
+        n.id === notificationId ? { ...n, isRead: newReadStatus } : n,
+      );
+      console.log(
+        `✓ Notification ${newReadStatus ? "marked as read" : "marked as unread"}`,
+      );
+    }
+  } catch (error) {
+    console.error("Failed to toggle notification read status:", error);
+  }
+};
+
+// Refresh notifications and locations
+const refreshNotifications = async () => {
+  console.log("Refreshing notifications and locations...");
+
+  // Select new random locations
+  selectRandomLocations();
+
+  // Just fetch existing notifications from DB
+  // removing pulling now Server automatically checks weather/crowd every 60s and pushes via Socket.io
+  await fetchNotifications(true);
+
+  console.log("Refresh complete");
+};
+
 const getUserId = () => {
   const user = JSON.parse(localStorage.getItem("user") || "{}");
   return user._id || user.id;
+};
+
+// Start countdown timer
+const startCountdown = () => {
+  // Clear existing interval if any
+  if (countdownInterval) {
+    clearInterval(countdownInterval);
+  }
+
+  // Reset to 60 seconds
+  countdown.value = 60;
+
+  // Start countdown
+  countdownInterval = setInterval(() => {
+    countdown.value--;
+
+    // When countdown reaches 0, notifications will arrive automatically via Socket.io
+    if (countdown.value <= 0) {
+      console.log(
+        "[TIMER] Countdown reached 0, resetting to 60s. Waiting for server PUSH...",
+      );
+      countdown.value = 60; // Reset for next cycle
+    }
+  }, 1000);
 };
 
 // Fetch upcoming trip (within 24 hours)
@@ -301,7 +305,7 @@ const fetchUpcomingTrip = async () => {
 
   try {
     const response = await fetch(
-      `http://localhost:3000/api/trips/upcoming/${userId}`
+      `http://localhost:3000/api/trips/upcoming/${userId}`,
     );
     const trips = await response.json();
     console.log("📦 Received trips:", trips);
@@ -344,18 +348,34 @@ const fetchUpcomingTrip = async () => {
 };
 
 // Fetch notifications from backend
-const fetchNotifications = async () => {
+const fetchNotifications = async (forceUnread = false) => {
   const userId = getUserId();
   if (!userId) return;
 
   try {
     const response = await fetch(
-      `http://localhost:3000/api/notifications/${userId}?limit=30`
+      `http://localhost:3000/api/notifications/${userId}?limit=30`,
     );
     const data = await response.json();
 
     if (data.success) {
       console.log("📥 Received notifications:", data.notifications.length);
+
+      // Get current location names
+      const currentCities = locations.value.map((loc) => loc.name);
+      console.log("🏙️ Current cities:", currentCities);
+
+      // Filter notifications to show only those for current locations
+      const filtered = data.notifications.filter((n) =>
+        currentCities.includes(n.city),
+      );
+
+      console.log(
+        "Filtered notifications:",
+        filtered.length,
+        "for cities:",
+        currentCities,
+      );
 
       // Create a balanced mix of notification types
       const byType = {
@@ -367,7 +387,7 @@ const fetchNotifications = async () => {
       };
 
       // Group notifications by type
-      data.notifications.forEach((n) => {
+      filtered.forEach((n) => {
         const type = n.type;
         if (byType[type]) {
           byType[type].push(n);
@@ -378,7 +398,7 @@ const fetchNotifications = async () => {
       const balanced = [];
       const maxPerType = 3;
       const types = Object.keys(byType).filter(
-        (type) => byType[type].length > 0
+        (type) => byType[type].length > 0,
       );
 
       for (let i = 0; i < maxPerType; i++) {
@@ -397,7 +417,7 @@ const fetchNotifications = async () => {
         message: n.message,
         icon: n.icon || "Bell",
         color: getNotificationColor(n.type),
-        isRead: n.isRead,
+        isRead: forceUnread ? false : n.isRead, // Force unread if refresh
         timestamp: new Date(n.createdAt).getTime(),
       }));
 
@@ -409,99 +429,19 @@ const fetchNotifications = async () => {
   }
 };
 
+// DEPRECATED: No longer needed - server checks automatically every 60s
 // Check weather and create notifications
-const checkWeatherAndNotify = async () => {
-  const userId = getUserId();
-  if (!userId) return;
+// const checkWeatherAndNotify = async () => {
+//   Server now handles this automatically via scheduler
+//   Notifications arrive via Socket.io PUSH
+// };
 
-  const locs = locations.value.map((loc) => ({
-    name: loc.name,
-    lat: loc.lat,
-    lon: loc.lon,
-  }));
-
-  try {
-    const response = await fetch(
-      `http://localhost:3000/api/notifications/weather/${userId}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ locations: locs }),
-      }
-    );
-
-    const data = await response.json();
-
-    if (data.success && data.weatherData) {
-      // Update locations with weather data
-      data.weatherData.forEach((weather) => {
-        const loc = locations.value.find((l) => l.name === weather.city);
-        if (loc && !weather.error) {
-          loc.weather.temp = `${weather.temperature}°C`;
-          loc.weather.condition = weather.condition;
-          loc.weather.windSpeed = weather.windSpeed || null;
-          loc.weather.icon = weather.icon;
-          loc.weather.alert = weather.alert;
-        }
-      });
-
-      // Refresh notifications if new alerts were created
-      if (data.alertsCreated > 0) {
-        fetchNotifications();
-      }
-    }
-  } catch (error) {
-    console.error("Failed to check weather:", error);
-  }
-};
-
+// DEPRECATED: No longer needed - server checks automatically every 60s
 // Check crowd density and create notifications
-const checkCrowdAndNotify = async () => {
-  const userId = getUserId();
-  if (!userId) return;
-
-  const locs = locations.value.map((loc) => ({
-    name: loc.name,
-    lat: loc.lat,
-    lon: loc.lon,
-  }));
-
-  try {
-    const response = await fetch(
-      `http://localhost:3000/api/notifications/crowd/${userId}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ locations: locs }),
-      }
-    );
-
-    const data = await response.json();
-
-    if (data.success && data.crowdData) {
-      // Update locations with crowd data
-      data.crowdData.forEach((crowd) => {
-        const loc = locations.value.find((l) => l.name === crowd.location);
-        if (loc) {
-          loc.crowd.value = crowd.density;
-          loc.crowd.levelKey = crowd.levelKey;
-          loc.crowd.trend = crowd.trend;
-          loc.crowd.trendIcon = crowd.icon;
-          loc.crowd.color = crowd.color;
-          loc.crowd.barColor = crowd.barColor;
-          loc.alternative = crowd.alternative;
-        }
-      });
-
-      // Refresh notifications if new alerts were created
-      if (data.alertsCreated > 0) {
-        fetchNotifications();
-      }
-    }
-  } catch (error) {
-    console.error("Failed to check crowd density:", error);
-  }
-};
+// const checkCrowdAndNotify = async () => {
+//   Server now handles this automatically via scheduler
+//   Notifications arrive via Socket.io PUSH
+// };
 
 const getNotificationColor = (type) => {
   const colors = {
@@ -523,6 +463,68 @@ const getNotificationDotColor = (type) => {
     location: "bg-emerald-500",
   };
   return colors[type] || "bg-emerald-500";
+};
+
+// Select 4 random locations from the complete list
+const selectRandomLocations = () => {
+  const shuffled = [...ALL_LOCATIONS].sort(() => Math.random() - 0.5);
+  const selected = shuffled.slice(0, 4);
+
+  // Generate random crowd data for each location
+  const crowdLevels = [
+    {
+      levelKey: "live.lowDensity",
+      value: 30 + Math.floor(Math.random() * 20),
+      color: "text-emerald-600",
+      barColor: "bg-emerald-300",
+      trend: "Down",
+      trendIcon: "TrendingDown",
+      alternative: null,
+    },
+    {
+      levelKey: "live.mediumDensity",
+      value: 50 + Math.floor(Math.random() * 20),
+      color: "text-orange-500",
+      barColor: "bg-orange-300",
+      trend: "Up",
+      trendIcon: "TrendingUp",
+      alternative: "Consider indoor activities or postpone visit",
+    },
+    {
+      levelKey: "live.highDensity",
+      value: 70 + Math.floor(Math.random() * 20),
+      color: "text-red-500",
+      barColor: "bg-red-300",
+      trend: "Stable",
+      trendIcon: "Minus",
+      alternative: "Visit during off-peak hours (early morning or evening)",
+    },
+  ];
+
+  locations.value = selected.map((loc, index) => {
+    const randomCrowd =
+      crowdLevels[Math.floor(Math.random() * crowdLevels.length)];
+    return {
+      id: index + 1,
+      name: loc.name,
+      lat: loc.lat,
+      lon: loc.lon,
+      live: true,
+      weather: {
+        condition: "Loading...",
+        temp: "--",
+        icon: "Cloud",
+        alert: false,
+      },
+      crowd: { ...randomCrowd },
+      alternative: randomCrowd.alternative,
+    };
+  });
+
+  console.log(
+    "Selected random locations:",
+    locations.value.map((l) => l.name).join(", "),
+  );
 };
 
 // changing codes to icons ---
@@ -561,13 +563,17 @@ const setupSocket = () => {
 
   // Listen for weather notifications
   socket.value.on("notification:weather", (notification) => {
-    console.log("Received weather notification:", notification);
+    console.log("[PUSH RECEIVED] Weather notification:", notification);
+    console.log("   → City:", notification.city);
+    console.log("   → Message:", notification.message);
     addNotificationToList(notification);
   });
 
   // Listen for crowd notifications
   socket.value.on("notification:crowd", (notification) => {
-    console.log("Received crowd notification:", notification);
+    console.log("[PUSH RECEIVED] Crowd notification:", notification);
+    console.log("   → City:", notification.city);
+    console.log("   → Message:", notification.message);
     addNotificationToList(notification);
   });
 
@@ -602,18 +608,34 @@ const addNotificationToList = (notification) => {
     notifications.value = notifications.value.slice(0, 50);
   }
 
+  // Reset countdown timer when new notification arrives from server
+  // This syncs the timer with server's automatic checks
+  const oldCountdown = countdown.value;
+  countdown.value = 60;
+  console.log(
+    `[PUSH SYNC] Timer reset: ${oldCountdown}s → 60s (notification received)`,
+  );
+
   console.log("✅ Notification added to list:", newNotification.message);
 };
 
 // Lifecycle hooks
 onMounted(() => {
+  // First select random locations
+  selectRandomLocations();
+
+  // Then fetch data for those locations
   fetchUpcomingTrip();
-  fetchNotifications(); // Load notification history
-  checkWeatherAndNotify();
-  checkCrowdAndNotify();
+  fetchNotifications(true); // Load notification history
+
+  // NO MORE PULL! Weather/crowd checks happen automatically every 60s on server
+  // Notifications arrive via Socket.io PUSH in real-time
 
   // Setup Socket.io for real-time push notifications
   setupSocket();
+
+  // Start countdown timer for automatic updates
+  startCountdown();
 
   window.addEventListener("languageChanged", handleLanguageChange);
 });
@@ -626,6 +648,11 @@ onBeforeUnmount(() => {
       socket.value.emit("leave:notifications", userId);
     }
     socket.value.disconnect();
+  }
+
+  // Clear countdown interval
+  if (countdownInterval) {
+    clearInterval(countdownInterval);
   }
 
   window.removeEventListener("languageChanged", handleLanguageChange);
@@ -753,6 +780,46 @@ onBeforeUnmount(() => {
     </div>
 
     <div class="bg-white rounded-2xl p-6 border border-green-200 shadow-sm">
+      <!-- Automatic Update Timer -->
+      <div
+        class="mb-4 bg-gradient-to-r from-emerald-50 to-blue-50 border border-emerald-200 rounded-xl p-4"
+      >
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="relative">
+              <div
+                class="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center"
+              >
+                <Clock class="w-6 h-6 text-emerald-600" />
+              </div>
+              <div
+                class="absolute -top-1 -right-1 w-5 h-5 bg-emerald-500 rounded-full animate-pulse flex items-center justify-center"
+              >
+                <span class="text-white text-[10px] font-bold">!</span>
+              </div>
+            </div>
+            <div>
+              <p class="text-sm font-bold text-gray-800">
+                Automatic Push Updates
+              </p>
+              <p class="text-xs text-gray-600">
+                Server checking all cities every 60 seconds
+              </p>
+            </div>
+          </div>
+          <div class="text-center">
+            <div
+              class="bg-white rounded-lg px-4 py-2 border-2 border-emerald-300 shadow-sm"
+            >
+              <p class="text-xs text-gray-500 mb-1">Next check in</p>
+              <p class="text-2xl font-bold text-emerald-600">
+                {{ countdown }}s
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div class="flex items-center justify-between mb-4">
         <div>
           <div class="flex items-center gap-2">
@@ -761,8 +828,14 @@ onBeforeUnmount(() => {
               {{ t("live.notifications") }}
             </h3>
             <span
+              v-if="notificationCounts.unread > 0"
               class="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full"
-              >{{ notificationCounts.all }} {{ t("live.new") }}</span
+              >{{ notificationCounts.unread }} {{ t("live.new") }}</span
+            >
+            <span
+              v-else
+              class="bg-gray-300 text-gray-600 text-[10px] font-bold px-2 py-0.5 rounded-full"
+              >All Read ✓</span
             >
           </div>
           <p class="text-sm text-gray-500 mt-1">
@@ -832,19 +905,37 @@ onBeforeUnmount(() => {
             </button>
           </div>
         </div>
-        <button
-          @click="markAllRead"
-          class="text-xs font-medium text-gray-600 border border-gray-300 rounded px-3 py-1 hover:bg-gray-50 transition-colors"
-        >
-          {{ t("live.markAllRead") }}
-        </button>
+        <div class="flex gap-2">
+          <button
+            @click="refreshNotifications"
+            class="text-xs font-medium text-emerald-600 border border-emerald-300 rounded px-3 py-1 hover:bg-emerald-50 transition-colors flex items-center gap-1"
+            title="Refresh locations and notifications"
+          >
+            <RefreshCw class="w-3.5 h-3.5" />
+          </button>
+          <button
+            @click="markAllRead"
+            class="text-xs font-medium text-gray-600 border border-gray-300 rounded px-3 py-1 hover:bg-gray-50 transition-colors"
+          >
+            {{ t("live.markAllRead") }}
+          </button>
+        </div>
       </div>
 
       <div class="space-y-3">
         <div
           v-for="item in filteredNotifications"
           :key="item.id"
-          class="flex items-center justify-between p-3 rounded-xl border border-emerald-100 bg-emerald-50/30 hover:bg-emerald-50 transition-colors cursor-pointer group"
+          @click="toggleNotificationRead(item.id)"
+          class="flex items-center justify-between p-3 rounded-xl border transition-colors cursor-pointer group"
+          :class="
+            item.isRead
+              ? 'border-gray-200 bg-gray-50/50 opacity-60 hover:opacity-80'
+              : 'border-emerald-100 bg-emerald-50/30 hover:bg-emerald-50'
+          "
+          :title="
+            item.isRead ? 'Click to mark as unread' : 'Click to mark as read'
+          "
         >
           <div class="flex items-center gap-4">
             <div
@@ -869,7 +960,7 @@ onBeforeUnmount(() => {
             </div>
           </div>
 
-          <div class="flex items-center pr-2">
+          <div v-if="!item.isRead" class="flex items-center pr-2">
             <div
               class="w-2 h-2 rounded-full"
               :class="getNotificationDotColor(item.type)"
@@ -950,8 +1041,8 @@ onBeforeUnmount(() => {
                 loc.crowd.trend === "Up"
                   ? t("live.up")
                   : loc.crowd.trend === "Down"
-                  ? t("live.down")
-                  : t("live.stable")
+                    ? t("live.down")
+                    : t("live.stable")
               }}
             </div>
           </div>
