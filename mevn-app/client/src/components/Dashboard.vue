@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from "vue";
+import { ref, computed, onMounted, onUnmounted, inject } from "vue";
 import {
   Leaf,
   Zap,
@@ -17,7 +17,7 @@ import DestinationChart from "./charts/DestinationChart.vue";
 import { getLanguage, t as translate } from "../utils/translations.js";
 
 const language = ref(getLanguage());
-
+const apiBase = inject("apiBase");
 const handleLanguageChange = (event) => {
   language.value = event.detail.language;
 };
@@ -34,6 +34,11 @@ const statsData = ref({
   greenDistanceKm: 0,
   ecoScore: 0,
   zeroTrips: 0,
+  ranking: {
+    position: 0,
+    totalUsers: 0,
+    topPercent: 0.0,
+  },
 });
 
 const formatNumber = (value) => {
@@ -45,7 +50,7 @@ const fetchDashboardSummary = async () => {
     const token = localStorage.getItem("token");
     if (!token) return;
 
-    const response = await fetch("http://localhost:3000/api/dashboard/summary", {
+    const response = await fetch(`${apiBase}/dashboard/summary`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -62,6 +67,11 @@ const fetchDashboardSummary = async () => {
       greenDistanceKm: data.greenDistanceKm || 0,
       ecoScore: data.ecoScore || 0,
       zeroTrips: data.zeroTrips || 0,
+      ranking: {
+        position: data.ranking.position,
+        totalUsers: data.ranking.totalUsers,
+        topPercent: data.ranking.topPercent,
+      },
     };
   } catch (error) {
     console.error("Failed to fetch dashboard summary:", error);
@@ -73,7 +83,7 @@ const fetchEnvironmentalImpact = async () => {
     const token = localStorage.getItem("token");
     if (!token) return;
 
-    const response = await fetch("http://localhost:3000/api/dashboard/impact", {
+    const response = await fetch(`${apiBase}/dashboard/impact`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -111,19 +121,34 @@ const stats = computed(() => [
   {
     label: t("dashboard.totalDistance"),
     value: `${formatNumber(statsData.value.totalDistanceKm)} km`,
-    subtitle: t("dashboard.thisMonth"),
+    subtitle: "",
     icon: Sprout,
   },
   {
     label: t("dashboard.greenDistance"),
     value: `${formatNumber(statsData.value.greenDistanceKm)} km`,
-    subtitle: t("dashboard.thisMonthGreen"),
+    subtitle: t("dashboard.zeroTripsBanner"),
     icon: TrendingUp,
   },
   {
     label: t("dashboard.ecoScore"),
     value: `${formatNumber(statsData.value.ecoScore)}`,
-    subtitle: t("dashboard.topGlobally"),
+    subtitle:
+      t("dashboard.topGlobally") +
+      " " +
+      statsData.value.ranking.topPercent +
+      "%",
+    icon: Gauge,
+  },
+  {
+    label: t("dashboard.position"),
+    value: statsData.value.ranking.position,
+    subtitle:
+      t("dashboard.position") +
+      " " +
+      statsData.value.ranking.position +
+      "/" +
+      statsData.value.ranking.totalUsers,
     icon: Gauge,
   },
   {
@@ -143,21 +168,21 @@ const environmentalImpactRaw = ref({
   energyKey: "dashboard.energy",
   energyDescKey: "dashboard.energyDesc",
   distanceValue: 0,
-  distanceKey: "dashboard.miles",
+  distanceKey: "dashboard.distance",
   distanceDescKey: "dashboard.milesDesc",
 });
 
 const environmentalImpact = computed(() => ({
   trees: `${environmentalImpactRaw.value.treesValue} ${t(
-    environmentalImpactRaw.value.treesKey
+    environmentalImpactRaw.value.treesKey,
   )}`,
   treesDesc: t(environmentalImpactRaw.value.treesDescKey),
   energy: `${environmentalImpactRaw.value.energyValue} ${t(
-    environmentalImpactRaw.value.energyKey
+    environmentalImpactRaw.value.energyKey,
   )}`,
   energyDesc: t(environmentalImpactRaw.value.energyDescKey),
   distance: `${environmentalImpactRaw.value.distanceValue} ${t(
-    environmentalImpactRaw.value.distanceKey
+    environmentalImpactRaw.value.distanceKey,
   )}`,
   distanceDesc: t(environmentalImpactRaw.value.distanceDescKey),
 }));
@@ -166,9 +191,9 @@ const environmentalImpact = computed(() => ({
 <template>
   <div class="space-y-6 overflow-hidden">
     <div
-      class="stats stats-vertical md:stats-horizontal shadow-sm border border-green-100 bg-white w-full md:grid-cols-2 lg:grid-cols-4"
+      class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 w-full bg-white shadow-sm border border-green-100 rounded-2xl divide-y md:divide-y-0 md:divide-x divide-green-100"
     >
-      <div v-for="(stat, idx) in stats" :key="idx" class="stat">
+      <div v-for="(stat, idx) in stats" :key="idx" class="stat p-6">
         <div class="stat-figure text-success">
           <component :is="stat.icon" class="w-6 h-6" />
         </div>

@@ -13,12 +13,10 @@ export const useTripStore = defineStore("trip", () => {
   }
   function setTripToEdit(tripFromDashboard) {
     const convertedRoutes = tripFromDashboard.routes.map((route) => {
-      // --- FIX: Parse dates for form inputs ---
       let dateStr = "";
       let depTimeStr = "";
       let arrTimeStr = "";
 
-      // If World.vue passed raw ISO strings (Recommended), use them:
       if (route.rawStartTime) {
         const start = new Date(route.rawStartTime);
         dateStr = start.toISOString().split("T")[0]; // "YYYY-MM-DD"

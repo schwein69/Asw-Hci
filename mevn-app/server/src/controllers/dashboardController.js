@@ -8,9 +8,22 @@ export const getDashboardSummary = async (req, res) => {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const user = await User.findById(userId).select("ecoPoints");
+    const user = await User.findById(userId).select("ecoPoints role");
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const usersWithMorePoints = await User.countDocuments({
+      role: "Standard",
+      ecoPoints: { $gt: user.ecoPoints || 0 },
+    });
+
+    const totalStandardUsers = await User.countDocuments({ role: "Standard" });
+
+    const currentPosition = usersWithMorePoints + 1;
+
     const trips = await Trip.find({ user: userId }).select(
-      "totalDistanceKm totalCo2Emission co2Saved transportModeBreakdown"
+      "totalDistanceKm totalCo2Emission co2Saved transportModeBreakdown",
     );
     const avgCarCo2PerKm = 0.171;
 
@@ -23,16 +36,20 @@ export const getDashboardSummary = async (req, res) => {
         const co2Saved =
           typeof trip.co2Saved === "number"
             ? trip.co2Saved
-            : Math.max(0, (trip.totalDistanceKm || 0) * avgCarCo2PerKm - tripCo2Emission);
+            : Math.max(
+                0,
+                (trip.totalDistanceKm || 0) * avgCarCo2PerKm - tripCo2Emission,
+              );
         acc.totalCo2SavedKg += co2Saved;
 
         const breakdown = trip.transportModeBreakdown || {};
-        acc.greenDistanceKm +=
-          (breakdown.get ? breakdown.get("walk") : breakdown.walk) || 0;
-        acc.greenDistanceKm +=
-          (breakdown.get ? breakdown.get("bike") : breakdown.bike) || 0;
-        acc.greenDistanceKm +=
-          (breakdown.get ? breakdown.get("train") : breakdown.train) || 0;
+
+        const getVal = (key) =>
+          (breakdown instanceof Map ? breakdown.get(key) : breakdown[key]) || 0;
+
+        acc.greenDistanceKm += getVal("walk");
+        acc.greenDistanceKm += getVal("bike");
+        acc.greenDistanceKm += getVal("train");
 
         if ((trip.totalCo2Emission || 0) === 0) {
           acc.zeroTrips += 1;
@@ -46,15 +63,21 @@ export const getDashboardSummary = async (req, res) => {
         totalCo2Emission: 0,
         greenDistanceKm: 0,
         zeroTrips: 0,
-      }
+      },
     );
 
     res.status(200).json({
       totalDistanceKm: Math.round(totals.totalDistanceKm),
       totalCo2SavedKg: Math.round(totals.totalCo2SavedKg),
       greenDistanceKm: Math.round(totals.greenDistanceKm),
-      ecoScore: user?.ecoPoints || 0,
+      ecoScore: user.ecoPoints || 0,
       zeroTrips: totals.zeroTrips,
+      // New fields for Frontend
+      ranking: {
+        position: currentPosition,
+        totalUsers: totalStandardUsers,
+        topPercent: Math.round((currentPosition / totalStandardUsers) * 100),
+      },
     });
   } catch (error) {
     console.error("Error fetching dashboard summary:", error);
@@ -71,7 +94,7 @@ export const getMonthlyEmissions = async (req, res) => {
 
     const year = Number(req.query.year) || new Date().getFullYear();
     const trips = await Trip.find({ user: userId }).select(
-      "totalCo2Emission endTime startTime createdAt"
+      "totalCo2Emission endTime startTime createdAt",
     );
 
     const months = Array.from({ length: 12 }, () => 0);
@@ -102,7 +125,7 @@ export const getTransportModes = async (req, res) => {
     }
 
     const trips = await Trip.find({ user: userId }).select(
-      "transportModeBreakdown"
+      "transportModeBreakdown",
     );
 
     const totals = {
@@ -164,12 +187,10 @@ export const getTripEfficiency = async (req, res) => {
           return from && to ? `${from}→${to}` : "";
         })
         .filter(Boolean)
-        .join(", ");
+        .join(".");
 
       const myTotal = Math.round(trip.totalCo2Emission || 0);
-      const avgTotal = Math.round(
-        (trip.totalDistanceKm || 0) * avgCarCo2PerKm
-      );
+      const avgTotal = Math.round((trip.totalDistanceKm || 0) * avgCarCo2PerKm);
 
       return {
         name: trip.title || "Trip",
@@ -194,20 +215,20 @@ export const getEnvironmentalImpact = async (req, res) => {
     }
 
     const trips = await Trip.find({ user: userId }).select(
-      "co2Saved totalDistanceKm totalCo2Emission"
+      "co2Saved totalDistanceKm totalCo2Emission",
     );
     const avgCarCo2PerKm = 0.171;
-    const totalCo2SavedKg = trips.reduce(
-      (sum, trip) => {
-        const tripCo2Emission = trip.totalCo2Emission || 0;
-        const co2Saved =
-          typeof trip.co2Saved === "number"
-            ? trip.co2Saved
-            : Math.max(0, (trip.totalDistanceKm || 0) * avgCarCo2PerKm - tripCo2Emission);
-        return sum + co2Saved;
-      },
-      0
-    );
+    const totalCo2SavedKg = trips.reduce((sum, trip) => {
+      const tripCo2Emission = trip.totalCo2Emission || 0;
+      const co2Saved =
+        typeof trip.co2Saved === "number"
+          ? trip.co2Saved
+          : Math.max(
+              0,
+              (trip.totalDistanceKm || 0) * avgCarCo2PerKm - tripCo2Emission,
+            );
+      return sum + co2Saved;
+    }, 0);
 
     const trees = Math.round(totalCo2SavedKg / 22);
     const energyKwh = Math.round(totalCo2SavedKg * 1.5);

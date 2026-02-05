@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, watch, onUnmounted, computed } from "vue";
+import { ref, onMounted, watch, onUnmounted, computed, inject } from "vue";
 import {
   Plus,
   Plane,
@@ -39,6 +39,7 @@ const tripStore = useTripStore();
 const router = useRouter();
 const language = ref(getLanguage());
 const accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
+const apiBase = inject("apiBase");
 
 const t = computed(() => (key) => translate(key, language.value));
 const handleLanguageChange = (event) => {
@@ -345,10 +346,7 @@ async function geminiEstimation(mode, distanceKm, fuelType) {
   try {
     const payload = { mode, distance_km: distanceKm };
     if (mode === "Car") payload.fuel_type = fuelType;
-    const response = await axios.post(
-      "http://localhost:3000/api/plan/estimate",
-      payload,
-    );
+    const response = await axios.post(`${apiBase}/plan/estimate`, payload);
     return response.data;
   } catch (err) {
     return { cost: "0.00", co2: "0.0", time: "N/A" };
@@ -506,10 +504,9 @@ async function openComparisonModal(index) {
   isLoadingComparison.value = true;
   pendingComparisonData.value = null;
   try {
-    const response = await axios.post(
-      "http://localhost:3000/api/plan/compare",
-      { distance_km: segment.distance },
-    );
+    const response = await axios.post(`${apiBase}/plan/compare`, {
+      distance_km: segment.distance,
+    });
     const allOptions = response.data;
     const alternatives = allOptions.filter((opt) => opt.mode !== segment.type);
     pendingComparisonData.value = alternatives;
@@ -578,7 +575,6 @@ const saveTripToDB = async () => {
   }
 
   const userId = getUserId();
-  // Check if we are editing an existing trip
   const tripId = tripStore.currentTrip?.id;
 
   try {
@@ -595,11 +591,11 @@ const saveTripToDB = async () => {
     };
 
     console.log("Saving trip with payload:", payload);
-    let url = "http://localhost:3000/api/plan/save";
+    let url = `${apiBase}/plan/save`;
     let method = "POST";
 
     if (tripId) {
-      url = `http://localhost:3000/api/plan/${tripId}`;
+      url = `${apiBase}/plan/${tripId}`;
       method = "PUT";
     }
 
@@ -1203,11 +1199,11 @@ function handleMapClear() {
             v-if="activeTab === 'city'"
             class="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-2"
           >
-            <button
+            <!-- <button
               class="btn btn-sm text-gray-800 gap-2 rounded-full shadow-lg"
             >
               {{ t("common.save") }}
-            </button>
+            </button> -->
           </div>
         </div>
       </div>

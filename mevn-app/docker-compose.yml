@@ -1,0 +1,30 @@
+version: "3.9"
+
+services:
+  server:
+    build: ./server
+    container_name: Ecogo-server
+    ports:
+      - "4000:3000"
+    restart: always
+    environment:
+      - MONGO_URI
+      - PORT
+      - MAPBOX_TOKEN
+      - EMAIL_SERVICE
+      - EMAIL_USER
+      - EMAIL_PASSWORD
+      - GEMINI_API_KEY
+
+  client:
+    build:
+      context: ./client
+      args:
+        - VITE_API_PORT=4000 # Tell the frontend the backend is at 4000
+        - VITE_MAPBOX_TOKEN=${VITE_MAPBOX_TOKEN}
+    container_name: Ecogo-client
+    ports:
+      - "8080:80"
+    depends_on:
+      - server
+    restart: always

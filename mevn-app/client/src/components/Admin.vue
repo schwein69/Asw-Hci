@@ -8,7 +8,7 @@ import {
   Flag,
 } from "lucide-vue-next";
 import { getLanguage, t as translate } from "../utils/translations.js";
-
+import { inject } from "vue";
 export default {
   name: "Admin",
   components: {
@@ -19,6 +19,7 @@ export default {
     X,
     Flag,
   },
+  inject: ["apiBase"],
   data() {
     return {
       language: getLanguage(),
@@ -64,7 +65,7 @@ export default {
   },
   mounted() {
     this.language = getLanguage();
-    window.addEventListener('languageChanged', this.handleLanguageChange);
+    window.addEventListener("languageChanged", this.handleLanguageChange);
     this.setCurrentUserRole();
     if (this.isForumAdmin) {
       this.activeTab = "forum";
@@ -78,7 +79,7 @@ export default {
     }
   },
   beforeUnmount() {
-    window.removeEventListener('languageChanged', this.handleLanguageChange);
+    window.removeEventListener("languageChanged", this.handleLanguageChange);
   },
   methods: {
     formatDate(dateString) {
@@ -93,14 +94,11 @@ export default {
         const token = localStorage.getItem("token");
         if (!token) return;
 
-        const response = await fetch(
-          "http://localhost:3000/api/users/admin/users",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
+        const response = await fetch(`${this.apiBase}/users/admin/users`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
           },
-        );
+        });
 
         if (!response.ok) {
           throw new Error("Failed to fetch users");
@@ -131,14 +129,11 @@ export default {
         const token = localStorage.getItem("token");
         if (!token) return;
 
-        const response = await fetch(
-          "http://localhost:3000/api/feedback/admin/reports",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
+        const response = await fetch(`${this.apiBase}/feedback/admin/reports`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
           },
-        );
+        });
 
         if (!response.ok) {
           throw new Error("Failed to fetch reported users");
@@ -164,7 +159,7 @@ export default {
       this.isFeedbackLoading = true;
       try {
         const token = localStorage.getItem("token");
-        const response = await fetch("http://localhost:3000/api/feedback", {
+        const response = await fetch(`${this.apiBase}/feedback`, {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
         });
 
@@ -197,7 +192,7 @@ export default {
         if (!token) return;
 
         const response = await fetch(
-          "http://localhost:3000/api/travelcards/moderation?status=Pending,Rejected,Approved",
+          `${this.apiBase}/travelcards/moderation?status=Pending,Rejected,Approved`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -213,9 +208,7 @@ export default {
         this.forumPosts = data.cards.map((card) => ({
           id: card._id,
           author: card.creator?.username || "Unknown",
-          initials: (card.creator?.username || "U")
-            .slice(0, 2)
-            .toUpperCase(),
+          initials: (card.creator?.username || "U").slice(0, 2).toUpperCase(),
           time: this.formatDate(card.createdAt),
           content: card.description,
           status: card.status.toLowerCase(),
@@ -249,7 +242,7 @@ export default {
         if (!token) return;
 
         const response = await fetch(
-          `http://localhost:3000/api/users/${user.id}/status`,
+          `${this.apiBase}/users/${user.id}/status`,
           {
             method: "PATCH",
             headers: {
@@ -270,7 +263,9 @@ export default {
       }
     },
     getRoleColor(role) {
-      return role === "admin" || role === "AdminGeneral" || role === "AdminForum"
+      return role === "admin" ||
+        role === "AdminGeneral" ||
+        role === "AdminForum"
         ? "bg-blue-100 text-blue-600"
         : "bg-gray-100 text-gray-600";
     },
@@ -319,7 +314,7 @@ export default {
         if (!token) return;
 
         const response = await fetch(
-          `http://localhost:3000/api/travelcards/${id}/status`,
+          `${this.apiBase}/travelcards/${id}/status`,
           {
             method: "PATCH",
             headers: {
@@ -335,7 +330,7 @@ export default {
         if (post) {
           post.status = "approved";
         }
-        alert(this.t('admin.postApproved'));
+        alert(this.t("admin.postApproved"));
       } catch (error) {
         console.error("Error approving post:", error);
       }
@@ -346,7 +341,7 @@ export default {
         if (!token) return;
 
         const response = await fetch(
-          `http://localhost:3000/api/travelcards/${id}/status`,
+          `${this.apiBase}/travelcards/${id}/status`,
           {
             method: "PATCH",
             headers: {
@@ -363,7 +358,7 @@ export default {
         if (post) {
           post.status = "rejected";
         }
-        alert(this.t('admin.postRejected'));
+        alert(this.t("admin.postRejected"));
       } catch (error) {
         console.error("Error rejecting post:", error);
       }
@@ -377,7 +372,7 @@ export default {
     <div class="bg-emerald-600 text-white rounded-2xl p-6 shadow-md">
       <div class="flex items-center gap-3 mb-1">
         <Shield class="w-6 h-6" />
-        <h2 class="text-xl font-bold">{{ t('admin.adminPanel') }}</h2>
+        <h2 class="text-xl font-bold">{{ t("admin.adminPanel") }}</h2>
       </div>
       <p class="text-emerald-100 text-sm opacity-90"></p>
     </div>
@@ -396,61 +391,61 @@ export default {
     <div
       class="bg-white rounded-xl p-1 border border-gray-100 shadow-sm flex overflow-x-auto"
     >
-        <button
-          v-if="isForumAdmin"
-          @click="activeTab = 'forum'"
-          class="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-sm font-medium transition-colors"
-          :class="
-            activeTab === 'forum'
-              ? 'bg-emerald-50 text-emerald-700 font-bold'
-              : 'text-gray-600 hover:bg-gray-50'
-          "
-        >
-          <MessageCircle class="w-4 h-4" />
-          {{ t('admin.forumModeration') }}
-        </button>
+      <button
+        v-if="isForumAdmin"
+        @click="activeTab = 'forum'"
+        class="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-sm font-medium transition-colors"
+        :class="
+          activeTab === 'forum'
+            ? 'bg-emerald-50 text-emerald-700 font-bold'
+            : 'text-gray-600 hover:bg-gray-50'
+        "
+      >
+        <MessageCircle class="w-4 h-4" />
+        {{ t("admin.forumModeration") }}
+      </button>
 
-        <button
-          v-if="isGeneralAdmin"
-          @click="activeTab = 'users'"
-          class="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-sm font-medium transition-colors"
-          :class="
-            activeTab === 'users'
-              ? 'bg-emerald-50 text-emerald-700 font-bold'
-              : 'text-gray-600 hover:bg-gray-50'
-          "
-        >
-          <UserCog class="w-4 h-4" />
-          {{ t('admin.userManagement') }}
-        </button>
+      <button
+        v-if="isGeneralAdmin"
+        @click="activeTab = 'users'"
+        class="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-sm font-medium transition-colors"
+        :class="
+          activeTab === 'users'
+            ? 'bg-emerald-50 text-emerald-700 font-bold'
+            : 'text-gray-600 hover:bg-gray-50'
+        "
+      >
+        <UserCog class="w-4 h-4" />
+        {{ t("admin.userManagement") }}
+      </button>
 
-        <button
-          v-if="isGeneralAdmin"
-          @click="activeTab = 'feedback'"
-          class="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-sm font-medium transition-colors"
-          :class="
-            activeTab === 'feedback'
-              ? 'bg-emerald-50 text-emerald-700 font-bold'
-              : 'text-gray-600 hover:bg-gray-50'
-          "
-        >
-          <MessageCircle class="w-4 h-4" />
-          {{ t('admin.feedbackManagement') }}
-        </button>
+      <button
+        v-if="isGeneralAdmin"
+        @click="activeTab = 'feedback'"
+        class="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-sm font-medium transition-colors"
+        :class="
+          activeTab === 'feedback'
+            ? 'bg-emerald-50 text-emerald-700 font-bold'
+            : 'text-gray-600 hover:bg-gray-50'
+        "
+      >
+        <MessageCircle class="w-4 h-4" />
+        {{ t("admin.feedbackManagement") }}
+      </button>
 
-        <button
-          v-if="isGeneralAdmin"
-          @click="activeTab = 'reports'"
-          class="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-sm font-medium transition-colors"
-          :class="
-            activeTab === 'reports'
-              ? 'bg-emerald-50 text-emerald-700 font-bold'
-              : 'text-gray-600 hover:bg-gray-50'
-          "
-        >
-          <Flag class="w-4 h-4" />
-          {{ t('admin.userReports') }}
-        </button>
+      <button
+        v-if="isGeneralAdmin"
+        @click="activeTab = 'reports'"
+        class="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-sm font-medium transition-colors"
+        :class="
+          activeTab === 'reports'
+            ? 'bg-emerald-50 text-emerald-700 font-bold'
+            : 'text-gray-600 hover:bg-gray-50'
+        "
+      >
+        <Flag class="w-4 h-4" />
+        {{ t("admin.userReports") }}
+      </button>
     </div>
 
     <div
@@ -458,9 +453,11 @@ export default {
       class="bg-white p-6 rounded-2xl border border-green-200 shadow-sm"
     >
       <div class="mb-6">
-        <h3 class="text-emerald-700 font-medium">{{ t('admin.userManagementTitle') }}</h3>
+        <h3 class="text-emerald-700 font-medium">
+          {{ t("admin.userManagementTitle") }}
+        </h3>
         <p class="text-sm text-gray-500">
-          {{ t('admin.manageUserAccounts') }}
+          {{ t("admin.manageUserAccounts") }}
         </p>
       </div>
       <div class="space-y-4">
@@ -484,14 +481,16 @@ export default {
                 >
                   {{ user.status }}
                 </span>
-                <span class="text-[10px] px-1.5 py-0.5 rounded border border-gray-100 bg-gray-100 text-gray-600">
-                  {{ t('admin.reportsCount') }}: {{ user.reports }}
+                <span
+                  class="text-[10px] px-1.5 py-0.5 rounded border border-gray-100 bg-gray-100 text-gray-600"
+                >
+                  {{ t("admin.reportsCount") }}: {{ user.reports }}
                 </span>
               </div>
               <div class="text-xs text-gray-500">
                 {{ user.email }}
                 <span class="mx-1">•</span>
-                {{ t('admin.joined') }} {{ user.joined }}
+                {{ t("admin.joined") }} {{ user.joined }}
               </div>
             </div>
           </div>
@@ -504,7 +503,11 @@ export default {
                 : 'border-green-200 text-green-600 hover:bg-green-50'
             "
           >
-            {{ user.status === "active" ? t('admin.suspend') : t('admin.activate') }}
+            {{
+              user.status === "active"
+                ? t("admin.suspend")
+                : t("admin.activate")
+            }}
           </button>
         </div>
       </div>
@@ -515,14 +518,16 @@ export default {
       class="bg-white p-6 rounded-2xl border border-green-200 shadow-sm"
     >
       <div class="mb-6">
-        <h3 class="text-emerald-700 font-medium">{{ t('admin.feedbackListTitle') }}</h3>
+        <h3 class="text-emerald-700 font-medium">
+          {{ t("admin.feedbackListTitle") }}
+        </h3>
         <p class="text-sm text-gray-500">
-          {{ t('admin.reviewFeedback') }}
+          {{ t("admin.reviewFeedback") }}
         </p>
       </div>
 
       <div v-if="isFeedbackLoading" class="text-sm text-gray-500">
-        {{ t('admin.loadingFeedback') }}
+        {{ t("admin.loadingFeedback") }}
       </div>
 
       <div v-else class="space-y-4">
@@ -534,16 +539,18 @@ export default {
           <div class="flex items-start justify-between gap-4">
             <div>
               <div class="flex items-center gap-2 mb-1">
-                <span class="text-xs text-gray-500">{{ t('admin.feedbackFrom') }}:</span>
+                <span class="text-xs text-gray-500"
+                  >{{ t("admin.feedbackFrom") }}:</span
+                >
                 <span class="text-sm font-bold text-gray-900">
                   {{ feedback.user }}
                 </span>
               </div>
               <div class="text-xs text-gray-500">
-                {{ t('admin.feedbackCategory') }}:
+                {{ t("admin.feedbackCategory") }}:
                 {{ getFeedbackCategoryLabel(feedback.category) }}
                 <span class="mx-1">•</span>
-                {{ t('admin.reportedOn') }} {{ feedback.createdAt }}
+                {{ t("admin.reportedOn") }} {{ feedback.createdAt }}
               </div>
               <div class="text-sm text-gray-800 mt-2">
                 {{ feedback.subject }}
@@ -569,14 +576,16 @@ export default {
       class="bg-white p-6 rounded-2xl border border-green-200 shadow-sm"
     >
       <div class="mb-6">
-        <h3 class="text-emerald-700 font-medium">{{ t('admin.userReportsTitle') }}</h3>
+        <h3 class="text-emerald-700 font-medium">
+          {{ t("admin.userReportsTitle") }}
+        </h3>
         <p class="text-sm text-gray-500">
-          {{ t('admin.reviewUserReports') }}
+          {{ t("admin.reviewUserReports") }}
         </p>
       </div>
 
       <div v-if="isReportsLoading" class="text-sm text-gray-500">
-        {{ t('admin.loadingReports') }}
+        {{ t("admin.loadingReports") }}
       </div>
 
       <div v-else class="space-y-4">
@@ -588,17 +597,22 @@ export default {
           <div class="flex items-start justify-between gap-4">
             <div>
               <div class="flex items-center gap-2 mb-1">
-                <span class="text-xs text-gray-500">{{ t('admin.reportedUser') }}:</span>
+                <span class="text-xs text-gray-500"
+                  >{{ t("admin.reportedUser") }}:</span
+                >
                 <span class="text-sm font-bold text-gray-900">
                   {{ report.reportedUserName }}
                 </span>
               </div>
               <div class="text-xs text-gray-500">
-                {{ t('admin.reporter') }}: {{ report.reporter }}
+                {{ t("admin.reporter") }}: {{ report.reporter }}
                 <span class="mx-1">•</span>
-                {{ t('admin.reportedOn') }} {{ report.createdAt }}
+                {{ t("admin.reportedOn") }} {{ report.createdAt }}
               </div>
-              <div v-if="report.reportedUserId" class="text-xs text-gray-400 mt-1">
+              <div
+                v-if="report.reportedUserId"
+                class="text-xs text-gray-400 mt-1"
+              >
                 ID: {{ report.reportedUserId }}
               </div>
             </div>
@@ -619,9 +633,11 @@ export default {
       class="bg-white p-6 rounded-2xl border border-green-200 shadow-sm"
     >
       <div class="mb-6">
-        <h3 class="text-emerald-700 font-medium">{{ t('admin.forumPostsModeration') }}</h3>
+        <h3 class="text-emerald-700 font-medium">
+          {{ t("admin.forumPostsModeration") }}
+        </h3>
         <p class="text-sm text-gray-500">
-          {{ t('admin.reviewAndModerate') }}
+          {{ t("admin.reviewAndModerate") }}
         </p>
       </div>
 
@@ -659,7 +675,7 @@ export default {
                 class="px-2 py-0.5 rounded bg-red-500 text-white text-[10px] font-bold"
               >
                 <i class="fa-solid fa-flag mr-1"></i>
-                {{ post.reports }} {{ t('admin.reports') }}
+                {{ post.reports }} {{ t("admin.reports") }}
               </span>
               <span
                 class="px-2 py-0.5 rounded text-[10px] font-bold uppercase"
@@ -672,11 +688,11 @@ export default {
                 "
               >
                 {{
-                  post.status === 'approved'
-                    ? t('admin.approved')
-                    : post.status === 'rejected'
-                      ? t('admin.rejected')
-                      : t('admin.pending')
+                  post.status === "approved"
+                    ? t("admin.approved")
+                    : post.status === "rejected"
+                      ? t("admin.rejected")
+                      : t("admin.pending")
                 }}
               </span>
             </div>
@@ -695,14 +711,14 @@ export default {
               class="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white text-xs font-bold rounded-lg hover:bg-emerald-700 transition-colors"
             >
               <Check class="w-3.5 h-3.5" />
-              {{ t('admin.approve') }}
+              {{ t("admin.approve") }}
             </button>
             <button
               @click="rejectPost(post.id)"
               class="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-red-200 text-red-600 text-xs font-bold rounded-lg hover:bg-red-50 transition-colors"
             >
               <X class="w-3.5 h-3.5" />
-              {{ t('admin.reject') }}
+              {{ t("admin.reject") }}
             </button>
           </div>
         </div>

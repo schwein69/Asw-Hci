@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, computed, onUnmounted } from "vue";
+import { ref, onMounted, computed, onUnmounted, inject } from "vue";
 import { useRouter } from "vue-router";
 import axios from "axios";
 import {
@@ -18,6 +18,7 @@ import {
   t as translate,
 } from "../utils/translations.js";
 
+const apiBase = inject("apiBase");
 const router = useRouter();
 const user = ref(null);
 const showChangePassword = ref(false);
@@ -140,7 +141,7 @@ const resizeImage = (file, maxWidth = 800, maxHeight = 800, quality = 0.8) => {
             }
           },
           "image/jpeg",
-          quality
+          quality,
         );
       };
       img.onerror = reject;
@@ -201,7 +202,7 @@ const saveProfileImage = async () => {
     console.log("Image preview length:", profileImagePreview.value.length);
 
     const response = await axios.post(
-      "http://localhost:3000/api/users/profile-image",
+      `${apiBase}/users/profile-image`,
       {
         profileImage: profileImagePreview.value,
       },
@@ -210,7 +211,7 @@ const saveProfileImage = async () => {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-      }
+      },
     );
 
     console.log("Upload response:", response.data);
@@ -250,15 +251,12 @@ const deleteProfileImage = async () => {
       return;
     }
 
-    const response = await axios.delete(
-      "http://localhost:3000/api/users/profile-image",
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      }
-    );
+    const response = await axios.delete(`${apiBase}/users/profile-image`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
 
     user.value.profileImage = null;
     const userData = { ...user.value };
@@ -292,7 +290,7 @@ const validatePassword = () => {
 
   if (!passwordForm.value.currentPassword) {
     passwordErrors.value.currentPassword = t.value(
-      "profile.currentPasswordRequired"
+      "profile.currentPasswordRequired",
     );
     isValid = false;
   }
@@ -313,14 +311,14 @@ const validatePassword = () => {
 
   if (!passwordForm.value.confirmPassword) {
     passwordErrors.value.confirmPassword = t.value(
-      "profile.confirmPasswordRequired"
+      "profile.confirmPasswordRequired",
     );
     isValid = false;
   } else if (
     passwordForm.value.newPassword !== passwordForm.value.confirmPassword
   ) {
     passwordErrors.value.confirmPassword = t.value(
-      "profile.passwordsDontMatch"
+      "profile.passwordsDontMatch",
     );
     isValid = false;
   }
@@ -362,7 +360,7 @@ const handleChangePassword = async () => {
     }
 
     await axios.post(
-      "http://localhost:3000/api/users/change-password",
+      `${apiBase}/users/change-password`,
       {
         currentPassword: passwordForm.value.currentPassword,
         newPassword: passwordForm.value.newPassword,
@@ -372,7 +370,7 @@ const handleChangePassword = async () => {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-      }
+      },
     );
 
     showToast(t.value("profile.passwordChanged"), "success");
@@ -444,18 +442,15 @@ const handleDeleteAccount = async () => {
     console.log("Attempting to delete account...");
     console.log("Token exists:", !!token);
 
-    const response = await axios.delete(
-      "http://localhost:3000/api/users/account",
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        data: {
-          password: deletePassword.value,
-        },
-      }
-    );
+    const response = await axios.delete(`${apiBase}/users/account`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      data: {
+        password: deletePassword.value,
+      },
+    });
 
     console.log("Delete account response:", response.data);
 
@@ -732,9 +727,7 @@ const handleDeleteAccount = async () => {
           <div
             v-if="
               user &&
-              !(
-                user.role === 'AdminGeneral' || user.role === 'AdminForum'
-              )
+              !(user.role === 'AdminGeneral' || user.role === 'AdminForum')
             "
             class="border-t border-red-200 dark:border-red-800 pt-6"
           >

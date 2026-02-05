@@ -1,5 +1,13 @@
 <script setup>
-import { ref, onMounted, onUnmounted, computed, reactive, watch } from "vue";
+import {
+  ref,
+  onMounted,
+  onUnmounted,
+  computed,
+  reactive,
+  watch,
+  inject,
+} from "vue";
 import Guidelines from "./template/Guidelines.vue";
 import Explore from "./template/Explore.vue";
 import axios from "axios";
@@ -54,6 +62,7 @@ const iconMap = {
   Sun,
   Wind,
 };
+const apiBase = inject("apiBase");
 const dailyTips = ref([]);
 const knowledgeData = ref(null);
 
@@ -61,8 +70,8 @@ const fetchData = async () => {
   try {
     // Run requests in parallel for faster loading
     const [dailyRes, knowledgeRes] = await Promise.all([
-      axios.get("http://localhost:3000/api/tips/daily"),
-      axios.get("http://localhost:3000/api/tips/knowledge"),
+      axios.get(`${apiBase}/tips/daily`),
+      axios.get(`${apiBase}/tips/knowledge`),
     ]);
 
     // Update Daily Tips

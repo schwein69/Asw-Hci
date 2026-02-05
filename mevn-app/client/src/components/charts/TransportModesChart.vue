@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from "vue";
+import { ref, computed, onMounted, onUnmounted, inject } from "vue";
 import { PolarArea } from "vue-chartjs";
 import {
   Chart as ChartJS,
@@ -12,6 +12,7 @@ import { getLanguage, t as translate } from "../../utils/translations.js";
 
 ChartJS.register(RadialLinearScale, ArcElement, Tooltip, Legend);
 
+const apiBase = inject("apiBase");
 const language = ref(getLanguage());
 
 const t = (key) => translate(key, language.value);
@@ -109,12 +110,9 @@ const fetchTransportModes = async () => {
       return;
     }
 
-    const response = await fetch(
-      "http://localhost:3000/api/dashboard/transport-modes",
-      {
-        headers: { Authorization: `Bearer ${token}` },
-      }
-    );
+    const response = await fetch(`${apiBase}/dashboard/transport-modes`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
 
     if (!response.ok) {
       throw new Error("Failed to fetch transport modes");

@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted, watch } from "vue";
+import { ref, computed, onMounted, onUnmounted, watch, inject } from "vue";
 import { TrendingUp, Calendar } from "lucide-vue-next";
 import { Line } from "vue-chartjs";
 import {
@@ -23,9 +23,10 @@ ChartJS.register(
   Title,
   Tooltip,
   Legend,
-  Filler
+  Filler,
 );
 
+const apiBase = inject("apiBase");
 const language = ref(getLanguage());
 const currentYear = new Date().getFullYear();
 const availableYears = ref([currentYear, currentYear - 1, currentYear - 2]);
@@ -124,10 +125,10 @@ const fetchMonthlyEmissions = async () => {
     }
 
     const response = await fetch(
-      `http://localhost:3000/api/dashboard/emissions?year=${selectedYear.value}`,
+      `${apiBase}/dashboard/emissions?year=${selectedYear.value}`,
       {
         headers: { Authorization: `Bearer ${token}` },
-      }
+      },
     );
 
     if (!response.ok) {
@@ -190,11 +191,7 @@ watch(selectedYear, () => {
               v-model="selectedYear"
               class="select select-xs select-ghost pl-8 font-medium text-gray-600 focus:bg-white w-24 focus:outline-none cursor-pointer"
             >
-              <option
-              v-for="year in availableYears"
-                :key="year"
-                :value="year"
-              >
+              <option v-for="year in availableYears" :key="year" :value="year">
                 {{ year }}
               </option>
             </select>
