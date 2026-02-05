@@ -1,6 +1,5 @@
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount, inject } from "vue";
-import { io } from "socket.io-client";
 import {
   Clock,
   Bell,
@@ -25,14 +24,18 @@ import {
 } from "lucide-vue-next";
 import { getLanguage, t as translate } from "../utils/translations.js";
 import { useRouter } from "vue-router";
+import {
+  socket as globalSocket,
+  resetUnreadCount,
+} from "../data/notificationStore.js";
 
 const apiBase = inject("apiBase");
 
 // Router
 const router = useRouter();
 
-// Socket.io connection
-const socket = ref(null);
+// Use global socket (no local socket needed anymore)
+const socket = globalSocket;
 
 // Reactive state
 const language = ref(getLanguage());
@@ -364,8 +367,9 @@ const fetchNotifications = async (forceUnread = false) => {
       console.log("🏙️ Current cities:", currentCities);
 
       // Filter notifications to show only those for current locations
-      const filtered = data.notifications.filter((n) =>
-        currentCities.includes(n.city),
+      // Social notifications (no city) are always shown
+      const filtered = data.notifications.filter(
+        (n) => n.type === "social" || currentCities.includes(n.city),
       );
 
       console.log(
@@ -539,50 +543,12 @@ const getWeatherInfo = (code) => {
   return { text: "Unknown", icon: "Cloud", alert: false };
 };
 
+// DEPRECATED: Socket is now global in App.vue
 // Setup Socket.io connection
-const setupSocket = () => {
-  const userId = getUserId();
-  if (!userId) return;
-
-  // Connect to Socket.io server
-  socket.value = io(`http://localhost:${import.meta.env.VITE_API_PORT}`);
-
-  socket.value.on("connect", () => {
-    console.log("Connected to Socket.io server:", socket.value.id);
-    // Join user's personal notification room
-    socket.value.emit("join:notifications", userId);
-  });
-
-  // Listen for new notifications
-  socket.value.on("notification:new", (notification) => {
-    console.log("Received notification:", notification);
-    addNotificationToList(notification);
-  });
-
-  // Listen for weather notifications
-  socket.value.on("notification:weather", (notification) => {
-    console.log("[PUSH RECEIVED] Weather notification:", notification);
-    console.log("   → City:", notification.city);
-    console.log("   → Message:", notification.message);
-    addNotificationToList(notification);
-  });
-
-  // Listen for crowd notifications
-  socket.value.on("notification:crowd", (notification) => {
-    console.log("[PUSH RECEIVED] Crowd notification:", notification);
-    console.log("   → City:", notification.city);
-    console.log("   → Message:", notification.message);
-    addNotificationToList(notification);
-  });
-
-  socket.value.on("disconnect", () => {
-    console.log("Disconnected from Socket.io server");
-  });
-
-  socket.value.on("connect_error", (error) => {
-    console.error("Socket connection error:", error);
-  });
-};
+// const setupSocket = () => {
+//   Socket is managed globally in App.vue
+//   Notifications arrive automatically from the global socket
+// };
 
 // Add notification to list (helper for socket events)
 const addNotificationToList = (notification) => {
@@ -619,6 +585,11 @@ const addNotificationToList = (notification) => {
 
 // Lifecycle hooks
 onMounted(() => {
+  console.log("[LIVE PAGE] Live page mounted");
+
+  // Reset unread notification count when user opens Live page
+  resetUnreadCount();
+
   // First select random locations
   selectRandomLocations();
 
@@ -627,10 +598,9 @@ onMounted(() => {
   fetchNotifications(true); // Load notification history
 
   // NO MORE PULL! Weather/crowd checks happen automatically every 60s on server
-  // Notifications arrive via Socket.io PUSH in real-time
+  // Notifications arrive via Socket.io PUSH in real-time through global socket in App.vue
 
-  // Setup Socket.io for real-time push notifications
-  setupSocket();
+  // Socket is already connected globally in App.vue - no need to setup again
 
   // Start countdown timer for automatic updates
   startCountdown();
@@ -639,14 +609,8 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
-  // Disconnect socket
-  if (socket.value) {
-    const userId = getUserId();
-    if (userId) {
-      socket.value.emit("leave:notifications", userId);
-    }
-    socket.value.disconnect();
-  }
+  // DO NOT disconnect socket - it's global and should stay alive
+  // Socket remains active for entire app lifecycle
 
   // Clear countdown interval
   if (countdownInterval) {
