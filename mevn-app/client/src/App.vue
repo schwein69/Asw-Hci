@@ -20,8 +20,7 @@ export default {
   setup() {
     const route = useRoute();
     const router = useRouter();
-
-    const apiBase = `http://localhost:${import.meta.env.VITE_API_PORT || "3000"}/api`;
+    const apiBase = `http://localhost:${import.meta.env.VITE_API_PORT || 4000}/api`;
     provide("apiBase", apiBase);
     return { route, router };
   },

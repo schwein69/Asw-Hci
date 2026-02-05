@@ -32,6 +32,9 @@ export default {
       showMapForTrip: null,
       trips: [],
       isLoadingTrips: false,
+      cityCoordsCache: {},
+      isGeocoding: false,
+      geocodeError: null,
     };
   },
   computed: {
@@ -53,14 +56,10 @@ export default {
 
       const features = [];
       trip.transportMethods.forEach((method) => {
-        let routeParts = method.route.split("→");
-        if (routeParts.length === 1) {
-          routeParts = method.route.split("->");
-        }
-        const fromCity = routeParts[0] ? routeParts[0].trim() : "";
-        const toCity = routeParts[1] ? routeParts[1].trim() : "";
-        const fromCoords = this.getCityCoordinates(fromCity);
-        const toCoords = this.getCityCoordinates(toCity);
+        const { fromCity, toCity } = this.parseRoute(method.route);
+        const fromCoords =
+          method.fromCoords || this.getCityCoordinates(fromCity);
+        const toCoords = method.toCoords || this.getCityCoordinates(toCity);
 
         if (fromCoords && toCoords) {
           const start = turf.point(fromCoords);
@@ -88,14 +87,10 @@ export default {
 
       const features = [];
       trip.transportMethods.forEach((method, index) => {
-        let routeParts = method.route.split("→");
-        if (routeParts.length === 1) {
-          routeParts = method.route.split("->");
-        }
-        const fromCity = routeParts[0] ? routeParts[0].trim() : "";
-        const toCity = routeParts[1] ? routeParts[1].trim() : "";
-        const fromCoords = this.getCityCoordinates(fromCity);
-        const toCoords = this.getCityCoordinates(toCity);
+        const { fromCity, toCity } = this.parseRoute(method.route);
+        const fromCoords =
+          method.fromCoords || this.getCityCoordinates(fromCity);
+        const toCoords = method.toCoords || this.getCityCoordinates(toCity);
 
         if (fromCoords) {
           features.push({
@@ -177,9 +172,13 @@ export default {
           const transportMethods = itinerary.map((segment, index) => {
             const fromName = segment.fromLocation?.name || "";
             const toName = segment.toLocation?.name || "";
+            const fromCoords = segment.fromLocation?.coordinates || null;
+            const toCoords = segment.toLocation?.coordinates || null;
             return {
               id: `${trip._id}-${index}`,
               route: fromName && toName ? `${fromName} → ${toName}` : "Route",
+              fromCoords,
+              toCoords,
               provider: segment.transportNumber || "EcoGo",
               code: segment.transportNumber || "",
               departure: this.formatTime(segment.startTime || trip.startTime),
@@ -229,13 +228,29 @@ export default {
     toggleExpand(trip) {
       trip.isExpanded = !trip.isExpanded;
     },
-    loadToMap(tripId) {
+    parseRoute(route) {
+      if (!route) return { fromCity: "", toCity: "" };
+      let routeParts = route.split("→");
+      if (routeParts.length === 1) {
+        routeParts = route.split("->");
+      }
+      const fromCity = routeParts[0] ? routeParts[0].trim() : "";
+      const toCity = routeParts[1] ? routeParts[1].trim() : "";
+      return { fromCity, toCity };
+    },
+    async loadToMap(tripId) {
       this.showMapForTrip = this.showMapForTrip === tripId ? null : tripId;
+      if (!this.showMapForTrip) return;
+      const trip = this.trips.find((t) => t.id === this.showMapForTrip);
+      if (trip) {
+        await this.ensureTripCoordinates(trip);
+      }
     },
     getCityCoordinates(cityName) {
       if (!cityName) return null;
 
       cityName = cityName.trim();
+      if (!cityName) return null;
 
       const cityCoords = {
         Paris: [2.3522, 48.8566],
@@ -275,6 +290,53 @@ export default {
       }
 
       return null;
+    },
+    async ensureTripCoordinates(trip) {
+      if (!trip || !Array.isArray(trip.transportMethods)) return;
+      const names = new Set();
+      trip.transportMethods.forEach((method) => {
+        const { fromCity, toCity } = this.parseRoute(method.route);
+        if (fromCity) names.add(fromCity);
+        if (toCity) names.add(toCity);
+      });
+
+      const missing = Array.from(names).filter(
+        (name) => !this.getCityCoordinates(name),
+      );
+      if (missing.length === 0) return;
+
+      this.isGeocoding = true;
+      this.geocodeError = null;
+      try {
+        await Promise.all(missing.map((name) => this.geocodeCity(name)));
+      } catch (error) {
+        this.geocodeError = "Failed to geocode some cities.";
+        console.error("Geocoding error:", error);
+      } finally {
+        this.isGeocoding = false;
+      }
+    },
+    async geocodeCity(cityName) {
+      if (!cityName) return null;
+      if (this.cityCoordsCache[cityName]) {
+        return this.cityCoordsCache[cityName];
+      }
+
+      const token = import.meta.env.VITE_MAPBOX_TOKEN;
+      if (!token) return null;
+
+      const query = encodeURIComponent(cityName);
+      const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${query}.json?limit=1&types=place&access_token=${token}`;
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`Mapbox geocoding failed: ${response.status}`);
+      }
+      const data = await response.json();
+      const coords = data?.features?.[0]?.center || null;
+      if (coords) {
+        this.cityCoordsCache[cityName] = coords;
+      }
+      return coords;
     },
   },
 };

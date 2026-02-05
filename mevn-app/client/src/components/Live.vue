@@ -620,11 +620,7 @@ const fetchWeatherData = async () => {
 };
 
 // DEPRECATED: Socket is now global in App.vue
-// Setup Socket.io connection
-// const setupSocket = () => {
-//   Socket is managed globally in App.vue
-//   Notifications arrive automatically from the global socket
-// };
+// Socket is managed globally in App.vue; notifications arrive automatically.
 
 // Add notification to list (helper for socket events)
 const addNotificationToList = (notification) => {
