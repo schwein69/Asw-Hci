@@ -1,12 +1,21 @@
 import express from "express";
 const router = express.Router();
 import * as travelCardsController from "../controllers/travelCardsController.js";
+import { authenticate, authorize } from "../middleware/auth.js";
 
 // Create a new travel card
 router.post("/", travelCardsController.createTravelCard);
 
 // Get all travel cards (randomized feed)
 router.get("/discover", travelCardsController.getTravelCards);
+
+// Admin forum moderation
+router.get(
+  "/moderation",
+  authenticate,
+  authorize("AdminForum"),
+  travelCardsController.getModerationCards,
+);
 
 // Get user's travel card by ID
 router.get("/myTravelCards", travelCardsController.getUserTravelCards);
@@ -16,6 +25,14 @@ router.get("/savedTravelCards", travelCardsController.getSavedTravelCards);
 
 // Update a travel card
 router.put("/:cardId", travelCardsController.updateTravelCard);
+
+// Approve/Reject a travel card
+router.patch(
+  "/:cardId/status",
+  authenticate,
+  authorize("AdminForum"),
+  travelCardsController.updateTravelCardStatus,
+);
 
 // Delete a travel card
 router.delete("/:cardId", travelCardsController.deleteTravelCard);

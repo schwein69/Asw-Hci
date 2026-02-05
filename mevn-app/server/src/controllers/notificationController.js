@@ -25,7 +25,7 @@ export const getUserNotifications = async (req, res) => {
     const { limit = 50, unreadOnly = false } = req.query;
 
     const query = { recipient: userId };
-    if (unreadOnly === "true") {
+    if (unreadOnly === "true" || unreadOnly === true) {
       query.isRead = false;
     }
 
@@ -34,13 +34,13 @@ export const getUserNotifications = async (req, res) => {
       .limit(parseInt(limit));
 
     console.log(
-      `Sending ${notifications.length} notifications for user ${userId}`
+      `Sending ${notifications.length} notifications for user ${userId}`,
     );
     console.log(
       "Sample:",
       notifications
         .slice(0, 3)
-        .map((n) => ({ city: n.city, message: n.message }))
+        .map((n) => ({ city: n.city, message: n.message, isRead: n.isRead })),
     );
 
     res.status(200).json({
@@ -113,11 +113,12 @@ export const createNotification = async (req, res) => {
 export const markAsRead = async (req, res) => {
   try {
     const { id } = req.params;
+    const { isRead } = req.body; // Get isRead status from request body
 
     const notification = await Notification.findByIdAndUpdate(
       id,
-      { isRead: true },
-      { new: true }
+      { isRead: isRead !== undefined ? isRead : true }, // Use provided value or default to true
+      { new: true },
     );
 
     if (!notification) {
@@ -151,7 +152,7 @@ export const markAllAsRead = async (req, res) => {
 
     await Notification.updateMany(
       { recipient: userId, isRead: false },
-      { isRead: true }
+      { isRead: true },
     );
 
     res.status(200).json({
@@ -296,7 +297,7 @@ export const checkCrowdAndNotify = async (req, res) => {
     // Calculate crowd density for all locations
     const crowdResults = calculateMultipleLocationsCrowd(
       locations,
-      weatherDataMap || {}
+      weatherDataMap || {},
     );
 
     // Create notifications for high crowd alerts (only if not already exists in last hour)

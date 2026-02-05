@@ -2,7 +2,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const getCoordinatesFromAddress = async (address) => {
-  const mapboxToken = process.env.MAPBOX_TOKEN || process.env.VITE_MAPBOX_TOKEN;
+  const mapboxToken = process.env.MAPBOX_TOKEN;
   if (!mapboxToken) {
     throw new Error("Missing Mapbox token");
   }

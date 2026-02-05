@@ -20,6 +20,8 @@ const ItinerarySegmentSchema = new mongoose.Schema({
     default: null,
   },
 
+  isCompleted: { type: Boolean, default: false },
+
   distanceKm: { type: Number, default: 0 },
   estimatedDurationMinutes: { type: Number, default: 0 },
 

@@ -1,5 +1,7 @@
 import express from "express";
 import User from "../models/users.js";
+import Trip from "../models/trip.js";
+import TravelCard from "../models/travelCard.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
@@ -65,7 +67,7 @@ router.post("/login", async (req, res) => {
     const token = jwt.sign(
       { id: user._id, role: user.role },
       process.env.JWT_SECRET || "your_temporary_secret_key",
-      { expiresIn: "24h" }
+      { expiresIn: "24h" },
     );
 
     const { password: _, ...userData } = user._doc;
@@ -168,12 +170,10 @@ router.post("/profile-image", authenticate, async (req, res) => {
     const maxSize = 5 * 1024 * 1024;
 
     if (base64Size > maxSize) {
-      return res
-        .status(400)
-        .json({
-          error:
-            "Image size exceeds 5MB limit. Please compress or resize your image.",
-        });
+      return res.status(400).json({
+        error:
+          "Image size exceeds 5MB limit. Please compress or resize your image.",
+      });
     }
 
     const user = await User.findById(userId);
@@ -248,11 +248,9 @@ router.post("/change-password", authenticate, async (req, res) => {
 
     const isSamePassword = await bcrypt.compare(newPassword, user.password);
     if (isSamePassword) {
-      return res
-        .status(400)
-        .json({
-          error: "New password must be different from current password",
-        });
+      return res.status(400).json({
+        error: "New password must be different from current password",
+      });
     }
 
     const saltRounds = 10;
@@ -297,70 +295,112 @@ router.delete("/account", authenticate, async (req, res) => {
 });
 
 // Admin: get users list
-router.get("/admin/users", authenticate, authorize("AdminGeneral"), async (req, res) => {
-  try {
-    const users = await User.find()
-      .select("_id username email role status createdAt numberOfReports")
-      .sort({ createdAt: -1 });
-    res.status(200).json(users);
-  } catch (err) {
-    res.status(500).json({ error: "Failed to fetch users: " + err.message });
-  }
-});
+router.get(
+  "/admin/users",
+  authenticate,
+  authorize("AdminGeneral"),
+  async (req, res) => {
+    try {
+      const users = await User.find()
+        .select("_id username email role status createdAt numberOfReports")
+        .sort({ createdAt: -1 });
+      res.status(200).json(users);
+    } catch (err) {
+      res.status(500).json({ error: "Failed to fetch users: " + err.message });
+    }
+  },
+);
+
+// Admin: dashboard stats
+router.get(
+  "/admin/stats",
+  authenticate,
+  authorize("AdminGeneral", "AdminForum"),
+  async (req, res) => {
+    try {
+      const [totalUsers, activeItineraries, forumPosts] = await Promise.all([
+        User.countDocuments({ role: "Standard" }),
+        Trip.countDocuments({ status: "ongoing" }),
+        TravelCard.countDocuments({ status: { $in: ["Approved", "Pending"] } }),
+      ]);
+
+      const avgEcoScoreAgg = await User.aggregate([
+        { $match: { role: "Standard" } },
+        { $group: { _id: null, avg: { $avg: "$ecoPoints" } } },
+      ]);
+
+      const avgEcoScore = Math.round(avgEcoScoreAgg[0]?.avg || 0);
+
+      res.status(200).json({
+        totalUsers,
+        activeItineraries,
+        forumPosts,
+        avgEcoScore,
+      });
+    } catch (err) {
+      res.status(500).json({ error: "Failed to fetch admin stats" });
+    }
+  },
+);
 
 // Admin: update user status (suspend/activate)
-router.patch("/:userId/status", authenticate, authorize("AdminGeneral"), async (req, res) => {
-  try {
-    const { userId } = req.params;
-    const { status } = req.body;
+router.patch(
+  "/:userId/status",
+  authenticate,
+  authorize("AdminGeneral"),
+  async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const { status } = req.body;
 
-    if (!["active", "suspended"].includes(status)) {
-      return res.status(400).json({ error: "Invalid status" });
-    }
-
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ error: "User not found" });
-    }
-
-    user.status = status;
-    await user.save();
-
-    if (status === "suspended") {
-      try {
-        await sendAccountSuspendedEmail(user.email, user.username);
-      } catch (emailError) {
-        console.error("Failed to send suspension email:", emailError);
+      if (!["active", "suspended"].includes(status)) {
+        return res.status(400).json({ error: "Invalid status" });
       }
-    } else if (status === "active") {
-      try {
-        await sendAccountReactivatedEmail(user.email, user.username);
-      } catch (emailError) {
-        console.error("Failed to send reactivation email:", emailError);
-      }
-    }
 
-    res.status(200).json({
-      message: "User status updated",
-      user: {
-        _id: user._id,
-        username: user.username,
-        email: user.email,
-        role: user.role,
-        status: user.status,
-        createdAt: user.createdAt,
-      },
-    });
-  } catch (err) {
-    res.status(500).json({ error: "Server error: " + err.message });
-  }
-});
+      const user = await User.findById(userId);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      user.status = status;
+      await user.save();
+
+      if (status === "suspended") {
+        try {
+          await sendAccountSuspendedEmail(user.email, user.username);
+        } catch (emailError) {
+          console.error("Failed to send suspension email:", emailError);
+        }
+      } else if (status === "active") {
+        try {
+          await sendAccountReactivatedEmail(user.email, user.username);
+        } catch (emailError) {
+          console.error("Failed to send reactivation email:", emailError);
+        }
+      }
+
+      res.status(200).json({
+        message: "User status updated",
+        user: {
+          _id: user._id,
+          username: user.username,
+          email: user.email,
+          role: user.role,
+          status: user.status,
+          createdAt: user.createdAt,
+        },
+      });
+    } catch (err) {
+      res.status(500).json({ error: "Server error: " + err.message });
+    }
+  },
+);
 
 // Get all users (for report user dropdown)
 router.get("/all", async (req, res) => {
   try {
-    const users = await User.find()
-      .select("_id username email")
+    const users = await User.find({ role: { $in: ["Standard", "AdminForum"] } })
+      .select("_id username email role")
       .sort({ username: 1 });
 
     res.status(200).json(users);
