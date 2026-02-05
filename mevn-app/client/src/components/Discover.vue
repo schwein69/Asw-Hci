@@ -128,8 +128,8 @@ const fetchPlaces = async (reset = false) => {
           defaultAvatar + encodeURIComponent(card.creator.username),
       },
       likes: card.numberOfLikes || 0,
-      saved: card.isSaved || false, // From the map logic we added in backend
-      isLiked: card.isLiked || false, // From the map logic we added in backend
+      saved: card.isSaved || false,
+      isLiked: card.isLiked || false,
     }));
 
     if (reset) {

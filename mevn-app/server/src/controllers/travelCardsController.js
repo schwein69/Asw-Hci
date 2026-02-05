@@ -46,13 +46,13 @@ export const createTravelCard = async (req, res) => {
   }
 };
 
-// Get ALL travel cards (Randomized Feed) with Search & Category
+// Get ALL travel cards with Search & Category
 export const getTravelCards = async (req, res) => {
   try {
     const userId = req.query.userId;
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 6;
-
+    const skip = (page - 1) * limit; // Calculate items to skip
     // Extract new query params
     const { search, category } = req.query;
 
@@ -78,16 +78,12 @@ export const getTravelCards = async (req, res) => {
     }
 
     //  Aggregation
-    let cards = await TravelCard.aggregate([
-      { $match: matchStage }, // Apply filters first
-      { $sample: { size: limit } }, // Then pick random documents from the result
-    ]);
-
-    // Populate user details
-    await TravelCard.populate(cards, {
-      path: "creator",
-      select: "_id username profileImage",
-    });
+    let cards = await TravelCard.find(matchStage)
+      .sort({ createdAt: -1 })
+      .skip(skip) // Apply pagination skipping
+      .limit(limit) // Apply limit
+      .populate("creator", "_id username profileImage") // Populate user
+      .lean();
 
     // If a user is logged in, calculate if they have liked/saved these cards
     if (userId) {
@@ -104,13 +100,12 @@ export const getTravelCards = async (req, res) => {
 
     // Pagination Counts
     const total = await TravelCard.countDocuments(matchStage);
-    const skippedSoFar = (page - 1) * limit;
 
     res.status(200).json({
       cards,
       currentPage: page,
       totalPages: Math.ceil(total / limit),
-      hasMore: skippedSoFar + cards.length < total,
+      hasMore: skip + cards.length < total,
     });
   } catch (error) {
     res.status(500).json({ message: `Error fetching cards: ${error.message}` });
@@ -338,7 +333,7 @@ export const toggleLikeCard = async (req, res) => {
         { new: true },
       );
 
-      // --- NOTIFICA (Database + Socket) ---
+      // --- NOTIFICA  ---
       const io = req.app.get("io");
       // Verifico che io esista e che l'utente non stia mettendo like a se stesso
       if (io && creatorId !== likerId) {
@@ -438,7 +433,7 @@ export const reportTravelCard = async (req, res) => {
     // Increment your new counter
     card.numberOfReports += 1;
 
-    //  If 5 people report it, mark it suspicious automatically
+    //  If 2 people report it, mark it suspicious automatically
     const REPORT_THRESHOLD = 2;
 
     if (card.numberOfReports >= REPORT_THRESHOLD) {
@@ -461,7 +456,7 @@ export const getModerationCards = async (req, res) => {
     const statusParam = req.query.status;
     const statuses = statusParam
       ? statusParam.split(",").map((status) => status.trim())
-      : ["Pending", "Rejected"];
+      : ["Pending", "Rejected", "Suspicious"];
 
     const cards = await TravelCard.find({ status: { $in: statuses } })
       .populate("creator", "username profileImage")

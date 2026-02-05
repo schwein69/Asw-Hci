@@ -25,7 +25,7 @@ export const getUserNotifications = async (req, res) => {
     const { limit = 50, unreadOnly = false } = req.query;
 
     const query = { recipient: userId };
-    if (unreadOnly === "true") {
+    if (unreadOnly === "true" || unreadOnly === true) {
       query.isRead = false;
     }
 
@@ -40,7 +40,7 @@ export const getUserNotifications = async (req, res) => {
       "Sample:",
       notifications
         .slice(0, 3)
-        .map((n) => ({ city: n.city, message: n.message })),
+        .map((n) => ({ city: n.city, message: n.message, isRead: n.isRead })),
     );
 
     res.status(200).json({
