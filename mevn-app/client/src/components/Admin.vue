@@ -8,7 +8,6 @@ import {
   Flag,
 } from "lucide-vue-next";
 import { getLanguage, t as translate } from "../utils/translations.js";
-import { inject } from "vue";
 export default {
   name: "Admin",
   components: {
@@ -26,11 +25,12 @@ export default {
       currentUserRole: null,
       // Stats Data
       stats: [
-        { labelKey: "admin.totalUsers", value: "1247" },
-        { labelKey: "admin.activeItineraries", value: "542" },
-        { labelKey: "admin.forumPosts", value: "3891" },
-        { labelKey: "admin.avgEcoScore", value: "87" },
+        { key: "totalUsers", labelKey: "admin.totalUsers", value: "—" },
+        { key: "activeItineraries", labelKey: "admin.activeItineraries", value: "—" },
+        { key: "forumPosts", labelKey: "admin.forumPosts", value: "—" },
+        { key: "avgEcoScore", labelKey: "admin.avgEcoScore", value: "—" },
       ],
+      isStatsLoading: false,
 
       // Tab State
       activeTab: "users",
@@ -69,10 +69,12 @@ export default {
     this.setCurrentUserRole();
     if (this.isForumAdmin) {
       this.activeTab = "forum";
+      this.fetchStats();
       this.fetchForumPosts();
     }
     if (this.isGeneralAdmin) {
       this.activeTab = "users";
+      this.fetchStats();
       this.fetchUsers();
       this.fetchReportedFeedback();
       this.fetchFeedbackEntries();
@@ -87,6 +89,36 @@ export default {
       const date = new Date(dateString);
       if (Number.isNaN(date.getTime())) return "";
       return date.toLocaleDateString();
+    },
+    async fetchStats() {
+      this.isStatsLoading = true;
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) return;
+
+        const response = await fetch(`${this.apiBase}/users/admin/stats`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch admin stats");
+        }
+
+        const data = await response.json();
+        this.stats = this.stats.map((stat) => ({
+          ...stat,
+          value:
+            data[stat.key] !== undefined && data[stat.key] !== null
+              ? String(data[stat.key])
+              : "—",
+        }));
+      } catch (error) {
+        console.error("Error loading admin stats:", error);
+      } finally {
+        this.isStatsLoading = false;
+      }
     },
     async fetchUsers() {
       this.isUsersLoading = true;
