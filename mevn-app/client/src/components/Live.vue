@@ -306,6 +306,9 @@ const refreshNotifications = async () => {
   // Select new random locations
   selectRandomLocations();
 
+  // Fetch weather data for new locations
+  await fetchWeatherData();
+
   // Just fetch existing notifications from DB
   // removing pulling now Server automatically checks weather/crowd every 60s and pushes via Socket.io
   await fetchNotifications(true);
@@ -583,6 +586,39 @@ const getWeatherInfo = (code) => {
   return { text: "Unknown", icon: "Cloud", alert: false };
 };
 
+// Fetch real weather data for selected locations
+const fetchWeatherData = async () => {
+  console.log("Fetching weather data for locations...");
+
+  for (const location of locations.value) {
+    try {
+      const response = await fetch(
+        `https://api.open-meteo.com/v1/forecast?latitude=${location.lat}&longitude=${location.lon}&current=temperature_2m,weather_code&timezone=auto`,
+      );
+      const data = await response.json();
+
+      if (data.current) {
+        const weatherInfo = getWeatherInfo(data.current.weather_code);
+        location.weather = {
+          condition: weatherInfo.text,
+          temp: `${Math.round(data.current.temperature_2m)}°C`,
+          icon: weatherInfo.icon,
+          alert: weatherInfo.alert,
+        };
+        console.log(`Weather loaded for ${location.name}:`, location.weather);
+      }
+    } catch (error) {
+      console.error(`Failed to fetch weather for ${location.name}:`, error);
+      location.weather = {
+        condition: "Unavailable",
+        temp: "--",
+        icon: "Cloud",
+        alert: false,
+      };
+    }
+  }
+};
+
 // DEPRECATED: Socket is now global in App.vue
 // Setup Socket.io connection
 // const setupSocket = () => {
@@ -632,6 +668,9 @@ onMounted(() => {
 
   // First select random locations
   selectRandomLocations();
+
+  // Fetch weather data for selected locations
+  fetchWeatherData();
 
   // Then fetch data for those locations
   fetchUpcomingTrip();
