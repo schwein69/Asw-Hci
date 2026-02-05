@@ -11,7 +11,6 @@ import {
 import { getLanguage, t as translate } from "../utils/translations.js";
 import actualMap from "./maps/actualMap.vue";
 import * as turf from "@turf/turf";
-
 export default {
   name: "PastTrips",
   components: {
@@ -251,41 +250,8 @@ export default {
       cityName = cityName.trim();
       if (!cityName) return null;
 
-      const cityCoords = {
-        Paris: [2.3522, 48.8566],
-        Berlin: [13.405, 52.52],
-        Amsterdam: [4.9041, 52.3676],
-        London: [-0.1276, 51.5074],
-        Rome: [12.4964, 41.9028],
-        Madrid: [-3.7038, 40.4168],
-        Vienna: [16.3738, 48.2082],
-        Barcelona: [2.1734, 41.3851],
-        Prague: [14.4378, 50.0755],
-        Warsaw: [21.0122, 52.2297],
-        Stockholm: [18.0686, 59.3293],
-        Copenhagen: [12.5683, 55.6761],
-        Brussels: [4.3517, 50.8503],
-        Dublin: [-6.2603, 53.3498],
-        Lisbon: [-9.1393, 38.7223],
-        Athens: [23.7275, 37.9838],
-        Budapest: [19.0402, 47.4979],
-        Munich: [11.582, 48.1351],
-        Milan: [9.19, 45.4642],
-        Zurich: [8.5417, 47.3769],
-        Lisboa: [-9.1393, 38.7223],
-        Roma: [12.4964, 41.9028],
-        Atene: [23.7275, 37.9838],
-      };
-
-      if (cityCoords[cityName]) {
-        return cityCoords[cityName];
-      }
-
-      const cityKey = Object.keys(cityCoords).find(
-        (key) => key.toLowerCase() === cityName.toLowerCase(),
-      );
-      if (cityKey) {
-        return cityCoords[cityKey];
+      if (this.cityCoordsCache[cityName]) {
+        return this.cityCoordsCache[cityName];
       }
 
       return null;

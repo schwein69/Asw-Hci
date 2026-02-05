@@ -1,5 +1,7 @@
 import express from "express";
 import User from "../models/users.js";
+import Trip from "../models/trip.js";
+import TravelCard from "../models/travelCard.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
@@ -305,6 +307,38 @@ router.get(
       res.status(200).json(users);
     } catch (err) {
       res.status(500).json({ error: "Failed to fetch users: " + err.message });
+    }
+  },
+);
+
+// Admin: dashboard stats
+router.get(
+  "/admin/stats",
+  authenticate,
+  authorize("AdminGeneral", "AdminForum"),
+  async (req, res) => {
+    try {
+      const [totalUsers, activeItineraries, forumPosts] = await Promise.all([
+        User.countDocuments({ role: "Standard" }),
+        Trip.countDocuments({ status: "ongoing" }),
+        TravelCard.countDocuments({ status: { $in: ["Approved", "Pending"] } }),
+      ]);
+
+      const avgEcoScoreAgg = await User.aggregate([
+        { $match: { role: "Standard" } },
+        { $group: { _id: null, avg: { $avg: "$ecoPoints" } } },
+      ]);
+
+      const avgEcoScore = Math.round(avgEcoScoreAgg[0]?.avg || 0);
+
+      res.status(200).json({
+        totalUsers,
+        activeItineraries,
+        forumPosts,
+        avgEcoScore,
+      });
+    } catch (err) {
+      res.status(500).json({ error: "Failed to fetch admin stats" });
     }
   },
 );
