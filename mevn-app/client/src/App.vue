@@ -119,7 +119,9 @@ export default {
       console.log("[GLOBAL SOCKET] Setting up global socket connection...");
 
       // Connect to Socket.io server
-      this.socket = io("http://localhost:3000");
+      this.socket = io(
+        `http://localhost:${import.meta.env.VITE_API_PORT || "4000"}`,
+      );
 
       // Listen for connection
       this.socket.on("connect", () => {

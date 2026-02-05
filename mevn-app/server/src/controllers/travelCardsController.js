@@ -107,7 +107,6 @@ export const getTravelCards = async (req, res) => {
       totalPages: Math.ceil(total / limit),
       hasMore: skip + cards.length < total,
     });
-    console.log(`Fetched ${cards.length} cards for page ${page}`);
   } catch (error) {
     res.status(500).json({ message: `Error fetching cards: ${error.message}` });
   }
@@ -334,7 +333,7 @@ export const toggleLikeCard = async (req, res) => {
         { new: true },
       );
 
-      // --- NOTIFICA (Database + Socket) ---
+      // --- NOTIFICA  ---
       const io = req.app.get("io");
       // Verifico che io esista e che l'utente non stia mettendo like a se stesso
       if (io && creatorId !== likerId) {
