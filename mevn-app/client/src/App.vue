@@ -3,6 +3,9 @@ import { Leaf, Moon, Sun, User, LogOut } from "lucide-vue-next";
 import TheNavigation from "./components/NavigationBar.vue";
 import { useRoute, useRouter } from "vue-router";
 import { getLanguage, t as translate } from "./utils/translations.js";
+import { provide } from "vue";
+import { io } from "socket.io-client";
+import { setSocket, addNotification } from "./data/notificationStore.js";
 
 export default {
   name: "App",
@@ -17,6 +20,8 @@ export default {
   setup() {
     const route = useRoute();
     const router = useRouter();
+    const apiBase = `http://localhost:${import.meta.env.VITE_API_PORT || 4000}/api`;
+    provide("apiBase", apiBase);
     return { route, router };
   },
   data() {
@@ -26,6 +31,7 @@ export default {
       user: null,
       profileImageUrl: null,
       language: getLanguage(),
+      socket: null,
     };
   },
   computed: {
@@ -33,7 +39,7 @@ export default {
       return (key) => translate(key, this.language);
     },
     isAuthPage() {
-      const authRoutes = ["Login", "ForgotPassword", "ResetPassword"];
+      const authRoutes = ['Login', 'ForgotPassword', 'ResetPassword'];
       return this.route && authRoutes.includes(this.route.name);
     },
     isAdminPage() {
@@ -62,9 +68,12 @@ export default {
     // Load user from localStorage
     this.loadUser();
 
+    // Setup global Socket.io connection
+    this.setupGlobalSocket();
+
     const userPref = localStorage.theme;
     const systemPref = window.matchMedia(
-      "(prefers-color-scheme: dark)"
+      "(prefers-color-scheme: dark)",
     ).matches;
 
     if (userPref === "dark" || (!userPref && systemPref)) {
@@ -72,16 +81,16 @@ export default {
     } else {
       this.setDarkMode(false);
     }
-
+    
     // Set background for auth pages
     this.updateBodyBackground();
-
+    
     // Close profile menu when clicking outside
-    document.addEventListener("click", this.handleClickOutside);
-
+    document.addEventListener('click', this.handleClickOutside);
+    
     // Listen for storage changes (when user logs in from another tab)
-    window.addEventListener("storage", this.handleStorageChange);
-
+    window.addEventListener('storage', this.handleStorageChange);
+    
     // Listen for profile image updates
     window.addEventListener("profileImageUpdated", this.loadUser);
 
@@ -89,20 +98,77 @@ export default {
     window.addEventListener("languageChanged", this.handleLanguageChange);
   },
   beforeUnmount() {
+    // DO NOT disconnect socket - keep it alive for the entire app lifecycle
+    // Socket will naturally disconnect when browser closes/user logs out
     document.removeEventListener("click", this.handleClickOutside);
     window.removeEventListener("storage", this.handleStorageChange);
     window.removeEventListener("profileImageUpdated", this.loadUser);
     window.removeEventListener("languageChanged", this.handleLanguageChange);
   },
   methods: {
-    loadUser() {
+    setupGlobalSocket() {
+      // Only setup socket if user is logged in
       const userData = localStorage.getItem("user");
+      if (!userData) return;
+
+      const user = JSON.parse(userData);
+      const userId = user._id || user.id;
+      if (!userId) return;
+
+      console.log("[GLOBAL SOCKET] Setting up global socket connection...");
+
+      // Connect to Socket.io server (same port as API)
+      const port = import.meta.env.VITE_API_PORT || 4000;
+      this.socket = io(`http://localhost:${port}`);
+
+      // Listen for connection
+      this.socket.on("connect", () => {
+        console.log("[GLOBAL SOCKET] Connected:", this.socket.id);
+        // Join user's personal notification room
+        this.socket.emit("join:notifications", userId);
+      });
+
+      // Listen for all notification types and add to global store
+      this.socket.on("notification:new", (notification) => {
+        console.log("[GLOBAL SOCKET] New notification received:", notification);
+        addNotification(notification);
+      });
+
+      this.socket.on("notification:weather", (notification) => {
+        console.log(
+          "[GLOBAL SOCKET] Weather notification received:",
+          notification,
+        );
+        addNotification(notification);
+      });
+
+      this.socket.on("notification:crowd", (notification) => {
+        console.log(
+          "[GLOBAL SOCKET] Crowd notification received:",
+          notification,
+        );
+        addNotification(notification);
+      });
+
+      this.socket.on("disconnect", () => {
+        console.log("[GLOBAL SOCKET] Disconnected");
+      });
+
+      this.socket.on("connect_error", (error) => {
+        console.error("[GLOBAL SOCKET] Connection error:", error);
+      });
+
+      // Save socket to global store
+      setSocket(this.socket);
+    },
+    loadUser() {
+      const userData = localStorage.getItem('user');
       if (userData) {
         try {
           this.user = JSON.parse(userData);
           this.profileImageUrl = this.user?.profileImage || null;
         } catch (e) {
-          console.error("Error parsing user data:", e);
+          console.error('Error parsing user data:', e);
           this.user = null;
           this.profileImageUrl = null;
         }
@@ -112,7 +178,7 @@ export default {
       }
     },
     handleStorageChange(e) {
-      if (e.key === "user") {
+      if (e.key === 'user') {
         this.loadUser();
       }
     },
@@ -139,24 +205,24 @@ export default {
         document.body.style.setProperty(
           "background-color",
           "#f0fdf4",
-          "important"
+          "important",
         );
         document.documentElement.style.setProperty(
           "background-color",
           "#f0fdf4",
-          "important"
+          "important",
         );
         // Also set on the app div
-        const appDiv = document.getElementById("app");
+        const appDiv = document.getElementById('app');
         if (appDiv) {
-          appDiv.style.setProperty("background-color", "#f0fdf4", "important");
+          appDiv.style.setProperty('background-color', '#f0fdf4', 'important');
         }
       } else {
-        document.body.style.removeProperty("background-color");
-        document.documentElement.style.removeProperty("background-color");
-        const appDiv = document.getElementById("app");
+        document.body.style.removeProperty('background-color');
+        document.documentElement.style.removeProperty('background-color');
+        const appDiv = document.getElementById('app');
         if (appDiv) {
-          appDiv.style.removeProperty("background-color");
+          appDiv.style.removeProperty('background-color');
         }
       }
     },
@@ -167,29 +233,29 @@ export default {
       }
       this.loadUser(); // Always reload user data
       this.showProfileMenu = !this.showProfileMenu;
-      console.log("Profile menu toggled:", this.showProfileMenu);
-      console.log("User data:", this.user);
+      console.log('Profile menu toggled:', this.showProfileMenu);
+      console.log('User data:', this.user);
     },
     handleClickOutside(event) {
-      const profileButton = event.target.closest(".profile-button");
-      const profileMenu = event.target.closest(".profile-menu");
+      const profileButton = event.target.closest('.profile-button');
+      const profileMenu = event.target.closest('.profile-menu');
       if (!profileButton && !profileMenu) {
         this.showProfileMenu = false;
       }
     },
     logout() {
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
       this.user = null;
       this.showProfileMenu = false;
-      this.router.push("/login");
+      this.router.push('/login');
     },
     handleLanguageChange(event) {
       this.language = event.detail.language;
     },
   },
   watch: {
-    $route() {
+    '$route'() {
       // Reload user when route changes (in case user just logged in)
       this.loadUser();
       // Update background when route changes
@@ -202,7 +268,7 @@ export default {
       this.$nextTick(() => {
         this.updateBodyBackground();
       });
-    },
+    }
   },
 };
 </script>
@@ -212,9 +278,7 @@ export default {
     id="app"
     :class="[
       'min-h-screen flex flex-col font-sans transition-colors duration-300',
-      isAuthPage
-        ? 'bg-[#f0fdf4] dark:bg-[#f0fdf4]'
-        : 'bg-base-200 dark:bg-gray-900',
+      isAuthPage ? 'bg-[#f0fdf4] dark:bg-[#f0fdf4]' : 'bg-base-200 dark:bg-gray-900'
     ]"
     :style="isAuthPage ? { backgroundColor: '#f0fdf4' } : {}"
   >
@@ -235,9 +299,7 @@ export default {
           >
             EcoGo
           </h1>
-          <p
-            class="text-[9px] text-success font-light uppercase tracking-[0.2em]"
-          >
+          <p class="text-[9px] text-success font-light uppercase tracking-[0.2em]">
             Travel Green • Live Clean
           </p>
         </div>
@@ -249,7 +311,7 @@ export default {
             <Moon v-if="!isDarkMode" class="w-5 h-5" />
             <Sun v-else class="w-5 h-5" />
           </button>
-
+          
           <!-- Profile Menu -->
           <div class="relative profile-button z-50">
             <button
@@ -257,9 +319,7 @@ export default {
               class="btn btn-ghost btn-sm text-gray-700 dark:text-gray-200 flex items-center gap-2 relative z-50"
             >
               <!-- Profile Image or Icon -->
-              <div
-                class="w-8 h-8 rounded-full overflow-hidden bg-success flex items-center justify-center shrink-0"
-              >
+              <div class="w-8 h-8 rounded-full overflow-hidden bg-success flex items-center justify-center flex-shrink-0">
                 <img
                   v-if="profileImageUrl"
                   :src="profileImageUrl"
@@ -272,22 +332,18 @@ export default {
                 user?.username || t("app.profile")
               }}</span>
             </button>
-
+            
             <!-- Dropdown Menu -->
             <Teleport to="body">
               <div
                 v-if="showProfileMenu"
-                class="profile-menu fixed w-64 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 z-9999 overflow-hidden"
+                class="profile-menu fixed w-64 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 z-[9999] overflow-hidden"
                 :style="{ top: '80px', right: '24px' }"
               >
                 <!-- User Info Section -->
-                <div
-                  class="p-5 bg-linear-to-r from-green-50 to-emerald-50 dark:from-gray-700 dark:to-gray-800 border-b border-gray-200 dark:border-gray-700"
-                >
+                <div class="p-5 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-gray-700 dark:to-gray-800 border-b border-gray-200 dark:border-gray-700">
                   <div class="flex items-center gap-3 mb-3">
-                    <div
-                      class="w-12 h-12 bg-success rounded-full overflow-hidden flex items-center justify-center shrink-0"
-                    >
+                    <div class="w-12 h-12 bg-success rounded-full overflow-hidden flex items-center justify-center flex-shrink-0">
                       <img
                         v-if="profileImageUrl"
                         :src="profileImageUrl"
@@ -295,19 +351,15 @@ export default {
                         class="w-full h-full object-cover"
                       />
                       <span v-else class="text-white font-semibold text-lg">
-                        {{ user?.username?.charAt(0).toUpperCase() || "U" }}
+                        {{ user?.username?.charAt(0).toUpperCase() || 'U' }}
                       </span>
                     </div>
                     <div class="flex-1 min-w-0">
-                      <p
-                        class="text-sm font-semibold text-gray-900 dark:text-white truncate"
-                      >
-                        {{ user?.username || "User" }}
+                      <p class="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                        {{ user?.username || 'User' }}
                       </p>
-                      <p
-                        class="text-xs text-gray-500 dark:text-gray-400 truncate"
-                      >
-                        {{ user?.email || "No email" }}
+                      <p class="text-xs text-gray-500 dark:text-gray-400 truncate">
+                        {{ user?.email || 'No email' }}
                       </p>
                     </div>
                   </div>
@@ -347,9 +399,9 @@ export default {
     <main
       :class="[
         'grow w-full transition-colors duration-300',
-        isAuthPage
-          ? 'bg-[#f0fdf4] dark:bg-[#f0fdf4]'
-          : 'md:p-8 bg-green-50 dark:bg-gray-900 pb-24 md:pb-8',
+        isAuthPage 
+          ? 'bg-[#f0fdf4] dark:bg-[#f0fdf4]' 
+          : 'md:p-8 bg-green-50 dark:bg-gray-900 pb-24 md:pb-8'
       ]"
       :style="isAuthPage ? { backgroundColor: '#f0fdf4' } : {}"
     >

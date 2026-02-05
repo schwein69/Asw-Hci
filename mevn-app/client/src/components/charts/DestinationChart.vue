@@ -1,7 +1,8 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from "vue";
+import { ref, computed, onMounted, onUnmounted, inject } from "vue";
 import { History, Loader2 } from "lucide-vue-next";
 import { Bar } from "vue-chartjs";
+import wrap from "word-wrap";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -19,9 +20,10 @@ ChartJS.register(
   BarElement,
   Title,
   Tooltip,
-  Legend
+  Legend,
 );
 
+const apiBase = inject("apiBase");
 const isLoading = ref(true);
 const processedTrips = ref([]);
 const language = ref(getLanguage());
@@ -36,12 +38,9 @@ const fetchTripEfficiency = async () => {
       return;
     }
 
-    const response = await fetch(
-      "http://localhost:3000/api/dashboard/trip-efficiency",
-      {
-        headers: { Authorization: `Bearer ${token}` },
-      }
-    );
+    const response = await fetch(`${apiBase}/dashboard/trip-efficiency`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
 
     if (!response.ok) {
       throw new Error("Failed to fetch trip efficiency");
@@ -102,10 +101,16 @@ const chartOptions = computed(() => ({
     },
     tooltip: {
       callbacks: {
+        title: (tooltipItems) => {
+          return tooltipItems[0].label;
+        },
         afterBody: (tooltipItems) => {
           const index = tooltipItems[0].dataIndex;
           const trip = processedTrips.value[index];
-          return `${t("dashboard.route")}: ${trip.routeSummary}`;
+          return wrap(trip.routeSummary.replace(/\./g, ".\n"), {
+            width: 100,
+            indent: "",
+          }).split("\n");
         },
         label: (context) => ` ${context.dataset.label}: ${context.raw} kg CO₂`,
       },
@@ -119,8 +124,20 @@ const chartOptions = computed(() => ({
       border: { display: false },
     },
     x: {
-      grid: { display: false },
-      ticks: { font: { size: 11 } },
+      grid: { display: true },
+      ticks: {
+        font: { size: 11 },
+        maxRotation: 45,
+        minRotation: 0,
+        autoSkip: false,
+        callback: function (value, index, values) {
+          const label = this.getLabelForValue(value);
+          if (label.length > 20) {
+            return label.substr(0, 20) + "...";
+          }
+          return label;
+        },
+      },
     },
   },
 }));

@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, onUnmounted, watch, computed } from "vue";
+import { ref, onMounted, onUnmounted, watch, computed, inject } from "vue";
 import {
   Plus,
   MapPin,
@@ -22,6 +22,7 @@ import { useRewardsStore } from "../data/rewardsStore.js";
 import AddTravelCardModal from "./template/AddTravelCardModal.vue";
 import { useRouter } from "vue-router";
 
+const apiBase = inject("apiBase");
 const accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
 const rewardsStore = useRewardsStore();
 const router = useRouter();
@@ -97,7 +98,7 @@ const fetchPlaces = async (reset = false) => {
     if (viewMode.value === "saved") endpoint = "/savedTravelCards";
 
     const response = await fetch(
-      `http://localhost:3000/api/travelcards${endpoint}?${params}`,
+      `${apiBase}/travelcards${endpoint}?${params}`,
       {
         method: "GET",
         headers: { "Content-Type": "application/json" },
@@ -151,14 +152,11 @@ const toggleLike = async (place) => {
   place.isLiked = !place.isLiked;
 
   try {
-    const response = await fetch(
-      `http://localhost:3000/api/travelcards/${place.id}/like`,
-      {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: getUserId() }),
-      },
-    );
+    const response = await fetch(`${apiBase}/travelcards/${place.id}/like`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId: getUserId() }),
+    });
     if (!response.ok) throw new Error("Like failed");
 
     const data = await response.json();
@@ -174,14 +172,11 @@ const toggleSave = async (place) => {
   place.saved = !place.saved;
 
   try {
-    const response = await fetch(
-      `http://localhost:3000/api/travelcards/${place.id}/save`,
-      {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: getUserId() }),
-      },
-    );
+    const response = await fetch(`${apiBase}/travelcards/${place.id}/save`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId: getUserId() }),
+    });
     if (!response.ok) throw new Error("Save failed");
   } catch (error) {
     console.error(error);
@@ -189,6 +184,15 @@ const toggleSave = async (place) => {
   }
 };
 const handleCardCreated = (newCard) => {
+  if (newCard.status !== "Approved") {
+    alert("Recommendation submitted for review.");
+    if (viewMode.value === "my-posts") {
+      fetchPlaces(true);
+    }
+    isAddModalOpen.value = false;
+    return;
+  }
+
   const defaultAvatar = "https://ui-avatars.com/api/?name=";
   places.value.unshift({
     id: newCard._id,
@@ -218,7 +222,7 @@ const reportPlace = async () => {
 
   try {
     const response = await fetch(
-      `http://localhost:3000/api/travelcards/${selectedPlace.value.id}/report`,
+      `${apiBase}/travelcards/${selectedPlace.value.id}/report`,
       {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -247,7 +251,7 @@ const deletePlace = async () => {
 
   try {
     const response = await fetch(
-      `http://localhost:3000/api/travelcards/${selectedPlace.value.id}`,
+      `${apiBase}/travelcards/${selectedPlace.value.id}`,
       {
         method: "DELETE",
         headers: {

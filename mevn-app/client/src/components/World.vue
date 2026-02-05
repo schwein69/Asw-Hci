@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from "vue";
+import { ref, computed, onMounted, onUnmounted, inject } from "vue";
 import {
   CheckCircle2,
   Clock,
@@ -17,6 +17,7 @@ import { useRouter } from "vue-router";
 import { useTripStore } from "../data/tripStore.js";
 import TripStats from "./template/TripStats.vue";
 
+const apiBase = inject("apiBase");
 const router = useRouter();
 const tripStore = useTripStore();
 const language = ref(getLanguage());
@@ -39,9 +40,7 @@ const fetchActiveTrips = async () => {
   if (!userId) return;
 
   try {
-    const response = await fetch(
-      `http://localhost:3000/api/trips/active/${userId}`,
-    );
+    const response = await fetch(`${apiBase}/trips/active/${userId}`);
     const activeTrips = await response.json();
 
     if (activeTrips && activeTrips.length > 0) {
@@ -55,7 +54,7 @@ const fetchActiveTrips = async () => {
             rawMode.charAt(0).toUpperCase() + rawMode.slice(1);
 
           return {
-            id: `${trip._id}-${index}`,
+            id: segment._id,
             from: segment.fromLocation.name,
             to: segment.toLocation.name,
             type: displayMode,
@@ -78,7 +77,7 @@ const fetchActiveTrips = async () => {
             cost: segment.price,
             startCoords: segment.fromLocation.coordinates,
             endCoords: segment.toLocation.coordinates,
-            completed: false,
+            completed: segment.isCompleted,
             seat: segment.seatNumber || null,
             gate: segment.gate || null,
             arrivalGate: segment.arrivalGate || null,
@@ -162,28 +161,93 @@ function toggle3D() {
   }
 }
 
-// --- ACTIONS ---
-function removeRoute(tripId, routeId) {
-  const trip = trips.value.find((t) => t.id === tripId);
-  if (trip) {
-    trip.routes = trip.routes.filter((s) => s.id !== routeId);
-  }
-}
+const removeRoute = async (tripId, routeId) => {
+  const tripIndex = trips.value.findIndex((t) => t.id === tripId);
+  if (tripIndex === -1) return;
 
-function toggleComplete(tripId, routeId) {
-  const trip = trips.value.find((t) => t.id === tripId);
-  if (trip) {
-    const seg = trip.routes.find((s) => s.id === routeId);
-    if (seg) seg.completed = !seg.completed;
+  const trip = trips.value[tripIndex];
+
+  // Check if this is the last segment
+  const isLastSegment = trip.routes.length === 1;
+
+  //  Snapshot for rollback
+  const originalRoutes = [...trip.routes];
+  const originalTrip = trip;
+  if (confirm(`Are you sure you want to delete?`)) {
+    if (isLastSegment) {
+      // Remove the ENTIRE TRIP from the list
+      trips.value.splice(tripIndex, 1);
+    } else {
+      // Remove ONLY the segment
+      trip.routes = trip.routes.filter((s) => s.id !== routeId);
+    }
+
+    try {
+      const response = await fetch(`${apiBase}/trips/${tripId}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          segmentId: isLastSegment ? null : routeId,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to delete");
+      }
+
+      console.log(isLastSegment ? "Trip deleted" : "Segment deleted");
+    } catch (error) {
+      console.error("Error removing:", error);
+
+      if (isLastSegment) {
+        trips.value.splice(tripIndex, 0, originalTrip);
+      } else {
+        trip.routes = originalRoutes;
+      }
+      alert("Failed to delete. Please check connection.");
+    }
   }
-}
+};
+
+const toggleComplete = async (tripId, segmentId) => {
+  const trip = trips.value.find((t) => t.id === tripId);
+  if (!trip) return;
+  const seg = trip.routes.find((t) => t.id === segmentId);
+  if (!seg) return;
+  const previousState = seg.completed;
+  seg.completed = !seg.completed;
+
+  try {
+    const response = await fetch(`${apiBase}/trips/${tripId}/update`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        segmentId: seg.id,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to update segment");
+    }
+  } catch (error) {
+    console.error("Error toggling status:", error);
+    seg.completed = previousState;
+  }
+};
 
 function completeTrip(tripId) {
   const trip = trips.value.find((t) => t.id === tripId);
   if (!trip || !isTripComplete(trip)) return;
   if (confirm(`Are you sure you want to complete "${trip.name}"?`)) {
-    fetch(`http://localhost:3000/api/trips/complete/${tripId}`, {
-      method: "POST",
+    fetch(`${apiBase}/trips/complete/${tripId}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
     })
       .then((res) => {
         if (!res.ok) throw new Error("Failed to complete trip");

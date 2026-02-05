@@ -15,6 +15,7 @@ import {
   X,
 } from "lucide-vue-next";
 import { getLanguage, t as translate } from "../utils/translations.js";
+import { unreadNotificationCount } from "../data/notificationStore.js";
 
 const route = useRoute();
 const isMenuOpen = ref(false);
@@ -127,13 +128,23 @@ function toggleMenu() {
                   <a
                     @click="navigate"
                     :class="[
-                      'flex items-center gap-2 justify-center py-2 px-4 rounded-full whitespace-nowrap cursor-pointer transition-colors',
+                      'flex items-center gap-2 justify-center py-2 px-4 rounded-full whitespace-nowrap cursor-pointer transition-colors relative',
                       isActive
                         ? 'bg-base-200 dark:bg-gray-700 text-success'
                         : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200',
                     ]"
                   >
-                    <component :is="item.icon" class="h-4 w-4" />
+                    <div class="relative">
+                      <component :is="item.icon" class="h-4 w-4" />
+                      <!-- Notification badge for Live page -->
+                      <span
+                        v-if="
+                          item.routeName === 'Live' &&
+                          unreadNotificationCount > 0
+                        "
+                        class="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"
+                      ></span>
+                    </div>
                     <span class="text-sm">{{ item.label }}</span>
                   </a>
                 </RouterLink>
@@ -174,12 +185,17 @@ function toggleMenu() {
             class="flex items-center gap-3 group"
           >
             <div
-              class="w-12 h-12 rounded-full shadow-lg flex items-center justify-center border border-gray-100 bg-white text-gray-600 transition-transform active:scale-90"
+              class="w-12 h-12 rounded-full shadow-lg flex items-center justify-center border border-gray-100 bg-white text-gray-600 transition-transform active:scale-90 relative"
               :class="{
                 'bg-green-600! text-white!': isActive,
               }"
             >
               <component :is="item.icon" class="w-5 h-5" />
+              <!-- Notification badge for Live page -->
+              <span
+                v-if="item.routeName === 'Live' && unreadNotificationCount > 0"
+                class="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse border-2 border-white"
+              ></span>
             </div>
             <span
               class="bg-white/90 backdrop-blur px-2 py-1 rounded-md text-xs font-bold text-gray-700 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
@@ -213,12 +229,17 @@ function toggleMenu() {
             class="flex items-center gap-3 flex-row-reverse group"
           >
             <div
-              class="w-12 h-12 rounded-full shadow-lg flex items-center justify-center border border-gray-100 bg-white text-gray-600 transition-transform active:scale-90"
+              class="w-12 h-12 rounded-full shadow-lg flex items-center justify-center border border-gray-100 bg-white text-gray-600 transition-transform active:scale-90 relative"
               :class="{
                 'bg-green-600! text-white!': isActive,
               }"
             >
               <component :is="item.icon" class="w-5 h-5" />
+              <!-- Notification badge for Live page -->
+              <span
+                v-if="item.routeName === 'Live' && unreadNotificationCount > 0"
+                class="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse border-2 border-white"
+              ></span>
             </div>
             <span
               class="bg-white/90 backdrop-blur px-2 py-1 rounded-md text-xs font-bold text-gray-700 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"

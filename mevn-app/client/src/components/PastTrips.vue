@@ -11,6 +11,7 @@ import {
 import { getLanguage, t as translate } from "../utils/translations.js";
 import actualMap from "./maps/actualMap.vue";
 import * as turf from "@turf/turf";
+import { inject } from "vue";
 
 export default {
   name: "PastTrips",
@@ -24,12 +25,16 @@ export default {
     X,
     actualMap,
   },
+  inject: ["apiBase"],
   data() {
     return {
       language: getLanguage(),
       showMapForTrip: null,
       trips: [],
       isLoadingTrips: false,
+      cityCoordsCache: {},
+      isGeocoding: false,
+      geocodeError: null,
     };
   },
   computed: {
@@ -57,8 +62,9 @@ export default {
         }
         const fromCity = routeParts[0] ? routeParts[0].trim() : "";
         const toCity = routeParts[1] ? routeParts[1].trim() : "";
-        const fromCoords = this.getCityCoordinates(fromCity);
-        const toCoords = this.getCityCoordinates(toCity);
+        const fromCoords =
+          method.fromCoords || this.getCityCoordinates(fromCity);
+        const toCoords = method.toCoords || this.getCityCoordinates(toCity);
 
         if (fromCoords && toCoords) {
           const start = turf.point(fromCoords);
@@ -92,8 +98,9 @@ export default {
         }
         const fromCity = routeParts[0] ? routeParts[0].trim() : "";
         const toCity = routeParts[1] ? routeParts[1].trim() : "";
-        const fromCoords = this.getCityCoordinates(fromCity);
-        const toCoords = this.getCityCoordinates(toCity);
+        const fromCoords =
+          method.fromCoords || this.getCityCoordinates(fromCity);
+        const toCoords = method.toCoords || this.getCityCoordinates(toCity);
 
         if (fromCoords) {
           features.push({
@@ -141,7 +148,10 @@ export default {
       if (!value) return "";
       const date = new Date(value);
       if (Number.isNaN(date.getTime())) return "";
-      return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+      return date.toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
     },
     formatDuration(hours) {
       if (!Number.isFinite(hours)) return "";
@@ -158,12 +168,9 @@ export default {
         const token = localStorage.getItem("token");
         if (!token) return;
 
-        const response = await fetch(
-          "http://localhost:3000/api/trips/completed",
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
+        const response = await fetch(`${this.apiBase}/trips/completed`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
 
         if (!response.ok) {
           throw new Error("Failed to fetch completed trips");
@@ -175,18 +182,24 @@ export default {
           const transportMethods = itinerary.map((segment, index) => {
             const fromName = segment.fromLocation?.name || "";
             const toName = segment.toLocation?.name || "";
+            const fromCoords = segment.fromLocation?.coordinates || null;
+            const toCoords = segment.toLocation?.coordinates || null;
             return {
               id: `${trip._id}-${index}`,
               route: fromName && toName ? `${fromName} → ${toName}` : "Route",
+              fromCoords,
+              toCoords,
               provider: segment.transportNumber || "EcoGo",
               code: segment.transportNumber || "",
               departure: this.formatTime(segment.startTime || trip.startTime),
               departureType: segment.gate || segment.departureGate || "",
               arrival: this.formatTime(segment.endTime || trip.endTime),
               arrivalType: segment.arrivalGate || "",
-              time: this.formatDuration(segment.estimatedDurationMinutes
-                ? segment.estimatedDurationMinutes / 60
-                : segment.durationHours),
+              time: this.formatDuration(
+                segment.estimatedDurationMinutes
+                  ? segment.estimatedDurationMinutes / 60
+                  : segment.durationHours,
+              ),
               co2: `${Math.round(segment.co2 || 0)}kg`,
               cost: this.formatMoney(segment.price || 0),
               type: segment.transportMode || segment.category || "travel",
@@ -225,52 +238,77 @@ export default {
     toggleExpand(trip) {
       trip.isExpanded = !trip.isExpanded;
     },
-    loadToMap(tripId) {
+    async loadToMap(tripId) {
       this.showMapForTrip = this.showMapForTrip === tripId ? null : tripId;
+      if (!this.showMapForTrip) return;
+      const trip = this.trips.find((t) => t.id === this.showMapForTrip);
+      if (trip) {
+        await this.ensureTripCoordinates(trip);
+      }
     },
     getCityCoordinates(cityName) {
       if (!cityName) return null;
 
       cityName = cityName.trim();
+      if (!cityName) return null;
 
-      const cityCoords = {
-        Paris: [2.3522, 48.8566],
-        Berlin: [13.405, 52.52],
-        Amsterdam: [4.9041, 52.3676],
-        London: [-0.1276, 51.5074],
-        Rome: [12.4964, 41.9028],
-        Madrid: [-3.7038, 40.4168],
-        Vienna: [16.3738, 48.2082],
-        Barcelona: [2.1734, 41.3851],
-        Prague: [14.4378, 50.0755],
-        Warsaw: [21.0122, 52.2297],
-        Stockholm: [18.0686, 59.3293],
-        Copenhagen: [12.5683, 55.6761],
-        Brussels: [4.3517, 50.8503],
-        Dublin: [-6.2603, 53.3498],
-        Lisbon: [-9.1393, 38.7223],
-        Athens: [23.7275, 37.9838],
-        Budapest: [19.0402, 47.4979],
-        Munich: [11.582, 48.1351],
-        Milan: [9.19, 45.4642],
-        Zurich: [8.5417, 47.3769],
-        Lisboa: [-9.1393, 38.7223],
-        Roma: [12.4964, 41.9028],
-        Atene: [23.7275, 37.9838],
-      };
-
-      if (cityCoords[cityName]) {
-        return cityCoords[cityName];
-      }
-
-      const cityKey = Object.keys(cityCoords).find(
-        (key) => key.toLowerCase() === cityName.toLowerCase()
-      );
-      if (cityKey) {
-        return cityCoords[cityKey];
+      if (this.cityCoordsCache[cityName]) {
+        return this.cityCoordsCache[cityName];
       }
 
       return null;
+    },
+    async ensureTripCoordinates(trip) {
+      if (!trip || !Array.isArray(trip.transportMethods)) return;
+      const names = new Set();
+      trip.transportMethods.forEach((method) => {
+        let routeParts = method.route.split("→");
+        if (routeParts.length === 1) {
+          routeParts = method.route.split("->");
+        }
+        const fromCity = routeParts[0] ? routeParts[0].trim() : "";
+        const toCity = routeParts[1] ? routeParts[1].trim() : "";
+        if (fromCity) names.add(fromCity);
+        if (toCity) names.add(toCity);
+      });
+
+      const missing = Array.from(names).filter(
+        (name) => !this.getCityCoordinates(name),
+      );
+      if (missing.length === 0) return;
+
+      this.isGeocoding = true;
+      this.geocodeError = null;
+      try {
+        await Promise.all(missing.map((name) => this.geocodeCity(name)));
+      } catch (error) {
+        this.geocodeError = "Failed to geocode some cities.";
+        console.error("Geocoding error:", error);
+      } finally {
+        this.isGeocoding = false;
+      }
+    },
+    async geocodeCity(cityName) {
+      if (!cityName) return null;
+      if (this.cityCoordsCache[cityName]) {
+        return this.cityCoordsCache[cityName];
+      }
+
+      const token = import.meta.env.VITE_MAPBOX_TOKEN;
+      if (!token) return null;
+
+      const query = encodeURIComponent(cityName);
+      const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${query}.json?limit=1&types=place&access_token=${token}`;
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`Mapbox geocoding failed: ${response.status}`);
+      }
+      const data = await response.json();
+      const coords = data?.features?.[0]?.center || null;
+      if (coords) {
+        this.cityCoordsCache[cityName] = coords;
+      }
+      return coords;
     },
   },
 };
