@@ -242,7 +242,10 @@ export default {
           author: card.creator?.username || "Unknown",
           initials: (card.creator?.username || "U").slice(0, 2).toUpperCase(),
           time: this.formatDate(card.createdAt),
-          content: card.description,
+          createdAt: this.formatDate(card.createdAt),
+          subject: card.title || "—",
+          category: card.category || "—",
+          message: card.description || "—",
           status: card.status.toLowerCase(),
           reports: card.numberOfReports || 0,
         }));
@@ -696,8 +699,15 @@ export default {
                   <span class="font-bold text-gray-900 text-sm">{{
                     post.author
                   }}</span>
+                  <span
+                    class="text-[10px] px-1.5 py-0.5 rounded border border-gray-200 text-gray-600 bg-gray-50"
+                  >
+                    {{ post.category }}
+                  </span>
                 </div>
-                <p class="text-xs text-gray-500">{{ post.time }}</p>
+                <p class="text-xs text-gray-500">
+                  {{ t("admin.reportedOn") }} {{ post.createdAt }}
+                </p>
               </div>
             </div>
 
@@ -730,9 +740,14 @@ export default {
             </div>
           </div>
 
-          <p class="text-sm text-gray-800 mb-4 pl-12">
-            {{ post.content }}
-          </p>
+          <div class="pl-12 mb-4 space-y-1">
+            <div class="text-sm font-semibold text-gray-900">
+              {{ post.subject }}
+            </div>
+            <div class="text-sm text-gray-800">
+              {{ post.message }}
+            </div>
+          </div>
 
           <div
             v-if="post.status === 'pending'"
