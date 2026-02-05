@@ -14,7 +14,7 @@ router.get("/:userId", getAchievements);
 // Get rewards stats for a user
 router.get("/:userId/stats", getRewardsStats);
 
-// Get complete rewards data (achievements + stats + leaderboard) - BEST FOR FRONTEND
+// Get complete rewards data (achievements + stats + leaderboard)
 router.get("/:userId/complete", getCompleteRewardsData);
 
 // Get leaderboard

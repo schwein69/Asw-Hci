@@ -19,7 +19,7 @@ import {
 export async function updateAchievementProgress(
   userId,
   achievementType,
-  incrementValue
+  incrementValue,
 ) {
   if (incrementValue <= 0) return null;
 
@@ -56,7 +56,7 @@ export async function updateAchievementProgress(
   // Calculate new tier
   const newTier = calculateTierForProgress(
     achievementType,
-    achievement.currentProgress
+    achievement.currentProgress,
   );
 
   // Check if user unlocked new tiers
@@ -88,7 +88,7 @@ export async function updateAchievementProgress(
     if (user) {
       const pointsToAdd = unlockedTiers.reduce(
         (sum, tier) => sum + tier.points,
-        0
+        0,
       );
       user.ecoPoints += pointsToAdd;
       user.ecoLevel = calculateUserLevel(user.ecoPoints);
@@ -123,7 +123,7 @@ export async function getUserAchievements(userId) {
 
   // Create a map for quick lookup
   const achievementMap = new Map(
-    existingAchievements.map((a) => [a.achievementType, a])
+    existingAchievements.map((a) => [a.achievementType, a]),
   );
 
   // Build complete list: include all types, even those with no progress
@@ -165,7 +165,7 @@ export async function getUserAchievements(userId) {
     // Achievement exists - map with details
     const nextTier = getNextTierInfo(
       achievement.achievementType,
-      achievement.currentTier
+      achievement.currentTier,
     );
 
     return {
@@ -186,7 +186,7 @@ export async function getUserAchievements(userId) {
             points: nextTier.points,
             progressPercent: Math.min(
               (achievement.currentProgress / nextTier.target) * 100,
-              100
+              100,
             ),
           }
         : null,
@@ -210,7 +210,7 @@ export async function getUserRewardsStats(userId) {
 
   // Calculate total unlocked achievements (any tier > 0)
   const achievementsUnlocked = achievements.filter(
-    (a) => a.currentTier > 0
+    (a) => a.currentTier > 0,
   ).length;
 
   // Total possible achievements (8 types)
@@ -264,21 +264,16 @@ function calculateStreakHistory(user) {
 async function calculateGlobalRank(userId) {
   const user = await User.findById(userId);
   if (!user) return "Unranked";
-
-  // Count users with more points
-  const usersAbove = await User.countDocuments({
-    ecoPoints: { $gt: user.ecoPoints },
+  const usersWithMorePoints = await User.countDocuments({
+    role: "Standard",
+    ecoPoints: { $gt: user.ecoPoints || 0 },
   });
+  const currentPosition = usersWithMorePoints + 1;
 
-  const totalUsers = await User.countDocuments();
-  const percentile = ((totalUsers - usersAbove) / totalUsers) * 100;
+  const totalUsers = await User.countDocuments({ role: "Standard" });
+  const percentile = Math.round((currentPosition / totalUsers) * 100);
 
-  if (percentile <= 1) return "Top 1%";
-  if (percentile <= 5) return "Top 5%";
-  if (percentile <= 10) return "Top 10%";
-  if (percentile <= 25) return "Top 25%";
-  if (percentile <= 50) return "Top 50%";
-  return `Top ${Math.ceil(percentile)}%`;
+  return `Top ${percentile}%`;
 }
 
 /**
@@ -289,7 +284,7 @@ async function calculateGlobalRank(userId) {
  */
 export async function getLeaderboard(limit = 10, currentUserId = null) {
   // Get top users
-  const topUsers = await User.find()
+  const topUsers = await User.find({ role: "Standard" })
     .sort({ ecoPoints: -1 })
     .limit(limit)
     .select("username ecoPoints")
@@ -298,7 +293,7 @@ export async function getLeaderboard(limit = 10, currentUserId = null) {
   // If current user is not in top list, fetch their data
   let currentUser = null;
   const isInTop = topUsers.some(
-    (u) => u._id.toString() === currentUserId?.toString()
+    (u) => u._id.toString() === currentUserId?.toString(),
   );
 
   if (currentUserId && !isInTop) {
@@ -346,7 +341,7 @@ export async function updateUserStreak(userId) {
     lastTripDate.setHours(0, 0, 0, 0);
 
     const daysDiff = Math.floor(
-      (today.getTime() - lastTripDate.getTime()) / (1000 * 60 * 60 * 24)
+      (today.getTime() - lastTripDate.getTime()) / (1000 * 60 * 60 * 24),
     );
 
     if (daysDiff === 0) {
