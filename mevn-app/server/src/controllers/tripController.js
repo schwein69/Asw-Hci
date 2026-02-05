@@ -236,6 +236,25 @@ export const markTripCompleted = async (req, res) => {
     const unlockedAchievements = [];
 
     try {
+      // Calculate EcoPoints based on transport modes
+      let pointsToAdd = 0;
+      const POINTS_PER_KM = 1;
+
+      const ecoModes = ["bike", "walk", "bus"];
+      ecoModes.forEach((mode) => {
+        const dist = trip.transportModeBreakdown.get(mode) || 0;
+        pointsToAdd += dist * POINTS_PER_KM;
+      });
+
+      const electricDist = trip.fuelTypeBreakdown.get("electric") || 0;
+      pointsToAdd += electricDist * POINTS_PER_KM;
+
+      if (pointsToAdd > 0) {
+        await User.findByIdAndUpdate(userId, {
+          $inc: { ecoPoints: Math.round(pointsToAdd) },
+        });
+      }
+
       // Update transport-based achievements
       if (trip.transportModeBreakdown) {
         const breakdown = trip.transportModeBreakdown;

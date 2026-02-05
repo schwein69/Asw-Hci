@@ -1,6 +1,10 @@
 import TravelCard from "../models/travelCard.js";
+import User from "../models/users.js";
 import Notification from "../models/notification.js";
-import { emitNotification } from "../socket/notificationSocket.js";
+import {
+  emitNotification,
+  emitLikeNotification,
+} from "../socket/notificationSocket.js";
 import { getCoordinatesFromAddress } from "../services/mapBox.js";
 
 // Add new travel card
@@ -305,6 +309,7 @@ export const toggleLikeCard = async (req, res) => {
     const isLiked = card.likes.includes(userId);
     const creatorId = card.creator.toString();
     const likerId = userId.toString();
+    const io = req.app.get("io");
 
     if (isLiked) {
       // --- UNLIKE ---
@@ -316,6 +321,20 @@ export const toggleLikeCard = async (req, res) => {
         },
         { new: true },
       );
+
+      // Aggiorna l'utente e ottieni i nuovi punti
+      const updatedAuthor = await User.findByIdAndUpdate(
+        creatorId,
+        { $inc: { ecoPoints: -1 } },
+        { new: true },
+      );
+
+      // Notifica il cambio punti via socket (anche per l'unlike)
+      if (io && creatorId !== likerId) {
+        emitLikeNotification(io, creatorId, {
+          newEcoPoints: updatedAuthor.ecoPoints,
+        });
+      }
 
       return res.status(200).json({
         message: "Unliked",
@@ -333,23 +352,32 @@ export const toggleLikeCard = async (req, res) => {
         { new: true },
       );
 
-      // --- NOTIFICA  ---
-      const io = req.app.get("io");
-      // Verifico che io esista e che l'utente non stia mettendo like a se stesso
+      const updatedAuthor = await User.findByIdAndUpdate(
+        creatorId,
+        { $inc: { ecoPoints: 1 } },
+        { new: true },
+      );
+
+      // --- LOGICA NOTIFICA ---
       if (io && creatorId !== likerId) {
         const notification = new Notification({
-          recipient: creatorId, // Il creatore della card
-          sender: likerId, // Chi ha messo il like
+          recipient: creatorId,
+          sender: likerId,
           type: "social",
-          message: `Someone liked your travel card: "${card.title}"`, // Usa il titolo della card
+          message: `Someone liked your travel card: "${card.title}"`,
           icon: "Heart",
         });
 
-        await notification.save();
+        const savedNotification = await notification.save();
 
-        if (io) {
-          emitNotification(io, creatorId, notification);
-        }
+        // Invia notifica push (campanellina)
+        emitNotification(io, creatorId, savedNotification);
+
+        // Invia aggiornamento punti real-time (dashboard)
+        emitLikeNotification(io, creatorId, {
+          notificationId: savedNotification._id,
+          newEcoPoints: updatedAuthor.ecoPoints,
+        });
       }
 
       return res.status(200).json({
@@ -359,6 +387,7 @@ export const toggleLikeCard = async (req, res) => {
       });
     }
   } catch (error) {
+    console.error("Error toggling like:", error);
     res.status(500).json({ message: `Error toggling like: ${error.message}` });
   }
 };

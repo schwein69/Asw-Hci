@@ -123,6 +123,11 @@ const buildTripData = (userId, segments, title) => {
   let totalCo2Emission = 0;
   let totalDurationMinutes = 0;
   const transportModeBreakdown = {};
+  const fuelTypeBreakdown = {
+    diesel: 0,
+    gasoline: 0,
+    electric: 0,
+  };
   let previousEndTime = new Date();
 
   const itinerary = segments.map((seg, index) => {
@@ -153,7 +158,7 @@ const buildTripData = (userId, segments, title) => {
 
     // Parse the string "0 hours 25 minutes" into number (25)
     const durationMins = parseDuration(seg.time);
-
+    const fuelType = seg.fuelType?.toLowerCase() || null;
     // Totals
     totalDistanceKm += dist;
     totalPrice += cost;
@@ -163,6 +168,9 @@ const buildTripData = (userId, segments, title) => {
     if (transportMode) {
       transportModeBreakdown[transportMode] =
         (transportModeBreakdown[transportMode] || 0) + dist;
+    }
+    if (fuelType && fuelTypeBreakdown.hasOwnProperty(fuelType)) {
+      fuelTypeBreakdown[fuelType] += dist;
     }
 
     // Date Logic
@@ -181,6 +189,7 @@ const buildTripData = (userId, segments, title) => {
     return {
       category,
       transportMode,
+      fuelType,
       fuelType: seg.fuelType?.toLowerCase() || null,
       distanceKm: dist,
       estimatedDurationMinutes: durationMins,
@@ -216,6 +225,7 @@ const buildTripData = (userId, segments, title) => {
     totalPrice: Number(totalPrice.toFixed(2)),
     totalCo2Emission: Number(totalCo2Emission.toFixed(2)),
     transportModeBreakdown,
+    fuelTypeBreakdown,
     startTime: itinerary[0]?.startTime,
     endTime: itinerary[itinerary.length - 1]?.endTime,
     itinerary,

@@ -41,13 +41,14 @@ const fetchTripEfficiency = async () => {
     const response = await fetch(`${apiBase}/dashboard/trip-efficiency`, {
       headers: { Authorization: `Bearer ${token}` },
     });
-
     if (!response.ok) {
       throw new Error("Failed to fetch trip efficiency");
     }
 
     const data = await response.json();
+
     processedTrips.value = Array.isArray(data.trips) ? data.trips : [];
+    console.log("Fetched trip efficiency data:", processedTrips.value);
   } catch (error) {
     console.error("Failed to fetch trip efficiency:", error);
     processedTrips.value = [];

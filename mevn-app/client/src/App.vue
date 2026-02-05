@@ -150,6 +150,21 @@ export default {
         );
         addNotification(notification);
       });
+      // --- ASCOLTO AGGIORNAMENTO ECOPOINTS ---
+      this.socket.on("notification:like", (data) => {
+        console.log(
+          "[GLOBAL SOCKET] Points update received:",
+          data.newEcoPoints,
+        );
+
+        if (data.newEcoPoints !== undefined) {
+          window.dispatchEvent(
+            new CustomEvent("eco-points-updated", {
+              detail: data.newEcoPoints,
+            }),
+          );
+        }
+      });
 
       this.socket.on("disconnect", () => {
         console.log("[GLOBAL SOCKET] Disconnected");

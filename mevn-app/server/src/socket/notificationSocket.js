@@ -63,7 +63,7 @@ export const emitWeatherNotification = (io, userId, notification) => {
   });
   console.log(
     `Pushed weather notification to user ${userId}:`,
-    notification.city
+    notification.city,
   );
 };
 
@@ -85,6 +85,21 @@ export const emitCrowdNotification = (io, userId, notification) => {
   });
   console.log(
     `Pushed crowd notification to user ${userId}:`,
-    notification.city
+    notification.city,
   );
+};
+
+/**
+ * Invia una notifica di aggiornare i punti in tempo reale
+ * @param {Object} io - Istanza Socket.io
+ * @param {String} targetUserId - ID dell'utente che riceve il like (Utente B)
+ * @param {Object} data - Dati del like e punti aggiornati
+ */
+export const emitLikeNotification = (io, targetUserId, data) => {
+  io.to(`user:${targetUserId}`).emit("notification:like", {
+    id: data.notificationId, // ID della notifica salvata nel DB
+    newEcoPoints: data.newEcoPoints, // Passiamo i punti aggiornati
+  });
+
+  console.log(`Pushed points update to user ${targetUserId}`);
 };

@@ -23,7 +23,7 @@ export const getDashboardSummary = async (req, res) => {
     const currentPosition = usersWithMorePoints + 1;
 
     const trips = await Trip.find({ user: userId }).select(
-      "totalDistanceKm totalCo2Emission co2Saved transportModeBreakdown",
+      "totalDistanceKm totalCo2Emission co2Saved transportModeBreakdown fuelTypeBreakdown",
     );
     const avgCarCo2PerKm = 0.171;
 
@@ -49,7 +49,14 @@ export const getDashboardSummary = async (req, res) => {
 
         acc.greenDistanceKm += getVal("walk");
         acc.greenDistanceKm += getVal("bike");
-        acc.greenDistanceKm += getVal("train");
+        // ---  FUEL TYPE BREAKDOWN (Electric) ---
+        const fuelBreakdown = trip.fuelTypeBreakdown || {};
+        const getFuelVal = (key) =>
+          (fuelBreakdown instanceof Map
+            ? fuelBreakdown.get(key)
+            : fuelBreakdown[key]) || 0;
+
+        acc.greenDistanceKm += getFuelVal("electric");
 
         if ((trip.totalCo2Emission || 0) === 0) {
           acc.zeroTrips += 1;
@@ -72,7 +79,6 @@ export const getDashboardSummary = async (req, res) => {
       greenDistanceKm: Math.round(totals.greenDistanceKm),
       ecoScore: user.ecoPoints || 0,
       zeroTrips: totals.zeroTrips,
-      // New fields for Frontend
       ranking: {
         position: currentPosition,
         totalUsers: totalStandardUsers,

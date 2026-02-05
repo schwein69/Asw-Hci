@@ -45,6 +45,15 @@ const formatNumber = (value) => {
   return Number.isFinite(value) ? value.toLocaleString() : "0";
 };
 
+const handlePointsUpdate = (event) => {
+  console.log(
+    "[DASHBOARD] Ricevuto aggiornamento punti real-time:",
+    event.detail,
+  );
+  // Aggiorna il valore reattivo degli ecoScore
+  statsData.value.ecoScore = event.detail;
+};
+
 const fetchDashboardSummary = async () => {
   try {
     const token = localStorage.getItem("token");
@@ -107,10 +116,13 @@ const fetchEnvironmentalImpact = async () => {
 
 onMounted(() => {
   window.addEventListener("languageChanged", handleLanguageChange);
+  window.addEventListener("eco-points-updated", handlePointsUpdate);
   fetchDashboardSummary();
   fetchEnvironmentalImpact();
 });
-
+onUnmounted(() => {
+  window.removeEventListener("eco-points-updated", handlePointsUpdate);
+});
 const stats = computed(() => [
   {
     label: t("dashboard.totalCo2Saved"),
