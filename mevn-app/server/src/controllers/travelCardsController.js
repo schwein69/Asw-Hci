@@ -483,6 +483,7 @@ export const reportTravelCard = async (req, res) => {
 export const getModerationCards = async (req, res) => {
   try {
     const statusParam = req.query.status;
+    console.log("Fetching moderation cards with status:", statusParam);
     const statuses = statusParam
       ? statusParam.split(",").map((status) => status.trim())
       : ["Pending", "Rejected", "Suspicious"];
@@ -491,6 +492,7 @@ export const getModerationCards = async (req, res) => {
       .populate("creator", "username profileImage")
       .sort({ createdAt: -1 });
 
+    console.log("Moderation Cards fetched:", cards);
     res.status(200).json({ cards });
   } catch (error) {
     res
@@ -509,17 +511,31 @@ export const updateTravelCardStatus = async (req, res) => {
       return res.status(400).json({ message: "Invalid status" });
     }
 
-    const updatedCard = await TravelCard.findByIdAndUpdate(
-      cardId,
-      { status },
-      { new: true },
-    ).populate("creator", "username profileImage");
-
-    if (!updatedCard) {
+    let cartToUpdate = await TravelCard.findById(cardId);
+    if (!cartToUpdate) {
       return res.status(404).json({ message: "Card not found" });
     }
+    if (cartToUpdate.status === "Suspicious" && status === "Approved") {
+      cartToUpdate = await TravelCard.findByIdAndUpdate(
+        cardId,
+        { status, numberOfReports: 0 },
+        { new: true },
+      ).populate("creator", "username profileImage");
+    } else if (cartToUpdate.status === "Suspicious" && status === "Rejected") {
+      cartToUpdate = await TravelCard.findByIdAndUpdate(
+        cardId,
+        { status },
+        { new: true },
+      ).populate("creator", "username profileImage");
+    } else {
+      cartToUpdate = await TravelCard.findByIdAndUpdate(
+        cardId,
+        { status },
+        { new: true },
+      ).populate("creator", "username profileImage");
+    }
 
-    res.status(200).json(updatedCard);
+    res.status(200).json(cartToUpdate);
   } catch (error) {
     res
       .status(500)

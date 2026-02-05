@@ -192,7 +192,7 @@ export default {
         if (!token) return;
 
         const response = await fetch(
-          `${this.apiBase}/travelcards/moderation?status=Pending,Rejected,Approved`,
+          `${this.apiBase}/travelcards/moderation?status=Pending,Rejected,Suspicious`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -703,7 +703,7 @@ export default {
           </p>
 
           <div
-            v-if="post.status === 'pending'"
+            v-if="post.status === 'pending' || post.status === 'suspicious'"
             class="flex items-center gap-3 pl-12"
           >
             <button
@@ -727,6 +727,4 @@ export default {
   </div>
 </template>
 
-<style scoped>
-/* Component-specific styles */
-</style>
+<style scoped></style>
