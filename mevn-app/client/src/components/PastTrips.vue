@@ -11,8 +11,6 @@ import {
 import { getLanguage, t as translate } from "../utils/translations.js";
 import actualMap from "./maps/actualMap.vue";
 import * as turf from "@turf/turf";
-import { inject } from "vue";
-
 export default {
   name: "PastTrips",
   components: {
@@ -56,12 +54,7 @@ export default {
 
       const features = [];
       trip.transportMethods.forEach((method) => {
-        let routeParts = method.route.split("→");
-        if (routeParts.length === 1) {
-          routeParts = method.route.split("->");
-        }
-        const fromCity = routeParts[0] ? routeParts[0].trim() : "";
-        const toCity = routeParts[1] ? routeParts[1].trim() : "";
+        const { fromCity, toCity } = this.parseRoute(method.route);
         const fromCoords =
           method.fromCoords || this.getCityCoordinates(fromCity);
         const toCoords = method.toCoords || this.getCityCoordinates(toCity);
@@ -92,12 +85,7 @@ export default {
 
       const features = [];
       trip.transportMethods.forEach((method, index) => {
-        let routeParts = method.route.split("→");
-        if (routeParts.length === 1) {
-          routeParts = method.route.split("->");
-        }
-        const fromCity = routeParts[0] ? routeParts[0].trim() : "";
-        const toCity = routeParts[1] ? routeParts[1].trim() : "";
+        const { fromCity, toCity } = this.parseRoute(method.route);
         const fromCoords =
           method.fromCoords || this.getCityCoordinates(fromCity);
         const toCoords = method.toCoords || this.getCityCoordinates(toCity);
@@ -238,6 +226,16 @@ export default {
     toggleExpand(trip) {
       trip.isExpanded = !trip.isExpanded;
     },
+    parseRoute(route) {
+      if (!route) return { fromCity: "", toCity: "" };
+      let routeParts = route.split("→");
+      if (routeParts.length === 1) {
+        routeParts = route.split("->");
+      }
+      const fromCity = routeParts[0] ? routeParts[0].trim() : "";
+      const toCity = routeParts[1] ? routeParts[1].trim() : "";
+      return { fromCity, toCity };
+    },
     async loadToMap(tripId) {
       this.showMapForTrip = this.showMapForTrip === tripId ? null : tripId;
       if (!this.showMapForTrip) return;
@@ -262,12 +260,7 @@ export default {
       if (!trip || !Array.isArray(trip.transportMethods)) return;
       const names = new Set();
       trip.transportMethods.forEach((method) => {
-        let routeParts = method.route.split("→");
-        if (routeParts.length === 1) {
-          routeParts = method.route.split("->");
-        }
-        const fromCity = routeParts[0] ? routeParts[0].trim() : "";
-        const toCity = routeParts[1] ? routeParts[1].trim() : "";
+        const { fromCity, toCity } = this.parseRoute(method.route);
         if (fromCity) names.add(fromCity);
         if (toCity) names.add(toCity);
       });

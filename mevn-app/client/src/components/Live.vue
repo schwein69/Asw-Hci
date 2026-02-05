@@ -544,8 +544,7 @@ const getWeatherInfo = (code) => {
 };
 
 // DEPRECATED: Socket is now global in App.vue
-// Setup Socket.io connection - socket is managed globally in App.vue,
-// notifications arrive automatically from the global socket.
+// Socket is managed globally in App.vue; notifications arrive automatically.
 
 // Add notification to list (helper for socket events)
 const addNotificationToList = (notification) => {
