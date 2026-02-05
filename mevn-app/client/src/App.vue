@@ -162,60 +162,6 @@ export default {
       setSocket(this.socket);
     },
     loadUser() {
-      const userData = localStorage.getItem("user");
-      if (!userData) return;
-
-      const user = JSON.parse(userData);
-      const userId = user._id || user.id;
-      if (!userId) return;
-
-      console.log("[GLOBAL SOCKET] Setting up global socket connection...");
-
-      // Connect to Socket.io server (same port as API)
-      const port = import.meta.env.VITE_API_PORT || 4000;
-      this.socket = io(`http://localhost:${port}`);
-
-      // Listen for connection
-      this.socket.on("connect", () => {
-        console.log("[GLOBAL SOCKET] Connected:", this.socket.id);
-        // Join user's personal notification room
-        this.socket.emit("join:notifications", userId);
-      });
-
-      // Listen for all notification types and add to global store
-      this.socket.on("notification:new", (notification) => {
-        console.log("[GLOBAL SOCKET] New notification received:", notification);
-        addNotification(notification);
-      });
-
-      this.socket.on("notification:weather", (notification) => {
-        console.log(
-          "[GLOBAL SOCKET] Weather notification received:",
-          notification,
-        );
-        addNotification(notification);
-      });
-
-      this.socket.on("notification:crowd", (notification) => {
-        console.log(
-          "[GLOBAL SOCKET] Crowd notification received:",
-          notification,
-        );
-        addNotification(notification);
-      });
-
-      this.socket.on("disconnect", () => {
-        console.log("[GLOBAL SOCKET] Disconnected");
-      });
-
-      this.socket.on("connect_error", (error) => {
-        console.error("[GLOBAL SOCKET] Connection error:", error);
-      });
-
-      // Save socket to global store
-      setSocket(this.socket);
-    },
-    loadUser() {
       const userData = localStorage.getItem('user');
       if (userData) {
         try {

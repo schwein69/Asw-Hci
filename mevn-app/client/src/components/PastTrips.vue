@@ -11,8 +11,6 @@ import {
 import { getLanguage, t as translate } from "../utils/translations.js";
 import actualMap from "./maps/actualMap.vue";
 import * as turf from "@turf/turf";
-
-
 export default {
   name: "PastTrips",
   components: {
