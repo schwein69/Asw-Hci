@@ -18,9 +18,9 @@ import {
   CloudRain,
   Wind,
   CloudSun,
-  Snowflake, // Added for snow
-  CloudLightning, // Added for storm
-  RefreshCw, // Added for refresh button
+  Snowflake,
+  CloudLightning,
+  RefreshCw,
 } from "lucide-vue-next";
 import { getLanguage, t as translate } from "../utils/translations.js";
 import { useRouter } from "vue-router";
@@ -120,6 +120,7 @@ const notifications = ref([
 
 // Complete list of available cities
 const ALL_LOCATIONS = [
+  // --- Europe ---
   { name: "Amsterdam", lat: 52.3676, lon: 4.9041 },
   { name: "Barcelona", lat: 41.3851, lon: 2.1734 },
   { name: "Copenhagen", lat: 55.6761, lon: 12.5683 },
@@ -132,6 +133,45 @@ const ALL_LOCATIONS = [
   { name: "Lisbon", lat: 38.7223, lon: -9.1393 },
   { name: "Brussels", lat: 50.8503, lon: 4.3517 },
   { name: "Budapest", lat: 47.4979, lon: 19.0402 },
+  { name: "London", lat: 51.5074, lon: -0.1278 },
+  { name: "Istanbul", lat: 41.0082, lon: 28.9784 },
+
+  // --- Asia ---
+  { name: "Tokyo", lat: 35.6762, lon: 139.6503 },
+  { name: "Kyoto", lat: 35.0116, lon: 135.7681 },
+  { name: "Bangkok", lat: 13.7563, lon: 100.5018 },
+  { name: "Singapore", lat: 1.3521, lon: 103.8198 },
+  { name: "Dubai", lat: 25.2048, lon: 55.2708 },
+  { name: "Hong Kong", lat: 22.3193, lon: 114.1694 },
+  { name: "Seoul", lat: 37.5665, lon: 126.978 },
+  { name: "Mumbai", lat: 19.076, lon: 72.8777 },
+
+  // --- North America ---
+  { name: "New York", lat: 40.7128, lon: -74.006 },
+  { name: "Los Angeles", lat: 34.0522, lon: -118.2437 },
+  { name: "San Francisco", lat: 37.7749, lon: -122.4194 },
+  { name: "Miami", lat: 25.7617, lon: -80.1918 },
+  { name: "Toronto", lat: 43.6532, lon: -79.3832 },
+  { name: "Mexico City", lat: 19.4326, lon: -99.1332 },
+  { name: "Vancouver", lat: 49.2827, lon: -123.1207 },
+
+  // --- South America ---
+  { name: "Rio de Janeiro", lat: -22.9068, lon: -43.1729 },
+  { name: "Buenos Aires", lat: -34.6037, lon: -58.3816 },
+  { name: "Lima", lat: -12.0464, lon: -77.0428 },
+  { name: "Santiago", lat: -33.4489, lon: -70.6693 },
+  { name: "Cusco", lat: -13.532, lon: -71.9675 },
+
+  // --- Africa ---
+  { name: "Cairo", lat: 30.0444, lon: 31.2357 },
+  { name: "Cape Town", lat: -33.9249, lon: 18.4241 },
+  { name: "Marrakech", lat: 31.6295, lon: -7.9811 },
+  { name: "Nairobi", lat: -1.2921, lon: 36.8219 },
+
+  // --- Oceania ---
+  { name: "Sydney", lat: -33.8688, lon: 151.2093 },
+  { name: "Melbourne", lat: -37.8136, lon: 144.9631 },
+  { name: "Auckland", lat: -36.8485, lon: 174.7633 },
 ];
 
 const locations = ref([]);
@@ -419,7 +459,7 @@ const fetchNotifications = async (forceUnread = false) => {
         message: n.message,
         icon: n.icon || "Bell",
         color: getNotificationColor(n.type),
-        isRead: forceUnread ? false : n.isRead, // Force unread if refresh
+        isRead: n.isRead,
         timestamp: new Date(n.createdAt).getTime(),
       }));
 
@@ -744,7 +784,7 @@ onBeforeUnmount(() => {
     <div class="bg-white rounded-2xl p-6 border border-green-200 shadow-sm">
       <!-- Automatic Update Timer -->
       <div
-        class="mb-4 bg-gradient-to-r from-emerald-50 to-blue-50 border border-emerald-200 rounded-xl p-4"
+        class="mb-4 bg-linear-to-r from-emerald-50 to-blue-50 border border-emerald-200 rounded-xl p-4"
       >
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-3">
